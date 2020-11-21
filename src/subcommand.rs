@@ -20,12 +20,12 @@ impl SubCommandUtil for ThisSubCommand {
     }
     
     fn construct_subcommand(&self) -> App{
-        return SubCommand::with_name("this")
+        SubCommand::with_name("this")
         .about("Fun folder usage in current working directory")
         .arg(Arg::with_name("debug").short("d")
         .help("print debug information verbosely"))
         .arg(Arg::with_name("register").short("r").long("register").value_name("FILE").takes_value(true)
-        .help("Register new handler type with provided override rust module"));
+        .help("Register new handler type with provided override rust module"))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches){
@@ -47,19 +47,18 @@ impl SubCommandUtil for ListSubCommand {
     }
     
     fn construct_subcommand(&self) -> App{
-        return SubCommand::with_name("list")
+        SubCommand::with_name("list")
         .about("Details on usage of fun folder across entire filesystem")
         .arg(Arg::with_name("debug").short("d")
-        .help("print debug information verbosely"));
+        .help("print debug information verbosely"))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches){
-        println!("{:?}", &sub_matches.args.len());
+        println!("{:?}", &sub_matches.args.len())
     }
 }
 
 pub struct GenerateSubCommand{
-
 }
 
 impl SubCommandUtil for GenerateSubCommand {
