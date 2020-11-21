@@ -4,7 +4,6 @@ use clap::{App, AppSettings};
 use crate::subcommand::SubCommandUtil;
 mod subcommand;
 
-
 fn main() {
     let list_subcommand = subcommand::ListSubCommand{};
     let this_subcommand = subcommand::ThisSubCommand{};
