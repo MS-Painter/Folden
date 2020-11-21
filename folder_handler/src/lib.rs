@@ -1,6 +1,6 @@
 trait Handler{
-    fn watch(); // Initalize handler to watch a folder
-    fn generate_config(); // Generate configuration file with defaults to apply a new worker with it's own configuration
+    fn watch(); // Initialize handler to watch a folder
+    fn generate_config(); // Generate configuration file with defaults
 }
 
 #[cfg(test)]
