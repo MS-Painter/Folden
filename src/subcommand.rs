@@ -57,3 +57,26 @@ impl SubCommandUtil for ListSubCommand {
         println!("{:?}", &sub_matches.args.len());
     }
 }
+
+pub struct GenerateSubCommand{
+
+}
+
+impl SubCommandUtil for GenerateSubCommand {
+    fn name(&self) -> &str {"generate"}
+
+    fn construct_subcommand(&self) -> App{
+        SubCommand::with_name("generate")
+        .about("Generate default handler config for input registered handler")
+        .arg(Arg::with_name("debug")
+            .short("d")
+            .help("print debug information verbosely"))
+        .arg(Arg::with_name("handler")
+            .takes_value(true)
+            .possible_values(&["a", "b", "c"]))
+    }
+
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
+        println!("{:?}", &sub_matches.args)
+    }
+}
