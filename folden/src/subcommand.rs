@@ -7,7 +7,7 @@ pub trait SubCommandUtil {
     fn construct_subcommand(&self) -> App;
     fn subcommand_runtime(&self, sub_matches: &ArgMatches);
     fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {
-        return matches.subcommand_matches(self.name());
+        matches.subcommand_matches(self.name())
     }
 }
 
