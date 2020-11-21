@@ -16,7 +16,7 @@ pub struct ThisSubCommand {
 
 impl SubCommandUtil for ThisSubCommand {
     fn name(&self) -> &str {
-        return "this";
+        "this"
     }
     
     fn construct_subcommand(&self) -> App{
@@ -43,7 +43,7 @@ pub struct ListSubCommand {
 
 impl SubCommandUtil for ListSubCommand {
     fn name(&self) -> &str {
-        return "list";
+        "list"
     }
     
     fn construct_subcommand(&self) -> App{
