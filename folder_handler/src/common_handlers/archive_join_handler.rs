@@ -1,8 +1,10 @@
-use crate::Handler;
+use crate::{Handler};
 
 use serde::{Serialize, Deserialize};
+use std::{fs, io};
+use std::path::Path;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ArchiveJoinHandler{
     #[serde(default)]
     max_parts: u8, // Max split archive parts supported to attempt rejoining
@@ -14,25 +16,25 @@ pub struct ArchiveJoinHandler{
     from_date_created: String, // Compute only files created after given date (Date requires format as supplied from general project config)
 }
 
+impl ArchiveJoinHandler{
+    pub(crate) fn generate_config(&self, path: &Path) -> io::Result<()>{
+        fs::write(path, toml::to_vec(&self).unwrap())
+    }
+}
+
 fn datetime_default() -> String {
     "%d/%m/%yyyy".to_string()
 }
 
+#[typetag::serde]
 impl Handler for ArchiveJoinHandler{
-    fn new() -> Self {
-        ArchiveJoinHandler{
-            max_parts: 0,
-            max_file_size: 0,
-            naming_regex_match: "".to_string(),
-            from_date_created: "".to_string()
-        }
-    }
-
-    fn from_bytes(bytes: Vec<u8>) -> Self {
-        toml::from_slice(&bytes).unwrap()
-    }
-
     fn watch(&self) {
         unimplemented!()
+    }
+}
+
+impl From<Vec<u8>> for ArchiveJoinHandler {
+    fn from(bytes: Vec<u8>) -> Self {
+        toml::from_slice(&bytes).unwrap()
     }
 }

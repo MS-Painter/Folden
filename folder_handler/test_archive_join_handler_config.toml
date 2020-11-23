@@ -1,0 +1,4 @@
+max_parts = 0
+max_file_size = 0
+naming_regex_match = ""
+from_date_created = ""
