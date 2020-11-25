@@ -2,7 +2,11 @@ use std::{env, option::Option};
 
 use clap::{App, SubCommand, Arg, ArgMatches};
 
+extern crate folder_handler;
+use folder_handler::handlers_json::HandlersJson;
+
 pub trait SubCommandUtil {
+    fn new(handlers_json: HandlersJson) -> Self;
     fn name(&self) -> &str;
     fn construct_subcommand(&self) -> App;
     fn subcommand_runtime(&self, sub_matches: &ArgMatches);
@@ -14,9 +18,15 @@ pub trait SubCommandUtil {
     }
 }
 
-pub struct ThisSubCommand { }
+pub struct ThisSubCommand {
+    handlers_json: HandlersJson
+}
 
 impl SubCommandUtil for ThisSubCommand {
+    fn new(handlers_json: HandlersJson) -> Self {
+        Self{ handlers_json }
+    }
+
     fn name(&self) -> &str {
         "this"
     }
@@ -41,9 +51,14 @@ impl SubCommandUtil for ThisSubCommand {
 }
 
 pub struct ListSubCommand {
+    handlers_json: HandlersJson
 }
 
 impl SubCommandUtil for ListSubCommand {
+    fn new(handlers_json: HandlersJson) -> Self {
+        Self{ handlers_json }
+    }
+
     fn name(&self) -> &str {
         "list"
     }
@@ -61,9 +76,14 @@ impl SubCommandUtil for ListSubCommand {
 }
 
 pub struct GenerateSubCommand{
+    handlers_json: HandlersJson
 }
 
 impl SubCommandUtil for GenerateSubCommand {
+    fn new(handlers_json: HandlersJson) -> Self {
+        Self{ handlers_json }
+    }
+
     fn name(&self) -> &str {"generate"}
 
     fn construct_subcommand(&self) -> App{
@@ -74,7 +94,7 @@ impl SubCommandUtil for GenerateSubCommand {
             .help("print debug information verbosely"))
         .arg(Arg::with_name("handler")
             .takes_value(true)
-            .possible_values(&["a", "b", "c"]))
+            .possible_values(self.handlers_json.get_handler_types().as_slice()))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {

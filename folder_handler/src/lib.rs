@@ -8,6 +8,7 @@ pub mod handlers_json {
     use crate::common_handlers::archive_join_handler::ArchiveJoinHandler;
     use crate::Handler;
 
+    #[derive(Clone)]
     pub struct HandlersJson{
         pub(crate) handlers: Vec<Value>
     }
