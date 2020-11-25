@@ -6,13 +6,15 @@ pub trait SubCommandUtil {
     fn name(&self) -> &str;
     fn construct_subcommand(&self) -> App;
     fn subcommand_runtime(&self, sub_matches: &ArgMatches);
+    fn create_instance(&self) -> App {
+        SubCommand::with_name(self.name())
+    }
     fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {
         matches.subcommand_matches(self.name())
     }
 }
 
-pub struct ThisSubCommand {
-}
+pub struct ThisSubCommand { }
 
 impl SubCommandUtil for ThisSubCommand {
     fn name(&self) -> &str {
@@ -20,7 +22,7 @@ impl SubCommandUtil for ThisSubCommand {
     }
     
     fn construct_subcommand(&self) -> App{
-        SubCommand::with_name("this")
+        self.create_instance()
         .about("Fun folder usage in current working directory")
         .arg(Arg::with_name("debug").short("d")
         .help("print debug information verbosely"))
@@ -47,7 +49,7 @@ impl SubCommandUtil for ListSubCommand {
     }
     
     fn construct_subcommand(&self) -> App{
-        SubCommand::with_name("list")
+        self.create_instance()
         .about("Details on usage of fun folder across entire filesystem")
         .arg(Arg::with_name("debug").short("d")
         .help("print debug information verbosely"))
@@ -65,7 +67,7 @@ impl SubCommandUtil for GenerateSubCommand {
     fn name(&self) -> &str {"generate"}
 
     fn construct_subcommand(&self) -> App{
-        SubCommand::with_name("generate")
+        self.create_instance()
         .about("Generate default handler config for input registered handler")
         .arg(Arg::with_name("debug")
             .short("d")
