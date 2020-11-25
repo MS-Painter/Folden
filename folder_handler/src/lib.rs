@@ -22,6 +22,10 @@ impl HandlersJson {
             }).collect()
         }
     }
+
+    fn get_handler_types(&self) -> Vec<&str> {
+        self.handlers.iter().map(|handler| handler["type"].as_str().unwrap()).collect()
+    }
 }
 
 pub mod common_handlers;
