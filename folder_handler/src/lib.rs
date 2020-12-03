@@ -1,5 +1,5 @@
 #[typetag::serde(tag = "type")]
-trait Handler {
+pub trait Handler {
     fn watch(&self); // Initialize handler to watch a folder
 }
 
@@ -9,7 +9,7 @@ pub mod handlers_json {
     use crate::Handler;
 
     #[derive(Clone)]
-    pub struct HandlersJson{
+    pub struct HandlersJson {
         pub(crate) handlers: Vec<Value>
     }
 
@@ -18,7 +18,7 @@ pub mod handlers_json {
             let archive_join_handler = ArchiveJoinHandler::default();
             let dyn_archive_join_handler = &archive_join_handler as &dyn Handler;
             let dyn_handlers = vec![dyn_archive_join_handler];
-            Self{
+            Self {
                 handlers: dyn_handlers.iter().map(|handler| {
                     let json = serde_json::to_string(handler).unwrap();
                     serde_json::from_str(&*json).unwrap()
@@ -28,6 +28,19 @@ pub mod handlers_json {
 
         pub fn get_handler_types(&self) -> Vec<&str> {
             self.handlers.iter().map(|handler| handler["type"].as_str().unwrap()).collect()
+        }
+
+        pub fn get_handler_by_name(&self, name: &str) -> Result<Box<dyn Handler>, &'static str> {
+            for handler_json in self.handlers.as_slice() {
+                println!("{}", handler_json);
+                let handler_value_as_str = handler_json.get("type").unwrap().as_str().unwrap();
+                if &handler_value_as_str.to_lowercase() == &name.to_lowercase() {
+                    let handler: Box<dyn Handler> = serde_json::from_str(handler_json.to_string().as_str()).unwrap();
+                    return Ok(handler);
+                }
+                return Err("oops");
+            }
+            return Err("oops");
         }
     }
 }
