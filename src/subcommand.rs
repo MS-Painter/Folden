@@ -104,7 +104,7 @@ impl SubCommandUtil for GenerateSubCommand {
         let handler_match = sub_matches.value_of("handler").unwrap();
         match self.handlers_json.get_handler_by_name(&handler_match) {
             Ok(_) => println!("YO"),
-            Err(_) => println!("Brah")
+            Err(e) => panic!(e)
         }
     }
 }
