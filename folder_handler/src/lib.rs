@@ -32,15 +32,13 @@ pub mod handlers_json {
 
         pub fn get_handler_by_name(&self, name: &str) -> Result<Box<dyn Handler>, &'static str> {
             for handler_json in self.handlers.as_slice() {
-                println!("{}", handler_json);
                 let handler_value_as_str = handler_json.get("type").unwrap().as_str().unwrap();
                 if &handler_value_as_str.to_lowercase() == &name.to_lowercase() {
                     let handler: Box<dyn Handler> = serde_json::from_str(handler_json.to_string().as_str()).unwrap();
                     return Ok(handler);
                 }
-                return Err("oops");
             }
-            return Err("oops");
+            return Err("Handler not found by given name");
         }
     }
 }
