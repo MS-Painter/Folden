@@ -31,9 +31,10 @@ pub mod handlers_json {
         }
 
         pub fn get_handler_by_name(&self, name: &str) -> Result<Box<dyn Handler>, &'static str> {
+            let name_lower_case = name.to_lowercase();
             for handler_json in self.handlers.as_slice() {
                 let handler_value_as_str = handler_json.get("type").unwrap().as_str().unwrap();
-                if &handler_value_as_str.to_lowercase() == &name.to_lowercase() {
+                if &handler_value_as_str.to_lowercase() == &name_lower_case {
                     let handler: Box<dyn Handler> = serde_json::from_str(handler_json.to_string().as_str()).unwrap();
                     return Ok(handler);
                 }
