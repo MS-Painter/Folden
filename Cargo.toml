@@ -16,4 +16,5 @@ folder_handler = {path = "folder_handler"}
 
 clap = "2.33.3"
 typetag = "0.1.6"
+toml = "0.5.7"
 serde = {version = "1.0.117", features = ["derive"] }

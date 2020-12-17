@@ -1,6 +1,14 @@
+use std::path::Path;
+use std::{io, fs};
+
 #[typetag::serde(tag = "type")]
 pub trait Handler {
-    fn watch(&self); // Initialize handler to watch a folder
+    // Initialize handler to watch a folder
+    fn watch(&self);
+    // Generate handler specific initialization config
+    fn generate_config(&self, path: &Path) -> io::Result<()> where Self: serde::ser::Serialize {
+        fs::write(path, toml::to_vec(*Box::new(self)).unwrap())
+    }
 }
 
 pub mod handlers_json {
@@ -53,6 +61,7 @@ mod tests {
     use std::any::{TypeId, Any};
     use crate::common_handlers::archive_join_handler::ArchiveJoinHandler;
     use crate::handlers_json::HandlersJson;
+    use crate::Handler;
 
     #[test]
     fn typetagging_works() {
@@ -66,7 +75,7 @@ mod tests {
     fn new_default_handler_works() {
         let file_path = "test_archive_join_handler_config.toml";
         let handler = ArchiveJoinHandler::default();
-        handler.generate_config(file_path.as_ref()).unwrap();
+        &handler.generate_config(file_path.as_ref()).unwrap();
     }
 
     #[test]

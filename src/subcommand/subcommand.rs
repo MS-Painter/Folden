@@ -1,4 +1,4 @@
-use std::{option::Option};
+use std::option::Option;
 
 use clap::{App, SubCommand, ArgMatches};
 

@@ -1,9 +1,32 @@
 use folder_handler::handlers_json::HandlersJson;
 use clap::{App, Arg, ArgMatches};
 use crate::subcommand::subcommand::SubCommandUtil;
+use std::env;
+use std::path::PathBuf;
 
 pub struct GenerateSubCommand {
     handlers_json: HandlersJson
+}
+
+impl GenerateSubCommand {
+    fn generate_config_path(handler_match: &str, path: Option<&str>) -> PathBuf {
+        match path {
+            None => {
+                let mut path_buf = env::current_dir().unwrap();
+                path_buf.push(handler_match);
+                path_buf.set_extension("toml");
+                path_buf
+            }
+            Some(path) => {
+                let mut path_buf = PathBuf::from(path);
+                if path_buf.is_dir() {
+                    path_buf.push(handler_match);
+                    path_buf.set_extension("toml");
+                }
+                path_buf
+            }
+        }
+    }
 }
 
 impl SubCommandUtil for GenerateSubCommand {
@@ -30,8 +53,12 @@ impl SubCommandUtil for GenerateSubCommand {
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
         let handler_match = sub_matches.value_of("handler").unwrap();
+        let path_match = match sub_matches.value_of("path") {
+            None => GenerateSubCommand::generate_config_path(handler_match, None),
+            Some(path) => GenerateSubCommand::generate_config_path(handler_match, Some(path))
+        };
         match self.handlers_json.get_handler_by_name(&handler_match) {
-            Ok(_) => println!("YO"),
+            Ok(handler) => handler.generate_config(path_match.as_ref()).unwrap(),
             Err(e) => panic!(e)
         }
     }
