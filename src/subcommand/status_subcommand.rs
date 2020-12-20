@@ -3,17 +3,17 @@ use crate::subcommand::subcommand::SubCommandUtil;
 use clap::{App, Arg, ArgMatches};
 use std::env;
 
-pub struct ThisSubCommand {
+pub struct StatusSubCommand {
     handlers_json: HandlersJson
 }
 
-impl SubCommandUtil for ThisSubCommand {
+impl SubCommandUtil for StatusSubCommand {
     fn new(handlers_json: HandlersJson) -> Self {
         Self { handlers_json }
     }
 
     fn name(&self) -> &str {
-        "this"
+        "status"
     }
 
     fn construct_subcommand(&self) -> App {
