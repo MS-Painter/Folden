@@ -34,8 +34,7 @@ fn main() {
         status_subcommand.subcommand_runtime(sub_matches);
     } else if let Some(sub_matches) = gen_subcommand.subcommand_matches(&matches) {
         gen_subcommand.subcommand_runtime(sub_matches);
-    }
-    else if let Some(sub_matches) = register_subcommand.subcommand_matches(&matches) {
+    } else if let Some(sub_matches) = register_subcommand.subcommand_matches(&matches) {
         register_subcommand.subcommand_runtime(sub_matches);
     }
 }
