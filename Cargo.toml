@@ -8,11 +8,13 @@ edition = "2018"
 
 [workspace]
 members = [
-    "folder_handler"
+    "folder_handler",
+    "server"
 ]
 
 [dependencies]
 folder_handler = {path = "folder_handler"}
+server = {path = "server"}
 
 clap = "2.33.3"
 typetag = "0.1.6"
