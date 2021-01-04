@@ -29,3 +29,9 @@ Library crate.
 Responsible for handlers api shared between client and server.
 
 Also, contains common handlers which are available to utilize.
+
+
+# Differences to other crates
+- `notify` - Library used to create cross-platform file watchers.
+- `watchexec` - Application used for single file watching cli needs.
+- `Folden` - System wide application for file watching needs. 
