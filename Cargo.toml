@@ -8,22 +8,19 @@ edition = "2018"
 
 [workspace]
 members = [
+    "generated_types",
     "folder_handler",
     "server"
 ]
 
 [dependencies]
+generated_types = {path = "generated_types"}
 folder_handler = {path = "folder_handler"}
 server = {path = "server"}
 
 tonic = "0.3.1"
-prost = "0.7"
-prost-types = "0.7"
 clap = "2.33.3"
 typetag = "0.1.6"
 toml = "0.5.7"
 tokio = { version = "0.2"}
 serde = {version = "1.0.117", features = ["derive"] }
-
-[build-dependencies]
-tonic-build = "0.3.1"
