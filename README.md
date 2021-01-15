@@ -34,4 +34,16 @@ Also, contains common handlers which are available to utilize.
 # Differences to other crates
 - `notify` - Library used to create cross-platform file watchers.
 - `watchexec` - Application used for single file watching cli needs.
-- `Folden` - System wide application for file watching needs. 
+- `Folden` - System wide application for file watching needs.
+
+# Contributing
+### gRPC auto completed intelliSense
+If you're interested in working in an easy to discern environment using IDEA IDE -
+
+You can enable intelliSense for build generated gRPC structures using the following IDE changes:
+
+1. Enter the IDE's “Experimental Features” dialog. Can be done by pressing `Ctrl+Alt+Shift+/`.
+
+2. Enable the `org.rust.cargo.fetch.out.dir` feature.
+
+3. Restart IDE.
