@@ -22,7 +22,7 @@ impl SubCommandUtil for ListSubCommand {
                 .help("print debug information verbosely"))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<generated_types::inter_process_client::InterProcessClient<tonic::transport::Channel>, tonic::transport::Error>>) {
         println!("{:?}", &sub_matches.args.len())
     }
 }

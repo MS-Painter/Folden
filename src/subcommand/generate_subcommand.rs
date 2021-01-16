@@ -51,7 +51,7 @@ impl SubCommandUtil for GenerateSubCommand {
                 .required(false))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<generated_types::inter_process_client::InterProcessClient<tonic::transport::Channel>, tonic::transport::Error>>) {
         let handler_match = sub_matches.value_of("handler").unwrap();
         let path_match = match sub_matches.value_of("path") {
             None => GenerateSubCommand::generate_config_path(handler_match, None),
