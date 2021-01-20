@@ -1,7 +1,13 @@
+use std::env;
+
+use futures::executor::block_on;
+use clap::{App, Arg, ArgMatches};
+use tonic::transport::{Channel, Error as TransportError};
+
 use folder_handler::handlers_json::HandlersJson;
 use crate::subcommand::subcommand::SubCommandUtil;
-use clap::{App, Arg, ArgMatches};
-use std::env;
+use generated_types::inter_process_client::InterProcessClient;
+use generated_types::GetDirectoryStatusRequest;
 
 pub struct StatusSubCommand {
     handlers_json: HandlersJson
@@ -23,9 +29,15 @@ impl SubCommandUtil for StatusSubCommand {
                 .help("print debug information verbosely"))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
         let path = env::current_dir().unwrap();
         println!("The current directory is {}", path.display());
         println!("{:?}", sub_matches);
+        let mut client = block_on(client_connect_future).unwrap();
+        let response = client.get_directory_status(GetDirectoryStatusRequest {
+            full_directory_path: String::from(path.as_os_str().to_str().unwrap())
+        });
+        let response = block_on(response).unwrap().into_inner();
+        println!("{:?}", response.message);
     }
 }

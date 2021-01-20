@@ -26,7 +26,7 @@ impl SubCommandUtil for RegisterSubCommand {
                 .help("Handler configuration file"))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<generated_types::inter_process_client::InterProcessClient<tonic::transport::Channel>, tonic::transport::Error>>) {
         let handler_config_match = sub_matches.value_of("handler_config").unwrap();
         let path = env::current_dir().unwrap();
         println!("The current directory is {}", path.display());

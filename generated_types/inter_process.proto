@@ -1,0 +1,27 @@
+// Definition of gRPC communication between different processes.
+// Definition of communication between client and server instances exclusively.
+
+syntax = "proto3";
+package inter_process;
+
+service InterProcess {
+  rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (RegisterToDirectoryResponse);
+  rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
+}
+
+message RegisterToDirectoryRequest {
+  string full_directory_path = 1;
+  string handler_type_name = 2;
+}
+
+message RegisterToDirectoryResponse {
+  string message = 1;
+}
+
+message GetDirectoryStatusRequest {
+  string full_directory_path = 1;
+}
+
+message GetDirectoryStatusResponse {
+  string message = 1;
+}
