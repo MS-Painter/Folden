@@ -6,6 +6,7 @@ package inter_process;
 
 service InterProcess {
   rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (RegisterToDirectoryResponse);
+  rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
 }
 
 message RegisterToDirectoryRequest {
@@ -14,5 +15,13 @@ message RegisterToDirectoryRequest {
 }
 
 message RegisterToDirectoryResponse {
+  string message = 1;
+}
+
+message GetDirectoryStatusRequest {
+  string full_directory_path = 1;
+}
+
+message GetDirectoryStatusResponse {
   string message = 1;
 }

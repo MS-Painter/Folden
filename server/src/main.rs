@@ -7,7 +7,10 @@ use tonic::{Request, Response};
 use tonic::transport::Server as TonicServer;
 
 use generated_types::inter_process_server::{InterProcess, InterProcessServer};
-use generated_types::{RegisterToDirectoryRequest, RegisterToDirectoryResponse};
+use generated_types::{
+    RegisterToDirectoryRequest, RegisterToDirectoryResponse,
+    GetDirectoryStatusRequest, GetDirectoryStatusResponse
+};
 
 const DEFAULT_CONFIG_PATH: &str = "default.conf";
 
@@ -16,13 +19,23 @@ struct Server {}
 
 #[tonic::async_trait]
 impl InterProcess for Server {
-    async fn register_to_directory(&self,request:Request<RegisterToDirectoryRequest>,) ->
+    async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) ->
     Result<Response<RegisterToDirectoryResponse>,tonic::Status> {
         let request = request.into_inner();
         println!("{}", request.full_directory_path);
         println!("{}", request.handler_type_name);
 
-        Ok(Response::new(RegisterToDirectoryResponse{
+        Ok(Response::new(RegisterToDirectoryResponse {
+            message: "".to_string(),
+        }))
+    }
+
+    async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) ->
+    Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
+        let request = request.into_inner();
+        println!("{}", request.full_directory_path);
+
+        Ok(Response::new(GetDirectoryStatusResponse {
             message: "".to_string(),
         }))
     }
