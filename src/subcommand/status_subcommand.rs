@@ -35,7 +35,7 @@ impl SubCommandUtil for StatusSubCommand {
         println!("{:?}", sub_matches);
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.get_directory_status(GetDirectoryStatusRequest {
-            full_directory_path: String::from(path.as_os_str().to_str().unwrap())
+            directory_path: String::from(path.as_os_str().to_str().unwrap())
         });
         let response = block_on(response).unwrap().into_inner();
         println!("{:?}", response.message);

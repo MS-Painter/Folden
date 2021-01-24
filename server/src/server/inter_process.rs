@@ -12,7 +12,7 @@ impl InterProcess for Server {
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) ->
     Result<Response<RegisterToDirectoryResponse>,tonic::Status> {
         let request = request.into_inner();
-        println!("{}", request.full_directory_path);
+        println!("{}", request.directory_path);
         println!("{}", request.handler_type_name);
 
         Ok(Response::new(RegisterToDirectoryResponse {
@@ -23,7 +23,7 @@ impl InterProcess for Server {
     async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) ->
     Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
         let request = request.into_inner();
-        println!("{}", request.full_directory_path);
+        println!("{}", request.directory_path);
 
         Ok(Response::new(GetDirectoryStatusResponse {
             message: "".to_string(),
