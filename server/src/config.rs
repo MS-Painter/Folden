@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub db_path: String, // Local db file path
 }
