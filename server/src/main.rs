@@ -1,4 +1,4 @@
-use std::thread;
+use std::{fs, sync::Arc, thread};
 use std::sync::mpsc;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
@@ -6,16 +6,22 @@ use clap::{App, AppSettings, Arg, SubCommand};
 use tonic::{Request, Response};
 use tonic::transport::Server as TonicServer;
 
+mod config;
+use config::Config;
+mod database_access;
+use database_access::database_access::establish_connection;
 use generated_types::inter_process_server::{InterProcess, InterProcessServer};
 use generated_types::{
     RegisterToDirectoryRequest, RegisterToDirectoryResponse,
     GetDirectoryStatusRequest, GetDirectoryStatusResponse
 };
 
-const DEFAULT_CONFIG_PATH: &str = "default.conf";
+const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
 
-#[derive(Default)]
-struct Server {}
+struct Server {
+    config: Arc<Config>,
+    db: Arc<rocksdb::DB>
+}
 
 #[tonic::async_trait]
 impl InterProcess for Server {
@@ -41,10 +47,15 @@ impl InterProcess for Server {
     }
 }
 
-async fn startup_server() -> Result<(), Box<dyn std::error::Error>> {
+async fn startup_server(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     //let (tx, rx) = mpsc::channel();
+    println!("{:?}", config);
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-    let server = Server::default();
+
+    let server = Server{
+        db: Arc::new(establish_connection(&config.db_path).unwrap()),
+        config: Arc::new(config)
+    };
 
     TonicServer::builder()
         .add_service(InterProcessServer::new(server))
@@ -69,10 +80,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .subcommand(SubCommand::with_name("run")
             .help("Startup Folden server"));
     let matches = app.get_matches();
-    let config = matches.value_of("config").unwrap_or(DEFAULT_CONFIG_PATH);
-    println!("Value for config: {}", config);
+    let config_file_path = matches.value_of("config").unwrap_or(DEFAULT_CONFIG_PATH);
+    let config_file_data = fs::read(config_file_path).unwrap();
+    let config = Config::from(config_file_data);
     if let Some(_) = matches.subcommand_matches("run") {
-        startup_server().await?;
+        startup_server(config).await?;
     }
     Ok(())
 }
