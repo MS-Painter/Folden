@@ -1,13 +1,11 @@
-use std::error::Error;
 use std::option::Option;
 
 use futures::Future;
 use tonic::transport::Channel;
-use clap::{App, SubCommand, ArgMatches};
+use clap::{App, Arg, ArgMatches, SubCommand};
 
 extern crate folder_handler;
 use folder_handler::handlers_json::HandlersJson;
-
 use generated_types::inter_process_client::InterProcessClient;
 
 pub trait SubCommandUtil {
@@ -20,5 +18,13 @@ pub trait SubCommandUtil {
     }
     fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {
         matches.subcommand_matches(self.name())
+    }
+
+    fn construct_handler_arg<'a, 'b>(name: &'a str, handlers_json: &'b HandlersJson) -> Arg<'a, 'b> {
+        Arg::with_name(name)
+            .required(true)
+            .empty_values(false)
+            .case_insensitive(true)
+            .possible_values(&handlers_json.get_handler_types().as_slice())
     }
 }
