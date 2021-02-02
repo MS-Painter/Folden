@@ -53,6 +53,6 @@ impl SubCommandUtil for RegisterSubCommand {
         });
 
         let response = block_on(response).unwrap().into_inner();
-        println!("resp {:?}", response.message);
+        println!("{:?}", response.message);
     }
 }
