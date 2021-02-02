@@ -50,8 +50,10 @@ impl InterProcess for Server {
 
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
+                let mut message = String::from("Handler - ");
+                message.push_str(handler_mapping.handler_type.as_str());
                 Ok(Response::new(GetDirectoryStatusResponse {
-                    message: "Directory unhandled".to_string(),
+                    message
                 }))
             }
             None => {
