@@ -12,8 +12,6 @@ mod config;
 use config::Config;
 mod mapping;
 use mapping::Mapping;
-mod database_access;
-use database_access::database_access::establish_connection;
 use generated_types::inter_process_server::InterProcessServer;
 
 const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
@@ -24,7 +22,6 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
     
     let server = Server{
-        db: Arc::new(establish_connection(&config.db_path).unwrap()),
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
     };
