@@ -26,15 +26,21 @@ impl InterProcess for Server {
             }
             None => {
                 drop(mapping); // Free lock here instead of scope exit
-
                 let mut mapping = self.mapping.write().await;
-                mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
-                    handler_thread_id: 0,
-                    handler_type: request.handler_type_name,
-                    handler_config_path: request.handler_config_path,
-                });
+                match self.handlers_json.get_handler_by_name(&request.handler_type_name) {
+                    Ok(handler) => {
+                        handler.watch();
 
-                println!("{:?}", mapping);
+                        mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
+                            handler_thread_id: 0,
+                            handler_type: request.handler_type_name,
+                            handler_config_path: request.handler_config_path,
+                        });
+
+                        println!("{:?}", mapping);
+                    },
+                    Err(e) => panic!(e)
+                }
 
                 Ok(Response::new(RegisterToDirectoryResponse {
                     message: "".to_string(),

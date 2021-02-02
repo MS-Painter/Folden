@@ -12,18 +12,20 @@ mod config;
 use config::Config;
 mod mapping;
 use mapping::Mapping;
+use folder_handler::handlers_json::HandlersJson;
 use generated_types::inter_process_server::InterProcessServer;
 
 const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
 const DEFAULT_MAPPING_STATE_PATH: &str = "default_mapping.toml";
 
-async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn std::error::Error>> {
+async fn startup_server(config: Config, mapping: Mapping, handlers_json: HandlersJson) -> Result<(), Box<dyn std::error::Error>> {
     //let (tx, rx) = mpsc::channel();
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
     
     let server = Server{
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
+        handlers_json: Arc::new(handlers_json), 
     };
 
     TonicServer::builder()
@@ -64,8 +66,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(_) => {}
     }
+    let handlers_json = HandlersJson::new();
     if let Some(_) = matches.subcommand_matches("run") {
-        startup_server(config, mapping).await?;
+        startup_server(config, mapping, handlers_json).await?;
     }
     Ok(())
 }

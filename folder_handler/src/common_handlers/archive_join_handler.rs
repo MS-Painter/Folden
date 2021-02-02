@@ -21,7 +21,7 @@ fn datetime_default() -> String {
 #[typetag::serde]
 impl Handler for ArchiveJoinHandler {
     fn watch(&self) {
-        unimplemented!()
+        println!("Wat chinnnn");
     }
 }
 
