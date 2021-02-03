@@ -1,9 +1,10 @@
-use std::thread;
+use std::{sync::Arc, thread};
 
-use tokio::sync::mpsc;
+use folder_handler::handlers_json::HandlersJson;
+use tokio::sync::{RwLockWriteGuard, mpsc};
 use tonic::{Request, Response};
 
-use crate::mapping::HandlerMapping;
+use crate::mapping::{HandlerMapping, Mapping};
 use super::Server;
 use generated_types::{
     inter_process_server::InterProcess,
@@ -11,6 +12,30 @@ use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, 
     RegisterToDirectoryRequest, RegisterToDirectoryResponse, 
 };
+
+fn start_handler_thread(
+    mut mapping: RwLockWriteGuard<Mapping>, handlers_json: Arc<HandlersJson>, 
+    directory_path: String, handler_type_name: String, handler_config_path: String) {
+    match handlers_json.get_handler_by_name(&handler_type_name) {
+        Ok(_handler) => {
+            let (tx, rx) = mpsc::channel::<u8>(2);
+            let handler_type_name_clone = handler_type_name.clone();
+            thread::spawn(move || {
+                let rx = rx;
+                let handlers_json = handlers_json;
+                let handler = handlers_json.get_handler_by_name(&handler_type_name_clone).unwrap();
+                handler.watch(rx);
+            });
+            
+            mapping.directory_mapping.insert(directory_path, HandlerMapping {
+                handler_thread_shutdown_tx: tx,
+                handler_type: handler_type_name,
+                handler_config_path,
+            });
+        },
+        Err(e) => panic!(e)
+    }
+}
 
 #[tonic::async_trait]
 impl InterProcess for Server {
@@ -29,27 +54,12 @@ impl InterProcess for Server {
             }
             None => {
                 drop(mapping); // Free lock here instead of scope exit
-                let mut mapping = self.mapping.write().await;
-                let handler_type_name = request.handler_type_name.clone();
+                let mapping = self.mapping.write().await;
                 let handlers_json = self.handlers_json.clone();
-                match handlers_json.get_handler_by_name(&handler_type_name) {
-                    Ok(_handler) => {
-                        let (tx, rx) = mpsc::channel::<u8>(2);
-                        thread::spawn(move || {
-                            let rx = rx;
-                            let handlers_json = handlers_json;
-                            let handler = handlers_json.get_handler_by_name(&handler_type_name).unwrap();
-                            handler.watch(rx);
-                        });
-                        
-                        mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
-                            handler_thread_shutdown_tx: tx,
-                            handler_type: request.handler_type_name,
-                            handler_config_path: request.handler_config_path,
-                        });
-                    },
-                    Err(e) => panic!(e)
-                }
+                start_handler_thread(
+                    mapping, handlers_json, 
+                    request.directory_path, request.handler_type_name, request.handler_config_path
+                );
 
                 Ok(Response::new(RegisterToDirectoryResponse {
                     message: "".to_string(),
