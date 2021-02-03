@@ -29,7 +29,7 @@ fn start_handler_thread(
             
             // Insert or update the value of the current handled directory
             mapping.directory_mapping.insert(directory_path, HandlerMapping {
-                handler_thread_shutdown_tx: tx,
+                handler_thread_tx: tx,
                 handler_type_name,
                 handler_config_path,
             });
@@ -84,8 +84,8 @@ impl InterProcess for Server {
                 let mut message = String::from("Handler - ");
                 message.push_str(handler_type_name.as_str());
                 
-                let mut handler_thread_shutdown_tx = handler_mapping.handler_thread_shutdown_tx.clone();
-                match handler_thread_shutdown_tx.try_send(HandlerChannelMessage::Ping) {
+                let mut handler_thread_tx = handler_mapping.handler_thread_tx.clone();
+                match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
                     Ok(_) => {
                         message.push_str(" - Alive");
                     }
@@ -127,8 +127,8 @@ impl InterProcess for Server {
                         let mapping = self.mapping.write().await;
                         let handler_mapping = mapping.directory_mapping.get(&request.directory_path).unwrap(); 
                         
-                        let mut handler_thread_shutdown_tx = handler_mapping.handler_thread_shutdown_tx.clone();
-                        match handler_thread_shutdown_tx.try_send(HandlerChannelMessage::Ping) {
+                        let mut handler_thread_tx = handler_mapping.handler_thread_tx.clone();
+                        match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
                             Ok(_) => {
                                 message = String::from("Handler already up");
                             }
@@ -179,8 +179,8 @@ impl InterProcess for Server {
                 let mut mapping = self.mapping.write().await;
                 match mapping.directory_mapping.get(&request.directory_path) {
                     Some(handler_mapping) => {
-                        let mut handler_thread_shutdown_tx = handler_mapping.handler_thread_shutdown_tx.clone();
-                        match handler_thread_shutdown_tx.send(HandlerChannelMessage::Terminate).await {
+                        let mut handler_thread_tx = handler_mapping.handler_thread_tx.clone();
+                        match handler_thread_tx.send(HandlerChannelMessage::Terminate).await {
                             Ok(_) => {
                                 let mut message = String::from("Handler stopped"); 
                                 if request.is_handler_to_be_removed {
