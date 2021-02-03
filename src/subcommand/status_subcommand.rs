@@ -29,9 +29,7 @@ impl SubCommandUtil for StatusSubCommand {
                 .help("print debug information verbosely"))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
-        println!("{:?}", sub_matches);
-        
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {        
         let path = env::current_dir().unwrap();
         
         let mut client = block_on(client_connect_future).unwrap();

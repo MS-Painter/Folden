@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let config_file_data = file_data;
             let config = Config::from(config_file_data);
 
-            let mut mapping = Mapping{
+            let mut mapping = Mapping {
                 directory_mapping: HashMap::new()
             };
             let mapping_file_path = matches.value_of("mapping").unwrap_or(DEFAULT_MAPPING_STATE_PATH);

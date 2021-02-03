@@ -33,8 +33,6 @@ impl SubCommandUtil for StopSubCommand {
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
-        println!("{:?}", sub_matches);
-
         let is_handler_to_be_removed = sub_matches.is_present("remove");
         
         let path = env::current_dir().unwrap();

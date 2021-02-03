@@ -134,8 +134,16 @@ impl InterProcess for Server {
                                 }))
                             }
                             Err(err) => {
-                                let mut message = String::from("Failed to stop handler\nError: ");
-                                message.push_str(err.to_string().as_str());
+                                let mut message = String::new();
+                                if request.is_handler_to_be_removed {
+                                    mapping.directory_mapping.remove(&request.directory_path);
+                                    message = String::from("Handler removed");
+                                }
+                                else {
+                                    message = String::from("Failed to stop handler\nError: ");
+                                    message.push_str(err.to_string().as_str());
+                                }
+                                
                                 Ok(Response::new(StopHandlerResponse {
                                     message
                                 }))
