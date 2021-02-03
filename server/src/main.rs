@@ -1,50 +1,30 @@
-use std::thread;
-use std::sync::mpsc;
+use std::{collections::HashMap, fs, sync::Arc};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
-use clap::{App, AppSettings, Arg, SubCommand};
-use tonic::{Request, Response};
+use tokio::sync::RwLock;
 use tonic::transport::Server as TonicServer;
+use clap::{App, AppSettings, Arg, SubCommand};
 
-use generated_types::inter_process_server::{InterProcess, InterProcessServer};
-use generated_types::{
-    RegisterToDirectoryRequest, RegisterToDirectoryResponse,
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse
-};
+mod server;
+use server::Server;
+mod config;
+use config::Config;
+mod mapping;
+use mapping::Mapping;
+use folder_handler::handlers_json::HandlersJson;
+use generated_types::inter_process_server::InterProcessServer;
 
-const DEFAULT_CONFIG_PATH: &str = "default.conf";
+const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
+const DEFAULT_MAPPING_STATE_PATH: &str = "default_mapping.toml";
 
-#[derive(Default)]
-struct Server {}
-
-#[tonic::async_trait]
-impl InterProcess for Server {
-    async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) ->
-    Result<Response<RegisterToDirectoryResponse>,tonic::Status> {
-        let request = request.into_inner();
-        println!("{}", request.full_directory_path);
-        println!("{}", request.handler_type_name);
-
-        Ok(Response::new(RegisterToDirectoryResponse {
-            message: "".to_string(),
-        }))
-    }
-
-    async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) ->
-    Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
-        let request = request.into_inner();
-        println!("{}", request.full_directory_path);
-
-        Ok(Response::new(GetDirectoryStatusResponse {
-            message: "".to_string(),
-        }))
-    }
-}
-
-async fn startup_server() -> Result<(), Box<dyn std::error::Error>> {
-    //let (tx, rx) = mpsc::channel();
+async fn startup_server(config: Config, mapping: Mapping, handlers_json: HandlersJson) -> Result<(), Box<dyn std::error::Error>> {
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-    let server = Server::default();
+    
+    let server = Server{
+        config: Arc::new(config),
+        mapping: Arc::new(RwLock::new(mapping)),
+        handlers_json: Arc::new(handlers_json), 
+    };
 
     TonicServer::builder()
         .add_service(InterProcessServer::new(server))
@@ -61,18 +41,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .about("Folden background manager")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .arg(Arg::with_name("config")
-            .short("c")
-            .long("config")
             .value_name("FILE")
             .help("Sets a custom config file")
+            .takes_value(true))
+        .arg(Arg::with_name("mapping")
+            .value_name("FILE")
+            .help("Provide custom path for existing saved mapping")
+            .required(false)
             .takes_value(true))
         .subcommand(SubCommand::with_name("run")
             .help("Startup Folden server"));
     let matches = app.get_matches();
-    let config = matches.value_of("config").unwrap_or(DEFAULT_CONFIG_PATH);
-    println!("Value for config: {}", config);
-    if let Some(_) = matches.subcommand_matches("run") {
-        startup_server().await?;
+    let config_file_path = matches.value_of("config").unwrap_or(DEFAULT_CONFIG_PATH);
+    match fs::read(config_file_path) {
+        Ok(file_data) => {
+            let config_file_data = file_data;
+            let config = Config::from(config_file_data);
+
+            let mut mapping = Mapping {
+                directory_mapping: HashMap::new()
+            };
+            let mapping_file_path = matches.value_of("mapping").unwrap_or(DEFAULT_MAPPING_STATE_PATH);
+            // match fs::read(mapping_file_path) {
+            //     Ok(mapping_file_data) => {
+            //         mapping = Mapping::from(mapping_file_data);
+            //     }
+            //     Err(_) => {}
+            // }
+            let handlers_json = HandlersJson::new();
+            if let Some(_) = matches.subcommand_matches("run") {
+                startup_server(config, mapping, handlers_json).await?;
+            }
+            Ok(())
+        }
+        Err(err) => {
+            panic!("Invalid config file: {path}\nError:{error}", path=config_file_path, error=err)
+        }
     }
-    Ok(())
 }

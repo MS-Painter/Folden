@@ -7,11 +7,14 @@ package inter_process;
 service InterProcess {
   rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (RegisterToDirectoryResponse);
   rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
+  rpc StartHandler (StartHandlerRequest) returns (StartHandlerResponse);
+  rpc StopHandler (StopHandlerRequest) returns (StopHandlerResponse);
 }
 
 message RegisterToDirectoryRequest {
-  string full_directory_path = 1;
+  string directory_path = 1;
   string handler_type_name = 2;
+  string handler_config_path = 3;
 }
 
 message RegisterToDirectoryResponse {
@@ -19,9 +22,26 @@ message RegisterToDirectoryResponse {
 }
 
 message GetDirectoryStatusRequest {
-  string full_directory_path = 1;
+  string directory_path = 1;
 }
 
 message GetDirectoryStatusResponse {
+  string message = 1;
+}
+
+message StartHandlerRequest {
+  string directory_path = 1;
+}
+
+message StartHandlerResponse {
+  string message = 1;
+}
+
+message StopHandlerRequest {
+  string directory_path = 1;
+  bool is_handler_to_be_removed = 2;
+}
+
+message StopHandlerResponse {
   string message = 1;
 }

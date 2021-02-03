@@ -1,8 +1,10 @@
-use folder_handler::handlers_json::HandlersJson;
-use clap::{App, Arg, ArgMatches};
-use crate::subcommand::subcommand::SubCommandUtil;
 use std::env;
 use std::path::PathBuf;
+
+use clap::{App, Arg, ArgMatches};
+
+use folder_handler::handlers_json::HandlersJson;
+use crate::subcommand::subcommand::SubCommandUtil;
 
 pub struct GenerateSubCommand {
     handlers_json: HandlersJson
@@ -42,11 +44,7 @@ impl SubCommandUtil for GenerateSubCommand {
             .arg(Arg::with_name("debug")
                 .short("d")
                 .help("print debug information verbosely"))
-            .arg(Arg::with_name("handler")
-                .required(true)
-                .empty_values(false)
-                .case_insensitive(true)
-                .possible_values(self.handlers_json.get_handler_types().as_slice()))
+            .arg(GenerateSubCommand::construct_handler_arg("handler", &self.handlers_json))
             .arg(Arg::with_name("path")
                 .required(false))
     }
