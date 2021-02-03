@@ -4,6 +4,8 @@ use tokio::sync::mpsc;
 use mpsc::error::TryRecvError;
 use serde::{Serialize, Deserialize};
 
+use generated_types::HandlerChannelMessage;
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ArchiveJoinHandler {
     #[serde(default)]
@@ -22,12 +24,18 @@ fn datetime_default() -> String {
 
 #[typetag::serde]
 impl Handler for ArchiveJoinHandler {
-    fn watch(&self, mut shutdown_channel_rx: mpsc::Receiver<u8> ) {
+    fn watch(&self, mut shutdown_channel_rx: mpsc::Receiver<HandlerChannelMessage> ) {
         let mut is_shutdown_required = false;
         while !is_shutdown_required {
             match shutdown_channel_rx.try_recv() {
                 Ok(_val) => {
-                    is_shutdown_required = true;
+                    match _val  {
+                        HandlerChannelMessage::Terminate => {
+                            is_shutdown_required = true;
+                        }
+                        HandlerChannelMessage::Ping => {}
+                    }
+                    
                 }
                 Err(err) => {
                     match err {

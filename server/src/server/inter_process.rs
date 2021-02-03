@@ -7,18 +7,17 @@ use tonic::{Request, Response};
 use crate::mapping::{HandlerMapping, Mapping};
 use super::Server;
 use generated_types::{
-    inter_process_server::InterProcess,
-    StopHandlerRequest, StopHandlerResponse,
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, 
     RegisterToDirectoryRequest, RegisterToDirectoryResponse, 
-};
+    StopHandlerRequest, StopHandlerResponse, 
+    inter_process_server::InterProcess, HandlerChannelMessage};
 
 fn start_handler_thread(
     mut mapping: RwLockWriteGuard<Mapping>, handlers_json: Arc<HandlersJson>, 
     directory_path: String, handler_type_name: String, handler_config_path: String) {
     match handlers_json.get_handler_by_name(&handler_type_name) {
         Ok(_handler) => {
-            let (tx, rx) = mpsc::channel::<u8>(2);
+            let (tx, rx) = mpsc::channel::<HandlerChannelMessage>(2);
             let handler_type_name_clone = handler_type_name.clone();
             thread::spawn(move || {
                 let rx = rx;
@@ -76,8 +75,30 @@ impl InterProcess for Server {
         
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
+                let handler_type_name = handler_mapping.handler_type_name.clone();
+                drop(mapping); // Free lock here instead of scope exit
+                let mapping = self.mapping.write().await;
+                let handler_mapping = mapping.directory_mapping.get(&request.directory_path).unwrap(); 
+
                 let mut message = String::from("Handler - ");
-                message.push_str(handler_mapping.handler_type_name.as_str());
+                message.push_str(handler_type_name.as_str());
+                
+                let mut handler_thread_shutdown_tx = handler_mapping.handler_thread_shutdown_tx.clone();
+                match handler_thread_shutdown_tx.try_send(HandlerChannelMessage::Ping) {
+                    Ok(_) => {
+                        message.push_str(" - Alive");
+                    }
+                    Err(err) => {
+                        match err {
+                            mpsc::error::TrySendError::Full(_) => {
+                                message.push_str(" - Alive");
+                            }
+                            mpsc::error::TrySendError::Closed(_) => {
+                                message.push_str(" - Dead");
+                            }
+                        }
+                    }
+                }
                 Ok(Response::new(GetDirectoryStatusResponse {
                     message
                 }))
@@ -101,7 +122,7 @@ impl InterProcess for Server {
                 match mapping.directory_mapping.get(&request.directory_path) {
                     Some(handler_mapping) => {
                         let mut handler_thread_shutdown_tx = handler_mapping.handler_thread_shutdown_tx.clone();
-                        match handler_thread_shutdown_tx.send(0).await {
+                        match handler_thread_shutdown_tx.send(HandlerChannelMessage::Terminate).await {
                             Ok(_) => {
                                 let mut message = String::from("Handler stopped"); 
                                 if request.is_handler_to_be_removed {

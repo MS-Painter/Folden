@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use tokio::sync::mpsc::Sender;
 
+use generated_types::HandlerChannelMessage;
+
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
 
@@ -15,7 +17,7 @@ pub struct Mapping {
 
 #[derive(Debug)]
 pub struct HandlerMapping {
-    pub handler_thread_shutdown_tx: Sender<u8>, // Channel sender providing thread health and allowing manual thread shutdown
+    pub handler_thread_shutdown_tx: Sender<HandlerChannelMessage>, // Channel sender providing thread health and allowing manual thread shutdown
     pub handler_type_name: String,
     pub handler_config_path: String,
 }
