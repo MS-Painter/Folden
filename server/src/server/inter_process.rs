@@ -27,6 +27,7 @@ fn start_handler_thread(
                 handler.watch(rx);
             });
             
+            // Insert or update the value of the current handled directory
             mapping.directory_mapping.insert(directory_path, HandlerMapping {
                 handler_thread_shutdown_tx: tx,
                 handler_type_name,
