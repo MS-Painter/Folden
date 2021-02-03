@@ -29,7 +29,7 @@ fn start_handler_thread(
             
             mapping.directory_mapping.insert(directory_path, HandlerMapping {
                 handler_thread_shutdown_tx: tx,
-                handler_type: handler_type_name,
+                handler_type_name,
                 handler_config_path,
             });
         },
@@ -47,7 +47,7 @@ impl InterProcess for Server {
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
                 let mut message = String::from("Directory already handled by handler - ");
-                message.push_str(handler_mapping.handler_type.as_str());
+                message.push_str(handler_mapping.handler_type_name.as_str());
                 Ok(Response::new(RegisterToDirectoryResponse {
                     message
                 }))
@@ -76,7 +76,7 @@ impl InterProcess for Server {
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
                 let mut message = String::from("Handler - ");
-                message.push_str(handler_mapping.handler_type.as_str());
+                message.push_str(handler_mapping.handler_type_name.as_str());
                 Ok(Response::new(GetDirectoryStatusResponse {
                     message
                 }))
