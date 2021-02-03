@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
-use tokio::sync::oneshot::Sender;
+use tokio::sync::mpsc::Sender;
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request

@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::{io, fs};
 
-use tokio::sync::oneshot::Receiver;
+use tokio::sync::mpsc::Receiver;
 
 #[typetag::serde(tag = "type")]
 pub trait Handler {

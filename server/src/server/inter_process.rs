@@ -1,15 +1,15 @@
 use std::thread;
 
-use tokio::sync::oneshot;
+use tokio::sync::mpsc;
 use tonic::{Request, Response};
-
 
 use crate::mapping::HandlerMapping;
 use super::Server;
 use generated_types::{
-    inter_process_server::InterProcess, 
+    inter_process_server::InterProcess,
+    StopHandlerRequest, StopHandlerResponse,
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, 
-    RegisterToDirectoryRequest, RegisterToDirectoryResponse
+    RegisterToDirectoryRequest, RegisterToDirectoryResponse, 
 };
 
 #[tonic::async_trait]
@@ -34,7 +34,7 @@ impl InterProcess for Server {
                 let handlers_json = self.handlers_json.clone();
                 match handlers_json.get_handler_by_name(&handler_type_name) {
                     Ok(_handler) => {
-                        let (tx, rx) = oneshot::channel::<u8>();
+                        let (tx, rx) = mpsc::channel::<u8>(2);
                         thread::spawn(move || {
                             let rx = rx;
                             let handlers_json = handlers_json;
@@ -47,8 +47,6 @@ impl InterProcess for Server {
                             handler_type: request.handler_type_name,
                             handler_config_path: request.handler_config_path,
                         });
-
-                        println!("{:?}", mapping);
                     },
                     Err(e) => panic!(e)
                 }
@@ -65,8 +63,6 @@ impl InterProcess for Server {
         let request = request.into_inner();
         let mapping = self.mapping.read().await;
         
-        println!("{:?}", mapping);
-
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
                 let mut message = String::from("Handler - ");
@@ -77,6 +73,47 @@ impl InterProcess for Server {
             }
             None => {
                 Ok(Response::new(GetDirectoryStatusResponse {
+                    message: "Directory unhandled".to_string(),
+                }))
+            }
+        }
+    }
+
+    async fn stop_handler(&self,request:Request<StopHandlerRequest>,)->Result<Response<StopHandlerResponse>,tonic::Status> {
+        let request = request.into_inner();
+        let mapping = self.mapping.read().await;
+        
+        match mapping.directory_mapping.get(&request.directory_path) {
+            Some(_handler_mapping) => {
+                drop(mapping); // Free lock here instead of scope exit
+                let mapping = self.mapping.write().await;
+                match mapping.directory_mapping.get(&request.directory_path) {
+                    Some(handler_mapping) => {
+                        let mut handler_thread_shutdown_tx = handler_mapping.handler_thread_shutdown_tx.clone();
+                        match handler_thread_shutdown_tx.send(0).await {
+                            Ok(_) => {
+                                Ok(Response::new(StopHandlerResponse {
+                                    message: "Handler stopped".to_string(),
+                                }))
+                            }
+                            Err(err) => {
+                                let mut message = String::from("Failed to stop handler\nError: ");
+                                message.push_str(err.to_string().as_str());
+                                Ok(Response::new(StopHandlerResponse {
+                                    message
+                                }))
+                            }
+                        }
+                    }
+                    None => {
+                        Ok(Response::new(StopHandlerResponse {
+                            message: "Handler not found".to_string(),
+                        }))
+                    }
+                }
+            }
+            None => {
+                Ok(Response::new(StopHandlerResponse {
                     message: "Directory unhandled".to_string(),
                 }))
             }
