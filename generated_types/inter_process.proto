@@ -7,6 +7,7 @@ package inter_process;
 service InterProcess {
   rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (RegisterToDirectoryResponse);
   rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
+  rpc StartHandler (StartHandlerRequest) returns (StartHandlerResponse);
   rpc StopHandler (StopHandlerRequest) returns (StopHandlerResponse);
 }
 
@@ -25,6 +26,14 @@ message GetDirectoryStatusRequest {
 }
 
 message GetDirectoryStatusResponse {
+  string message = 1;
+}
+
+message StartHandlerRequest {
+  string directory_path = 1;
+}
+
+message StartHandlerResponse {
   string message = 1;
 }
 
