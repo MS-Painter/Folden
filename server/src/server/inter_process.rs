@@ -86,14 +86,19 @@ impl InterProcess for Server {
         match mapping.directory_mapping.get(&request.directory_path) {
             Some(_handler_mapping) => {
                 drop(mapping); // Free lock here instead of scope exit
-                let mapping = self.mapping.write().await;
+                let mut mapping = self.mapping.write().await;
                 match mapping.directory_mapping.get(&request.directory_path) {
                     Some(handler_mapping) => {
                         let mut handler_thread_shutdown_tx = handler_mapping.handler_thread_shutdown_tx.clone();
                         match handler_thread_shutdown_tx.send(0).await {
                             Ok(_) => {
+                                let mut message = String::from("Handler stopped"); 
+                                if request.is_handler_to_be_removed {
+                                    mapping.directory_mapping.remove(&request.directory_path);
+                                    message.push_str(" & removed");
+                                }
                                 Ok(Response::new(StopHandlerResponse {
-                                    message: "Handler stopped".to_string(),
+                                    message,
                                 }))
                             }
                             Err(err) => {

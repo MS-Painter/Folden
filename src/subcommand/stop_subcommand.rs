@@ -25,18 +25,24 @@ impl SubCommandUtil for StopSubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Stop handler on directory")
+            .arg(Arg::with_name("remove").long("remove")
+            .required(false)
+            .takes_value(false))
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
         println!("{:?}", sub_matches);
+
+        let is_handler_to_be_removed = sub_matches.is_present("remove");
         
         let path = env::current_dir().unwrap();
         
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.stop_handler(StopHandlerRequest {
-            directory_path: String::from(path.as_os_str().to_str().unwrap())
+            directory_path: String::from(path.as_os_str().to_str().unwrap()),
+            is_handler_to_be_removed,
         });
         let response = block_on(response).unwrap().into_inner();
         println!("{:?}", response.message);

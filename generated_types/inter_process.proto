@@ -30,6 +30,7 @@ message GetDirectoryStatusResponse {
 
 message StopHandlerRequest {
   string directory_path = 1;
+  bool is_handler_to_be_removed = 2;
 }
 
 message StopHandlerResponse {
