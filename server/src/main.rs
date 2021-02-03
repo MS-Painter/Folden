@@ -1,5 +1,4 @@
-use std::{fs, sync::Arc, thread};
-use std::sync::mpsc;
+use std::{collections::HashMap, fs, sync::Arc};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use tokio::sync::RwLock;
@@ -57,15 +56,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config_file_path = matches.value_of("config").unwrap_or(DEFAULT_CONFIG_PATH);
     let config_file_data = fs::read(config_file_path).unwrap();
     let config = Config::from(config_file_data);
-    
-    let mut mapping = Mapping::default();
+
+    let mut mapping = Mapping{
+        directory_mapping: HashMap::new()
+    };
     let mapping_file_path = matches.value_of("mapping").unwrap_or(DEFAULT_MAPPING_STATE_PATH);
-    match fs::read(mapping_file_path) {
-        Ok(mapping_file_data) => {
-            mapping = Mapping::from(mapping_file_data);
-        }
-        Err(_) => {}
-    }
+    // match fs::read(mapping_file_path) {
+    //     Ok(mapping_file_data) => {
+    //         mapping = Mapping::from(mapping_file_data);
+    //     }
+    //     Err(_) => {}
+    // }
     let handlers_json = HandlersJson::new();
     if let Some(_) = matches.subcommand_matches("run") {
         startup_server(config, mapping, handlers_json).await?;

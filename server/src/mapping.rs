@@ -1,32 +1,21 @@
 use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
+use tokio::sync::oneshot::Sender;
 
 // Mapping data used to handle known directories to handle
+// If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+// TODO: Find a way to de/serialize a reciever to allow storing for later usage. Or omit such data to serialize to recreate reciever anyway!
+
+#[derive(Debug)]
 pub struct Mapping {
     pub directory_mapping: HashMap<String, HandlerMapping> // Hash map key binds to directory path
 }
 
-impl From<Vec<u8>> for Mapping {
-    fn from(bytes: Vec<u8>) -> Self {
-        serde_json::from_slice(&bytes).unwrap()
-    }
-}
-
-impl Into<Vec<u8>> for Mapping {
-    fn into(self) -> Vec<u8> {
-        serde_json::to_vec(&self).unwrap()
-    }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct HandlerMapping {
-    #[serde(default)]
-    pub handler_thread_id: u32,
-    #[serde(default)]
+    pub handler_thread_shutdown_tx: Sender<()>, // Channel sender providing thread health and allowing manual thread shutdown
     pub handler_type: String,
-    #[serde(default)]
     pub handler_config_path: String,
 }

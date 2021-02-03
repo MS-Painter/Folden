@@ -1,3 +1,6 @@
+use std::thread;
+
+use tokio::sync::oneshot;
 use tonic::{Request, Response};
 
 
@@ -27,12 +30,20 @@ impl InterProcess for Server {
             None => {
                 drop(mapping); // Free lock here instead of scope exit
                 let mut mapping = self.mapping.write().await;
-                match self.handlers_json.get_handler_by_name(&request.handler_type_name) {
-                    Ok(handler) => {
-                        handler.watch();
-
+                let handler_type_name = request.handler_type_name.clone();
+                let handlers_json = self.handlers_json.clone();
+                match handlers_json.get_handler_by_name(&handler_type_name) {
+                    Ok(_handler) => {
+                        let (tx, rx) = oneshot::channel();
+                        thread::spawn(move || {
+                            let rx = rx;
+                            let handlers_json = handlers_json;
+                            let handler = handlers_json.get_handler_by_name(&handler_type_name).unwrap();
+                            handler.watch();
+                        });
+                        
                         mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
-                            handler_thread_id: 0,
+                            handler_thread_shutdown_tx: tx,
                             handler_type: request.handler_type_name,
                             handler_config_path: request.handler_config_path,
                         });
@@ -53,6 +64,8 @@ impl InterProcess for Server {
     Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
         let request = request.into_inner();
         let mapping = self.mapping.read().await;
+        
+        println!("{:?}", mapping);
 
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
