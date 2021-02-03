@@ -1,10 +1,12 @@
 use std::path::Path;
 use std::{io, fs};
 
+use tokio::sync::oneshot::Receiver;
+
 #[typetag::serde(tag = "type")]
 pub trait Handler {
     // Initialize handler to watch a folder
-    fn watch(&self);
+    fn watch(&self, shutdown_channel_rx: Receiver<u8> );
     // Generate handler specific initialization config
     fn generate_config(&self, path: &Path) -> io::Result<()> where Self: serde::ser::Serialize {
         fs::write(path, toml::to_vec(*Box::new(self)).unwrap())

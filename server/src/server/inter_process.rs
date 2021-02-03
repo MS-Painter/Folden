@@ -34,12 +34,12 @@ impl InterProcess for Server {
                 let handlers_json = self.handlers_json.clone();
                 match handlers_json.get_handler_by_name(&handler_type_name) {
                     Ok(_handler) => {
-                        let (tx, rx) = oneshot::channel();
+                        let (tx, rx) = oneshot::channel::<u8>();
                         thread::spawn(move || {
                             let rx = rx;
                             let handlers_json = handlers_json;
                             let handler = handlers_json.get_handler_by_name(&handler_type_name).unwrap();
-                            handler.watch();
+                            handler.watch(rx);
                         });
                         
                         mapping.directory_mapping.insert(request.directory_path, HandlerMapping {

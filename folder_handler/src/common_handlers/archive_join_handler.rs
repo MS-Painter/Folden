@@ -1,5 +1,7 @@
-use crate::{Handler};
+use crate::Handler;
 
+use tokio::sync::oneshot;
+use oneshot::error::TryRecvError;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -20,8 +22,26 @@ fn datetime_default() -> String {
 
 #[typetag::serde]
 impl Handler for ArchiveJoinHandler {
-    fn watch(&self) {
-        println!("Wat chinnnn");
+    fn watch(&self, mut shutdown_channel_rx: oneshot::Receiver<u8> ) {
+        let mut is_shutdown_required = false;
+        while !is_shutdown_required {
+            match shutdown_channel_rx.try_recv() {
+                Ok(_val) => {
+                    is_shutdown_required = true;
+                }
+                Err(err) => {
+                    match err {
+                        TryRecvError::Empty => {
+                            // TODO: Handler logic... 
+                        }
+                        TryRecvError::Closed => {
+                            is_shutdown_required = true;
+                        }
+                    }
+                }
+            }
+        }
+        println!("Ending watch");
     }
 }
 

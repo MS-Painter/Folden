@@ -15,7 +15,7 @@ pub struct Mapping {
 
 #[derive(Debug)]
 pub struct HandlerMapping {
-    pub handler_thread_shutdown_tx: Sender<()>, // Channel sender providing thread health and allowing manual thread shutdown
+    pub handler_thread_shutdown_tx: Sender<u8>, // Channel sender providing thread health and allowing manual thread shutdown
     pub handler_type: String,
     pub handler_config_path: String,
 }
