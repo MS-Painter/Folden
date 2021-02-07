@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     println!("{:?}", mapping);
                                 }
                                 Err(_) => {
-                                    println!("Mapping file invalid", mapping_file_path);
+                                    println!("Mapping file invalid");
                                 }
                             }
                         }
