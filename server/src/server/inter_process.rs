@@ -61,7 +61,7 @@ impl InterProcess for Server {
                     mapping, handlers_json, 
                     request.directory_path, request.handler_type_name, request.handler_config_path
                 );
-
+                self.save_mapping().await;
                 Ok(Response::new(RegisterToDirectoryResponse {
                     message: "".to_string(),
                 }))

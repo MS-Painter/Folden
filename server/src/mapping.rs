@@ -30,6 +30,12 @@ impl Into<Vec<u8>> for Mapping {
     }
 }
 
+impl Into<Vec<u8>> for &Mapping {
+    fn into(self) -> Vec<u8> {
+        toml::to_vec(self).unwrap()
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HandlerMapping {
     #[serde(skip)]
