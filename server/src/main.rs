@@ -17,10 +17,24 @@ use generated_types::inter_process_server::InterProcessServer;
 const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
 const DEFAULT_MAPPING_STATE_PATH: &str = "default_mapping.toml";
 
+fn handle_mapping_strategy(strategy: &MappingStatusStrategy, mapping: &Mapping) {
+    match strategy {
+        MappingStatusStrategy::None => {}
+        MappingStatusStrategy::Save => {}
+        MappingStatusStrategy::Continue => {
+            for (directory, handler_mapping) in mapping.directory_mapping.iter() {
+                println!("directory: {} \n handler_mapping: {:?}", directory, handler_mapping);
+            }
+        }
+    }
+}
+
 async fn startup_server(config: Config, mapping: Mapping, handlers_json: HandlersJson) -> Result<(), Box<dyn std::error::Error>> {
+    handle_mapping_strategy(&config.mapping_status_strategy, &mapping);
+
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
     
-    let server = Server{
+    let server = Server {
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
         handlers_json: Arc::new(handlers_json), 
