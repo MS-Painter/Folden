@@ -29,7 +29,7 @@ fn start_handler_thread(
             
             // Insert or update the value of the current handled directory
             mapping.directory_mapping.insert(directory_path, HandlerMapping {
-                handler_thread_tx: tx,
+                handler_thread_tx: Option::Some(tx),
                 handler_type_name,
                 handler_config_path,
             });
@@ -84,20 +84,26 @@ impl InterProcess for Server {
                 let mut message = String::from("Handler - ");
                 message.push_str(handler_type_name.as_str());
                 
-                let mut handler_thread_tx = handler_mapping.handler_thread_tx.clone();
-                match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
-                    Ok(_) => {
-                        message.push_str(" - Alive");
-                    }
-                    Err(err) => {
-                        match err {
-                            mpsc::error::TrySendError::Full(_) => {
+                match handler_mapping.handler_thread_tx.clone() {
+                    Some(mut handler_thread_tx) => {
+                        match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
+                            Ok(_) => {
                                 message.push_str(" - Alive");
                             }
-                            mpsc::error::TrySendError::Closed(_) => {
-                                message.push_str(" - Dead");
+                            Err(err) => {
+                                match err {
+                                    mpsc::error::TrySendError::Full(_) => {
+                                        message.push_str(" - Alive");
+                                    }
+                                    mpsc::error::TrySendError::Closed(_) => {
+                                        message.push_str(" - Dead");
+                                    }
+                                }
                             }
                         }
+                    }
+                    None => {
+                        message.push_str(" - Dead");
                     }
                 }
                 Ok(Response::new(GetDirectoryStatusResponse {
@@ -119,35 +125,48 @@ impl InterProcess for Server {
         match mapping.directory_mapping.get(&request.directory_path) {
             Some(_handler_mapping) => {
                 drop(mapping); // Free lock here instead of scope exit
-                let mut mapping = self.mapping.write().await;
+                let mapping = self.mapping.write().await;
                 match mapping.directory_mapping.get(&request.directory_path) {
-                    Some(handler_mapping) => {
+                    Some(_handler_mapping) => {
                         drop(mapping); // Free lock here instead of scope exit
                         let mut message = String::new();
                         let mapping = self.mapping.write().await;
                         let handler_mapping = mapping.directory_mapping.get(&request.directory_path).unwrap(); 
                         
-                        let mut handler_thread_tx = handler_mapping.handler_thread_tx.clone();
-                        match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
-                            Ok(_) => {
-                                message = String::from("Handler already up");
-                            }
-                            Err(err) => {
-                                match err {
-                                    mpsc::error::TrySendError::Full(_) => {
+                        match handler_mapping.handler_thread_tx.clone() {
+                            Some(mut handler_thread_tx) => {
+                                match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
+                                    Ok(_) => {
                                         message = String::from("Handler already up");
                                     }
-                                    mpsc::error::TrySendError::Closed(_) => {
-                                        let handler_type_name = handler_mapping.handler_type_name.clone();
-                                        let handler_config_path = handler_mapping.handler_config_path.clone();
-                                        let handlers_json = self.handlers_json.clone();
-                                        start_handler_thread(
-                                            mapping, handlers_json, 
-                                            request.directory_path, handler_type_name, handler_config_path
-                                        );
-                                        message = String::from("Handler started");
+                                    Err(err) => {
+                                        match err {
+                                            mpsc::error::TrySendError::Full(_) => {
+                                                message = String::from("Handler already up");
+                                            }
+                                            mpsc::error::TrySendError::Closed(_) => {
+                                                let handler_type_name = handler_mapping.handler_type_name.clone();
+                                                let handler_config_path = handler_mapping.handler_config_path.clone();
+                                                let handlers_json = self.handlers_json.clone();
+                                                start_handler_thread(
+                                                    mapping, handlers_json, 
+                                                    request.directory_path, handler_type_name, handler_config_path
+                                                );
+                                                message = String::from("Handler started");
+                                            }
+                                        }
                                     }
                                 }
+                            }
+                            None => {
+                                let handler_type_name = handler_mapping.handler_type_name.clone();
+                                let handler_config_path = handler_mapping.handler_config_path.clone();
+                                let handlers_json = self.handlers_json.clone();
+                                start_handler_thread(
+                                    mapping, handlers_json, 
+                                    request.directory_path, handler_type_name, handler_config_path
+                                );
+                                message = String::from("Handler started");
                             }
                         }
                         Ok(Response::new(StartHandlerResponse {
@@ -179,31 +198,47 @@ impl InterProcess for Server {
                 let mut mapping = self.mapping.write().await;
                 match mapping.directory_mapping.get(&request.directory_path) {
                     Some(handler_mapping) => {
-                        let mut handler_thread_tx = handler_mapping.handler_thread_tx.clone();
-                        match handler_thread_tx.send(HandlerChannelMessage::Terminate).await {
-                            Ok(_) => {
-                                let mut message = String::from("Handler stopped"); 
-                                if request.is_handler_to_be_removed {
-                                    mapping.directory_mapping.remove(&request.directory_path);
-                                    message.push_str(" & removed");
+                        match handler_mapping.handler_thread_tx.clone() {
+                            Some(mut handler_thread_tx) => {
+                                let handler_type_name = handler_mapping.handler_type_name.clone();
+                                let handler_config_path = handler_mapping.handler_config_path.clone();
+                                match handler_thread_tx.send(HandlerChannelMessage::Terminate).await {
+                                    Ok(_) => {
+                                        let mut message = String::from("Handler stopped"); 
+                                        if request.is_handler_to_be_removed {
+                                            mapping.directory_mapping.remove(&request.directory_path);
+                                            message.push_str(" & removed");
+                                        }
+                                        else {
+                                            mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
+                                                handler_thread_tx: Option::None,
+                                                handler_type_name,
+                                                handler_config_path,
+                                            });
+                                        }
+                                        Ok(Response::new(StopHandlerResponse {
+                                            message,
+                                        }))
+                                    }
+                                    Err(err) => {
+                                        let mut message = String::new();
+                                        if request.is_handler_to_be_removed {
+                                            mapping.directory_mapping.remove(&request.directory_path);
+                                            message = String::from("Handler removed");
+                                        }
+                                        else {
+                                            message = String::from("Failed to stop handler\nError: ");
+                                            message.push_str(err.to_string().as_str());
+                                        }
+                                        Ok(Response::new(StopHandlerResponse {
+                                            message
+                                        }))
+                                    }
                                 }
-                                Ok(Response::new(StopHandlerResponse {
-                                    message,
-                                }))
                             }
-                            Err(err) => {
-                                let mut message = String::new();
-                                if request.is_handler_to_be_removed {
-                                    mapping.directory_mapping.remove(&request.directory_path);
-                                    message = String::from("Handler removed");
-                                }
-                                else {
-                                    message = String::from("Failed to stop handler\nError: ");
-                                    message.push_str(err.to_string().as_str());
-                                }
-                                
+                            None => {
                                 Ok(Response::new(StopHandlerResponse {
-                                    message
+                                    message: String::from("")
                                 }))
                             }
                         }
