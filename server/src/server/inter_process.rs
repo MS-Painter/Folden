@@ -1,11 +1,8 @@
-use std::{sync::Arc, thread};
-
-use folder_handler::handlers_json::HandlersJson;
-use tokio::sync::{RwLockWriteGuard, mpsc};
+use tokio::sync::mpsc;
 use tonic::{Request, Response};
 
-use crate::mapping::{HandlerMapping, Mapping};
-use super::Server;
+use crate::mapping::HandlerMapping;
+use super::{Server, start_handler_thread};
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, 
     RegisterToDirectoryRequest, RegisterToDirectoryResponse, 
@@ -13,30 +10,7 @@ use generated_types::{
     StopHandlerRequest, StopHandlerResponse, 
     HandlerChannelMessage, inter_process_server::InterProcess};
 
-fn start_handler_thread(
-    mut mapping: RwLockWriteGuard<Mapping>, handlers_json: Arc<HandlersJson>, 
-    directory_path: String, handler_type_name: String, handler_config_path: String) {
-    match handlers_json.get_handler_by_name(&handler_type_name) {
-        Ok(_handler) => {
-            let (tx, rx) = mpsc::channel::<HandlerChannelMessage>(2);
-            let handler_type_name_clone = handler_type_name.clone();
-            thread::spawn(move || {
-                let rx = rx;
-                let handlers_json = handlers_json;
-                let handler = handlers_json.get_handler_by_name(&handler_type_name_clone).unwrap();
-                handler.watch(rx);
-            });
-            
-            // Insert or update the value of the current handled directory
-            mapping.directory_mapping.insert(directory_path, HandlerMapping {
-                handler_thread_tx: Option::Some(tx),
-                handler_type_name,
-                handler_config_path,
-            });
-        },
-        Err(e) => panic!(e)
-    }
-}
+
 
 #[tonic::async_trait]
 impl InterProcess for Server {
