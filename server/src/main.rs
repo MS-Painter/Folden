@@ -2,7 +2,7 @@ use std::{collections::HashMap, convert::TryFrom, fs, sync::Arc};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use tokio::sync::RwLock;
-use tonic::transport::Server as TonicServer;
+use tonic::{Request, transport::Server as TonicServer};
 use clap::{App, AppSettings, Arg, SubCommand};
 
 mod server;
@@ -12,26 +12,41 @@ use config::{Config, MappingStatusStrategy};
 mod mapping;
 use mapping::Mapping;
 use folder_handler::handlers_json::HandlersJson;
-use generated_types::inter_process_server::InterProcessServer;
+use generated_types::{StartHandlerRequest, inter_process_server::{InterProcess, InterProcessServer}};
 
 const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
 const DEFAULT_MAPPING_STATE_PATH: &str = "default_mapping.toml";
 
-fn handle_mapping_strategy(strategy: &MappingStatusStrategy, mapping: &Mapping) {
-    match strategy {
+async fn handle_mapping_strategy(server: &Server) -> () {
+    match server.config.mapping_status_strategy {
         MappingStatusStrategy::None => {}
         MappingStatusStrategy::Save => {}
         MappingStatusStrategy::Continue => {
-            for (directory, handler_mapping) in mapping.directory_mapping.iter() {
-                println!("directory: {} \n handler_mapping: {:?}", directory, handler_mapping);
+            let mapping = server.mapping.read().await;
+            let mut handler_requests: Vec<StartHandlerRequest> = Vec::new();
+            for directory_path in mapping.directory_mapping.keys() {
+                let request = StartHandlerRequest {
+                    directory_path: directory_path.clone(),
+                };
+                handler_requests.push(request);
+            }
+            drop(mapping); // Free lock to complete server requests.
+            for request in handler_requests {
+                let response = server.start_handler(Request::new(request.clone())).await;
+                match response {
+                    Ok(_) => {
+                        println!("Handler {:?} - up", request.directory_path);
+                    }
+                    Err(err) => {
+                        println!("Handler {:?} - down\n Error: {:?}", request.directory_path, err);
+                    }
+                }
             }
         }
     }
 }
 
 async fn startup_server(config: Config, mapping: Mapping, handlers_json: HandlersJson) -> Result<(), Box<dyn std::error::Error>> {
-    handle_mapping_strategy(&config.mapping_status_strategy, &mapping);
-
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
     
     let server = Server {
@@ -39,6 +54,8 @@ async fn startup_server(config: Config, mapping: Mapping, handlers_json: Handler
         mapping: Arc::new(RwLock::new(mapping)),
         handlers_json: Arc::new(handlers_json), 
     };
+
+    handle_mapping_strategy(&server).await; // The handlers are raised before being able to accept client calls.
 
     TonicServer::builder()
         .add_service(InterProcessServer::new(server))
@@ -84,7 +101,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             match Mapping::try_from(mapping_file_data) {
                                 Ok(read_mapping) => {
                                     mapping = read_mapping;
-                                    println!("{:?}", mapping);
                                 }
                                 Err(_) => {
                                     println!("Mapping file invalid");
