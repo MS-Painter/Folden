@@ -18,8 +18,8 @@ impl InterProcess for Server {
     Result<Response<RegisterToDirectoryResponse>,tonic::Status> {
         let request = request.into_inner();
         let mapping = self.mapping.read().await;
-
-        match mapping.directory_mapping.get(request.directory_path.as_str()) {
+        let request_directory_path = request.directory_path.as_str();
+        match mapping.directory_mapping.get(request_directory_path) {
             Some(handler_mapping) => {
                 let mut message = String::from("Directory already handled by handler - ");
                 message.push_str(handler_mapping.handler_type_name.as_str());
@@ -28,6 +28,23 @@ impl InterProcess for Server {
                 }))
             }
             None => {
+                // Check if requested directory is a child of any handled directory
+                for directory_path in mapping.directory_mapping.keys() {
+                    if request_directory_path.contains(directory_path) {
+                        let mut message = "Couldn't register\nDirectory is a child of handled directory - ".to_string();
+                        message.push_str(directory_path); 
+                        return Ok(Response::new(RegisterToDirectoryResponse {
+                            message,
+                        }))
+                    }
+                    else if directory_path.contains(request_directory_path) {
+                        let mut message = "Couldn't register\nDirectory is a parent of requested directory - ".to_string();
+                        message.push_str(directory_path); 
+                        return Ok(Response::new(RegisterToDirectoryResponse {
+                            message,
+                        }))
+                    }
+                }
                 drop(mapping); // Free lock here instead of scope exit
                 let mapping = self.mapping.write().await;
                 let handlers_json = self.handlers_json.clone();
@@ -35,7 +52,7 @@ impl InterProcess for Server {
                     mapping, handlers_json, 
                     request.directory_path, request.handler_type_name, request.handler_config_path
                 );
-                self.save_mapping().await;
+                let _result = self.save_mapping().await;
                 Ok(Response::new(RegisterToDirectoryResponse {
                     message: "".to_string(),
                 }))
