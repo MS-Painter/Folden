@@ -28,10 +28,9 @@ async fn handle_mapping_strategy(server: &Server) -> () {
             let mapping = server.mapping.read().await;
             let mut handler_requests: Vec<StartHandlerRequest> = Vec::new();
             for directory_path in mapping.directory_mapping.keys() {
-                let request = StartHandlerRequest {
+                handler_requests.push(StartHandlerRequest {
                     directory_path: directory_path.clone(),
-                };
-                handler_requests.push(request);
+                });
             }
             drop(mapping); // Free lock to complete server requests.
             for request in handler_requests {
