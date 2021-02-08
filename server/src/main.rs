@@ -20,6 +20,24 @@ use generated_types::{StartHandlerRequest, inter_process_server::{InterProcess, 
 const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
 const DEFAULT_MAPPING_STATE_PATH: &str = "default_mapping.toml";
 
+fn construct_app<'a, 'b>() -> App<'a, 'b> {
+    App::new("Folden Server")
+        .version("0.1")
+        .about("Folden background manager")
+        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .arg(Arg::with_name("config")
+            .value_name("FILE")
+            .help("Sets a custom config file")
+            .takes_value(true))
+        .arg(Arg::with_name("mapping")
+            .value_name("FILE")
+            .help("Provide custom path for existing saved mapping")
+            .required(false)
+            .takes_value(true))
+        .subcommand(SubCommand::with_name("run")
+            .help("Startup Folden server"))
+}
+
 async fn handle_mapping_strategy(server: &Server) -> () {
     match server.config.mapping_status_strategy {
         MappingStatusStrategy::Continue => {
@@ -68,21 +86,7 @@ async fn startup_server(config: Config, mapping: Mapping, handlers_json: Handler
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let app = App::new("Folden Server")
-        .version("0.1")
-        .about("Folden background manager")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .arg(Arg::with_name("config")
-            .value_name("FILE")
-            .help("Sets a custom config file")
-            .takes_value(true))
-        .arg(Arg::with_name("mapping")
-            .value_name("FILE")
-            .help("Provide custom path for existing saved mapping")
-            .required(false)
-            .takes_value(true))
-        .subcommand(SubCommand::with_name("run")
-            .help("Startup Folden server"));
+    let app = construct_app();
     let matches = app.get_matches();
     let config_file_path = matches.value_of("config").unwrap_or(DEFAULT_CONFIG_PATH);
     match fs::read(config_file_path) {
