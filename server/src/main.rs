@@ -1,9 +1,12 @@
-use std::{collections::HashMap, convert::TryFrom, fs, sync::Arc};
+use std::fs;
+use std::sync::Arc;
+use std::convert::TryFrom;
+use std::collections::HashMap;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use tokio::sync::RwLock;
-use tonic::{Request, transport::Server as TonicServer};
 use clap::{App, AppSettings, Arg, SubCommand};
+use tonic::{Request, transport::Server as TonicServer};
 
 mod server;
 use server::Server;
@@ -35,10 +38,10 @@ async fn handle_mapping_strategy(server: &Server) -> () {
                 let response = server.start_handler(Request::new(request.clone())).await;
                 match response {
                     Ok(_) => {
-                        println!("Handler {:?} - up", request.directory_path);
+                        println!("Handler [RUNNING] - {:?}", request.directory_path);
                     }
                     Err(err) => {
-                        println!("Handler {:?} - down\n Error: {:?}", request.directory_path, err);
+                        println!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);
                     }
                 }
             }
