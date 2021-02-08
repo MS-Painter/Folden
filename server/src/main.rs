@@ -22,8 +22,6 @@ const DEFAULT_MAPPING_STATE_PATH: &str = "default_mapping.toml";
 
 async fn handle_mapping_strategy(server: &Server) -> () {
     match server.config.mapping_status_strategy {
-        MappingStatusStrategy::None => {}
-        MappingStatusStrategy::Save => {}
         MappingStatusStrategy::Continue => {
             let mapping = server.mapping.read().await;
             let mut handler_requests: Vec<StartHandlerRequest> = Vec::new();
@@ -45,6 +43,7 @@ async fn handle_mapping_strategy(server: &Server) -> () {
                 }
             }
         }
+        _ => {}
     }
 }
 
