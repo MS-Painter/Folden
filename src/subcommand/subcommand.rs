@@ -1,4 +1,7 @@
+use std::env;
+use std::path::Path;
 use std::option::Option;
+use std::ffi::{OsStr, OsString};
 
 use futures::Future;
 use tonic::transport::Channel;
@@ -26,5 +29,26 @@ pub trait SubCommandUtil {
             .empty_values(false)
             .case_insensitive(true)
             .possible_values(&handlers_json.get_handler_types().as_slice())
+    }
+
+    fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {
+        let path = Path::new(val);
+        if path.is_dir() && path.exists() {
+            Ok(())
+        }
+        else {
+            Err(OsString::from("Input value isn't a directory"))
+        }
+    }
+
+    fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_name: &str) -> Result<std::path::PathBuf, std::io::Error> {
+        match sub_matches.value_of(match_name) {
+            Some(directory_match) => {
+                Path::new(directory_match).canonicalize()
+            }
+            None => {
+                env::current_dir().unwrap().canonicalize()
+            }
+        }
     }
 }
