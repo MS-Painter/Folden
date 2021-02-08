@@ -1,5 +1,3 @@
-use std::env;
-
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
@@ -26,11 +24,15 @@ impl SubCommandUtil for StartSubCommand {
             .about("Start handler on directory")
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
+            .arg(Arg::with_name("directory")
+                .required(false)
+                .empty_values(false)
+                .takes_value(true)
+                .validator_os(StartSubCommand::is_existing_directory_validator))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {        
-        let path = env::current_dir().unwrap();
-        
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) { 
+        let path = StartSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.start_handler(StartHandlerRequest {
             directory_path: String::from(path.as_os_str().to_str().unwrap()),

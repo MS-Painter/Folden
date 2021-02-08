@@ -33,6 +33,11 @@ impl SubCommandUtil for RegisterSubCommand {
             .arg(Arg::with_name("handler_config").value_name("FILE")
                 .takes_value(true).required(true)
                 .help("Handler configuration file"))
+            .arg(Arg::with_name("directory")
+                .required(false)
+                .empty_values(false)
+                .takes_value(true)
+                .validator_os(RegisterSubCommand::is_existing_directory_validator))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
@@ -43,7 +48,8 @@ impl SubCommandUtil for RegisterSubCommand {
         }
 
         let handler_match = sub_matches.value_of("handler").unwrap();
-        let path = env::current_dir().unwrap();
+
+        let path = RegisterSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
 
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.register_to_directory(RegisterToDirectoryRequest {

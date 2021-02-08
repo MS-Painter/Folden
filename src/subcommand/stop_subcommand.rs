@@ -1,5 +1,3 @@
-use std::env;
-
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
@@ -30,12 +28,17 @@ impl SubCommandUtil for StopSubCommand {
             .takes_value(false))
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-    }
+            .arg(Arg::with_name("directory")
+                .required(false)
+                .empty_values(false)
+                .takes_value(true)
+                .validator_os(StopSubCommand::is_existing_directory_validator))
+        }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
         let is_handler_to_be_removed = sub_matches.is_present("remove");
         
-        let path = env::current_dir().unwrap();
+        let path = StopSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.stop_handler(StopHandlerRequest {
