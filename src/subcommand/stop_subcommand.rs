@@ -4,8 +4,8 @@ use tonic::transport::{Channel, Error as TransportError};
 
 use folder_handler::handlers_json::HandlersJson;
 use crate::subcommand::subcommand::SubCommandUtil;
-use generated_types::inter_process_client::InterProcessClient;
 use generated_types::StopHandlerRequest;
+use generated_types::inter_process_client::InterProcessClient;
 
 pub struct StopSubCommand  {
     handlers_json: HandlersJson
@@ -23,16 +23,12 @@ impl SubCommandUtil for StopSubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Stop handler on directory")
-            .arg(Arg::with_name("remove").long("remove")
-            .required(false)
-            .takes_value(false))
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-            .arg(Arg::with_name("directory")
+            .arg(Arg::with_name("remove").long("remove")
                 .required(false)
-                .empty_values(false)
-                .takes_value(true)
-                .validator_os(StopSubCommand::is_existing_directory_validator))
+                .takes_value(false))
+            .args(StopSubCommand::construct_directory_or_all_args().as_slice())
         }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {

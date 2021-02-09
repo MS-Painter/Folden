@@ -4,8 +4,8 @@ use tonic::transport::{Channel, Error as TransportError};
 
 use folder_handler::handlers_json::HandlersJson;
 use crate::subcommand::subcommand::SubCommandUtil;
-use generated_types::inter_process_client::InterProcessClient;
 use generated_types::GetDirectoryStatusRequest;
+use generated_types::inter_process_client::InterProcessClient;
 
 pub struct StatusSubCommand {
     handlers_json: HandlersJson
@@ -25,15 +25,7 @@ impl SubCommandUtil for StatusSubCommand {
             .about("Fun folder usage in current working directory")
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-            .arg(Arg::with_name("directory").long("directory")
-                .required(false)
-                .empty_values(false)
-                .takes_value(true)
-                .validator_os(StatusSubCommand::is_existing_directory_validator))
-            .arg(Arg::with_name("all").long("all")
-                .required(false)
-                .takes_value(false)
-                .conflicts_with("directory"))
+            .args(StatusSubCommand::construct_directory_or_all_args().as_slice())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {  

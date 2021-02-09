@@ -1,4 +1,4 @@
-use std::{env, path::Path};
+use std::path::Path;
 
 use futures::executor::block_on;
 use tonic::transport::Channel;
@@ -10,7 +10,9 @@ use folder_handler::handlers_json::HandlersJson;
 use generated_types::{RegisterToDirectoryRequest, inter_process_client::InterProcessClient};
 
 use crate::subcommand::subcommand::SubCommandUtil;
+use super::subcommand::is_existing_directory_validator;
 
+#[derive(Clone)]
 pub struct RegisterSubCommand {
     handlers_json: HandlersJson
 }
@@ -37,7 +39,7 @@ impl SubCommandUtil for RegisterSubCommand {
                 .required(false)
                 .empty_values(false)
                 .takes_value(true)
-                .validator_os(RegisterSubCommand::is_existing_directory_validator))
+                .validator_os(is_existing_directory_validator))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
