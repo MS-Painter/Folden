@@ -26,7 +26,17 @@ message GetDirectoryStatusRequest {
 }
 
 message GetDirectoryStatusResponse {
-  string message = 1;
+  map<string, HandlerSummary> directory_states_map = 1; // key is directory path
+}
+
+message HandlerSummary {
+  enum Status {
+    Dead = 0;
+    Live = 1;
+  }
+  Status state = 1;
+  string type_name = 2;
+  string config_path = 3;
 }
 
 message StartHandlerRequest {

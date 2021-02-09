@@ -55,6 +55,6 @@ impl SubCommandUtil for StatusSubCommand {
             directory_path
         });
         let response = block_on(response).unwrap().into_inner();
-        println!("{:?}", response.message);
+        println!("{:?}", response.directory_states_map);
     }
 }

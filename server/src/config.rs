@@ -19,4 +19,4 @@ pub enum MappingStatusStrategy {
     None,
     Save, // Saves registered handlers to mapping file
     Continue // (Save strategy) + On startup start registered handlers
-}  
+}

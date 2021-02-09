@@ -1,16 +1,17 @@
+use std::ops::Deref;
+use std::collections::HashMap;
+
 use tokio::sync::mpsc;
 use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
 use super::{Server, start_handler_thread};
 use generated_types::{
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse, 
+    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary, handler_summary::Status as HandlerStatus,
     RegisterToDirectoryRequest, RegisterToDirectoryResponse, 
     StartHandlerRequest, StartHandlerResponse, 
     StopHandlerRequest, StopHandlerResponse, 
     HandlerChannelMessage, inter_process_server::InterProcess};
-
-
 
 #[tonic::async_trait]
 impl InterProcess for Server {
@@ -62,48 +63,42 @@ impl InterProcess for Server {
 
     async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) ->
     Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
+        let mut directory_states_map: HashMap<String, HandlerSummary> = HashMap::new();
         let request = request.into_inner();
         let mapping = self.mapping.read().await;
+        let mapping = mapping.deref();
         
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
-                let handler_type_name = handler_mapping.handler_type_name.clone();
-                drop(mapping); // Free lock here instead of scope exit
-                let mapping = self.mapping.write().await;
-                let handler_mapping = mapping.directory_mapping.get(&request.directory_path).unwrap(); 
-
-                let mut message = String::from("Handler - ");
-                message.push_str(handler_type_name.as_str());
-                
+                let mut state = HandlerSummary {
+                    state: HandlerStatus::Live as i32,
+                    type_name: handler_mapping.handler_type_name.clone(),
+                    config_path: handler_mapping.handler_config_path.clone(),
+                };
                 match handler_mapping.handler_thread_tx.clone() {
                     Some(mut handler_thread_tx) => {
                         match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
-                            Ok(_) => {
-                                message.push_str(" - Alive");
-                            }
+                            Ok(_) => {}
                             Err(err) => {
                                 match err {
-                                    mpsc::error::TrySendError::Full(_) => {
-                                        message.push_str(" - Alive");
-                                    }
-                                    mpsc::error::TrySendError::Closed(_) => {
-                                        message.push_str(" - Dead");
-                                    }
+                                    mpsc::error::TrySendError::Full(_) => {},
+                                    mpsc::error::TrySendError::Closed(_) => state.state = HandlerStatus::Dead as i32
                                 }
                             }
                         }
                     }
-                    None => {
-                        message.push_str(" - Dead");
-                    }
+                    None => state.state = HandlerStatus::Dead as i32
                 }
+                directory_states_map.insert(request.directory_path, state);
                 Ok(Response::new(GetDirectoryStatusResponse {
-                    message
+                    directory_states_map
                 }))
             }
             None => {
+                if request.directory_path.is_empty() { // If empty - All directories are requested
+                }
                 Ok(Response::new(GetDirectoryStatusResponse {
-                    message: "Directory unhandled".to_string(),
+                    directory_states_map
                 }))
             }
         }
