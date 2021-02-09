@@ -1,5 +1,4 @@
-// Definition of gRPC communication between different processes.
-// Definition of communication between client and server instances exclusively.
+// Definition of gRPC communication between client and server instances exclusively.
 
 syntax = "proto3";
 package inter_process;
