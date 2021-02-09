@@ -67,18 +67,23 @@ impl InterProcess for Server {
         let mapping = self.mapping.read().await;
         let mapping = mapping.deref();
         
+        let directory_path = request.directory_path.as_str();
         let mut directory_states_map: HashMap<String, HandlerSummary> = HashMap::new();
         
-        match mapping.directory_mapping.get(request.directory_path.as_str()) {
+        match mapping.directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
                 let state = get_handler_summary(handler_mapping);
-                directory_states_map.insert(request.directory_path, state);
+                directory_states_map.insert(directory_path.to_string(), state);
                 Ok(Response::new(GetDirectoryStatusResponse {
                     directory_states_map
                 }))
             }
             None => {
-                if request.directory_path.is_empty() { // If empty - All directories are requested
+                if directory_path.is_empty() { // If empty - All directories are requested
+                    for (directory_path, handler_mapping) in mapping.directory_mapping.iter() {
+                        let state = get_handler_summary(handler_mapping);
+                        directory_states_map.insert(directory_path.to_owned(), state);
+                    }
                 }
                 Ok(Response::new(GetDirectoryStatusResponse {
                     directory_states_map
