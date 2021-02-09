@@ -25,18 +25,34 @@ impl SubCommandUtil for StatusSubCommand {
             .about("Fun folder usage in current working directory")
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-            .arg(Arg::with_name("directory")
+            .arg(Arg::with_name("directory").long("directory")
                 .required(false)
                 .empty_values(false)
                 .takes_value(true)
                 .validator_os(StatusSubCommand::is_existing_directory_validator))
+            .arg(Arg::with_name("all").long("all")
+                .required(false)
+                .takes_value(false)
+                .conflicts_with("directory"))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {        
-        let path = StatusSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {  
+        let mut directory_path = String::new();
+        if !sub_matches.is_present("all") {
+            let path = StatusSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+            directory_path = path.into_os_string().into_string().unwrap();
+        }
+        else {
+            match sub_matches.value_of_os("directory") {
+                Some(path) => {
+                    directory_path = path.to_os_string().into_string().unwrap();
+                }
+                None => {}
+            }
+        }
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.get_directory_status(GetDirectoryStatusRequest {
-            directory_path: String::from(path.as_os_str().to_str().unwrap())
+            directory_path
         });
         let response = block_on(response).unwrap().into_inner();
         println!("{:?}", response.message);
