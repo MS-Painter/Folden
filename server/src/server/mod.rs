@@ -3,7 +3,7 @@ use std::{fs, ops::Deref, sync::Arc, thread};
 use tokio::sync::{RwLock, RwLockWriteGuard, mpsc};
 
 use crate::mapping::Mapping;
-use generated_types::HandlerChannelMessage;
+use generated_types::{HandlerChannelMessage, HandlerSummary, handler_summary::Status as HandlerStatus};
 use folder_handler::handlers_json::HandlersJson;
 use crate::{config::Config, mapping::HandlerMapping};
 
@@ -47,4 +47,27 @@ pub fn start_handler_thread(
         },
         Err(e) => panic!(e)
     }
+}
+
+pub fn get_handler_summary(handler_mapping: &HandlerMapping) -> HandlerSummary {
+    let mut state = HandlerSummary {
+        state: HandlerStatus::Live as i32,
+        type_name: handler_mapping.handler_type_name.clone(),
+        config_path: handler_mapping.handler_config_path.clone(),
+    };
+    match handler_mapping.handler_thread_tx.clone() {
+        Some(mut handler_thread_tx) => {
+            match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
+                Ok(_) => {}
+                Err(err) => {
+                    match err {
+                        mpsc::error::TrySendError::Full(_) => {},
+                        mpsc::error::TrySendError::Closed(_) => state.state = HandlerStatus::Dead as i32
+                    }
+                }
+            }
+        }
+        None => state.state = HandlerStatus::Dead as i32
+    }
+    state
 }

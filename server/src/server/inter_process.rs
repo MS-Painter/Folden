@@ -5,9 +5,9 @@ use tokio::sync::mpsc;
 use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
-use super::{Server, start_handler_thread};
+use super::{Server, start_handler_thread, get_handler_summary};
 use generated_types::{
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary, handler_summary::Status as HandlerStatus,
+    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary,
     RegisterToDirectoryRequest, RegisterToDirectoryResponse, 
     StartHandlerRequest, StartHandlerResponse, 
     StopHandlerRequest, StopHandlerResponse, 
@@ -63,32 +63,15 @@ impl InterProcess for Server {
 
     async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) ->
     Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
-        let mut directory_states_map: HashMap<String, HandlerSummary> = HashMap::new();
         let request = request.into_inner();
         let mapping = self.mapping.read().await;
         let mapping = mapping.deref();
         
+        let mut directory_states_map: HashMap<String, HandlerSummary> = HashMap::new();
+        
         match mapping.directory_mapping.get(request.directory_path.as_str()) {
             Some(handler_mapping) => {
-                let mut state = HandlerSummary {
-                    state: HandlerStatus::Live as i32,
-                    type_name: handler_mapping.handler_type_name.clone(),
-                    config_path: handler_mapping.handler_config_path.clone(),
-                };
-                match handler_mapping.handler_thread_tx.clone() {
-                    Some(mut handler_thread_tx) => {
-                        match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
-                            Ok(_) => {}
-                            Err(err) => {
-                                match err {
-                                    mpsc::error::TrySendError::Full(_) => {},
-                                    mpsc::error::TrySendError::Closed(_) => state.state = HandlerStatus::Dead as i32
-                                }
-                            }
-                        }
-                    }
-                    None => state.state = HandlerStatus::Dead as i32
-                }
+                let state = get_handler_summary(handler_mapping);
                 directory_states_map.insert(request.directory_path, state);
                 Ok(Response::new(GetDirectoryStatusResponse {
                     directory_states_map
