@@ -91,7 +91,6 @@ impl InterProcess for Server {
                                 
         match mapping.directory_mapping.get(&request.directory_path) {
             Some(handler_mapping) => {
-                let mut message = String::new();
                 match handler_mapping.status() {
                     handler_summary::Status::Dead => {
                         let handler_type_name = handler_mapping.handler_type_name.clone();
@@ -101,19 +100,20 @@ impl InterProcess for Server {
                             mapping, handlers_json, 
                             request.directory_path, handler_type_name, handler_config_path
                         );
-                        message = String::from("Handler started");
+                        Ok(Response::new(StartHandlerResponse {
+                            message: String::from("Handler started")
+                        }))
                     }
                     handler_summary::Status::Live => {
-                        message = String::from("Handler already up");
+                        Ok(Response::new(StartHandlerResponse {
+                            message: String::from("Handler already up")
+                        }))
                     }
                 }
-                Ok(Response::new(StartHandlerResponse {
-                    message
-                }))
             }
             None => {
                 Ok(Response::new(StartHandlerResponse {
-                    message: "Directory unhandled".to_string(),
+                    message: String::from("Directory unhandled"),
                 }))
             }
         }
