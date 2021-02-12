@@ -39,7 +39,7 @@ impl SubCommandUtil for StopSubCommand {
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.stop_handler(StopHandlerRequest {
             directory_path: String::from(path.as_os_str().to_str().unwrap()),
-            is_handler_to_be_removed,
+            remove: is_handler_to_be_removed,
         });
         let response = block_on(response).unwrap().into_inner();
         println!("{:?}", response.message);

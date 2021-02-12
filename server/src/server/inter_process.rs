@@ -179,7 +179,7 @@ impl InterProcess for Server {
                                 match handler_thread_tx.send(HandlerChannelMessage::Terminate).await {
                                     Ok(_) => {
                                         let mut message = String::from("Handler stopped"); 
-                                        if request.is_handler_to_be_removed {
+                                        if request.remove {
                                             mapping.directory_mapping.remove(&request.directory_path);
                                             message.push_str(" & removed");
                                         }
@@ -196,7 +196,7 @@ impl InterProcess for Server {
                                     }
                                     Err(err) => {
                                         let mut message = String::new();
-                                        if request.is_handler_to_be_removed {
+                                        if request.remove {
                                             mapping.directory_mapping.remove(&request.directory_path);
                                             message = String::from("Handler removed");
                                         }
