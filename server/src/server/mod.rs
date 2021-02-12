@@ -1,4 +1,4 @@
-use std::{fs, ops::Deref, sync::Arc, thread};
+use std::{fs, io::ErrorKind, ops::Deref, sync::Arc, thread};
 
 use tokio::sync::{RwLock, RwLockWriteGuard, mpsc};
 
@@ -17,10 +17,16 @@ pub struct Server {
 
 impl Server {
     pub async fn save_mapping(&self) -> Result<(), std::io::Error> {
-        let mapping = self.mapping.read().await;
-        let mapping = mapping.deref();
-        let mapping_data: Vec<u8> = mapping.into();
-        fs::write(&self.config.mapping_state_path, mapping_data)
+        match self.config.mapping_status_strategy {
+            crate::config::MappingStatusStrategy::None => Err(std::io::Error::new(ErrorKind::Other, "Not allowed current in config state")),
+            _ => {
+                let mapping = self.mapping.read().await;
+                let mapping = mapping.deref();
+                let mapping_data: Vec<u8> = mapping.into();
+                fs::write(&self.config.mapping_state_path, mapping_data)
+            }
+        }
+        
     }
 }
 
