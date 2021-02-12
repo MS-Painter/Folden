@@ -6,12 +6,7 @@ use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
 use super::{Server, start_handler_thread, get_handler_summary};
-use generated_types::{
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary,
-    RegisterToDirectoryRequest, RegisterToDirectoryResponse, 
-    StartHandlerRequest, StartHandlerResponse, 
-    StopHandlerRequest, StopHandlerResponse, 
-    HandlerChannelMessage, inter_process_server::InterProcess};
+use generated_types::{GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerChannelMessage, HandlerSummary, RegisterToDirectoryRequest, RegisterToDirectoryResponse, StartHandlerRequest, StartHandlerResponse, StopHandlerRequest, StopHandlerResponse, handler_summary, inter_process_server::InterProcess};
 
 #[tonic::async_trait]
 impl InterProcess for Server {
@@ -93,36 +88,12 @@ impl InterProcess for Server {
     async fn start_handler(&self,request:Request<StartHandlerRequest>,)->Result<Response<StartHandlerResponse>,tonic::Status> {
         let request = request.into_inner();
         let mapping = self.mapping.write().await;
-        let mut message = String::new();
-                        
+                                
         match mapping.directory_mapping.get(&request.directory_path) {
             Some(handler_mapping) => {
-                match handler_mapping.handler_thread_tx.clone() {
-                    Some(mut handler_thread_tx) => {
-                        match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
-                            Ok(_) => {
-                                message = String::from("Handler already up");
-                            }
-                            Err(send_error) => {
-                                match send_error {
-                                    mpsc::error::TrySendError::Full(_) => {
-                                        message = String::from("Handler already up");
-                                    }
-                                    mpsc::error::TrySendError::Closed(_) => {
-                                        let handler_type_name = handler_mapping.handler_type_name.clone();
-                                        let handler_config_path = handler_mapping.handler_config_path.clone();
-                                        let handlers_json = self.handlers_json.clone();
-                                        start_handler_thread(
-                                            mapping, handlers_json, 
-                                            request.directory_path, handler_type_name, handler_config_path
-                                        );
-                                        message = String::from("Handler started");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    None => {
+                let mut message = String::new();
+                match handler_mapping.status() {
+                    handler_summary::Status::Dead => {
                         let handler_type_name = handler_mapping.handler_type_name.clone();
                         let handler_config_path = handler_mapping.handler_config_path.clone();
                         let handlers_json = self.handlers_json.clone();
@@ -131,6 +102,9 @@ impl InterProcess for Server {
                             request.directory_path, handler_type_name, handler_config_path
                         );
                         message = String::from("Handler started");
+                    }
+                    handler_summary::Status::Live => {
+                        message = String::from("Handler already up");
                     }
                 }
                 Ok(Response::new(StartHandlerResponse {
