@@ -18,7 +18,7 @@ impl InterProcess for Server {
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) ->
     Result<Response<RegisterToDirectoryResponse>,tonic::Status> {
         let request = request.into_inner();
-        let mapping = self.mapping.read().await;
+        let mapping = self.mapping.write().await;
         let request_directory_path = request.directory_path.as_str();
         match mapping.directory_mapping.get(request_directory_path) {
             Some(handler_mapping) => {
@@ -46,8 +46,6 @@ impl InterProcess for Server {
                         }))
                     }
                 }
-                drop(mapping); // Free lock here instead of scope exit
-                let mapping = self.mapping.write().await;
                 let handlers_json = self.handlers_json.clone();
                 start_handler_thread(
                     mapping, handlers_json, 
