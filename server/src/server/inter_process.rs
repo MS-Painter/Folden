@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use tonic::{Request, Response};
 
-use crate::{config::MappingStatusStrategy, mapping::HandlerMapping};
+use crate::mapping::HandlerMapping;
 use super::{Server, start_handler_thread, get_handler_summary};
 use generated_types::{GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary, RegisterToDirectoryRequest, RegisterToDirectoryResponse, StartHandlerRequest, StartHandlerResponse, StopHandlerRequest, StopHandlerResponse, handler_summary, inter_process_server::InterProcess};
 
