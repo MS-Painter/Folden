@@ -6,7 +6,7 @@ use tokio::sync::mpsc::Receiver;
 use generated_types::HandlerChannelMessage;
 
 #[typetag::serde(tag = "type")]
-pub trait Handler {
+pub trait Handler: Send    {
     // Initialize handler to watch a folder
     fn watch(&self, shutdown_channel_rx: Receiver<HandlerChannelMessage> );
     // Generate handler specific initialization config
