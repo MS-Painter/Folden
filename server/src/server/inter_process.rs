@@ -1,12 +1,11 @@
 use std::ops::Deref;
 use std::collections::HashMap;
 
-use tokio::sync::mpsc;
 use tonic::{Request, Response};
 
-use crate::mapping::HandlerMapping;
+use crate::{config::MappingStatusStrategy, mapping::HandlerMapping};
 use super::{Server, start_handler_thread, get_handler_summary};
-use generated_types::{GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerChannelMessage, HandlerSummary, RegisterToDirectoryRequest, RegisterToDirectoryResponse, StartHandlerRequest, StartHandlerResponse, StopHandlerRequest, StopHandlerResponse, handler_summary, inter_process_server::InterProcess};
+use generated_types::{GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary, RegisterToDirectoryRequest, RegisterToDirectoryResponse, StartHandlerRequest, StartHandlerResponse, StopHandlerRequest, StopHandlerResponse, handler_summary, inter_process_server::InterProcess};
 
 #[tonic::async_trait]
 impl InterProcess for Server {
@@ -121,69 +120,61 @@ impl InterProcess for Server {
 
     async fn stop_handler(&self,request:Request<StopHandlerRequest>,)->Result<Response<StopHandlerResponse>,tonic::Status> {
         let request = request.into_inner();
-        let mapping = self.mapping.read().await;
+        let mut mapping = self.mapping.write().await;
         
         match mapping.directory_mapping.get(&request.directory_path) {
-            Some(_handler_mapping) => {
-                drop(mapping); // Free lock here instead of scope exit
-                let mut mapping = self.mapping.write().await;
-                match mapping.directory_mapping.get(&request.directory_path) {
-                    Some(handler_mapping) => {
-                        match handler_mapping.handler_thread_tx.clone() {
-                            Some(mut handler_thread_tx) => {
-                                let handler_type_name = handler_mapping.handler_type_name.clone();
-                                let handler_config_path = handler_mapping.handler_config_path.clone();
-                                match handler_thread_tx.send(HandlerChannelMessage::Terminate).await {
-                                    Ok(_) => {
-                                        let mut message = String::from("Handler stopped"); 
-                                        if request.remove {
-                                            mapping.directory_mapping.remove(&request.directory_path);
-                                            message.push_str(" & removed");
-                                        }
-                                        else {
-                                            mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
-                                                handler_thread_tx: Option::None,
-                                                handler_type_name,
-                                                handler_config_path,
-                                            });
-                                        }
-                                        Ok(Response::new(StopHandlerResponse {
-                                            message,
-                                        }))
-                                    }
-                                    Err(err) => {
-                                        let mut message = String::new();
-                                        if request.remove {
-                                            mapping.directory_mapping.remove(&request.directory_path);
-                                            message = String::from("Handler removed");
-                                        }
-                                        else {
-                                            message = String::from("Failed to stop handler\nError: ");
-                                            message.push_str(err.to_string().as_str());
-                                        }
-                                        Ok(Response::new(StopHandlerResponse {
-                                            message
-                                        }))
-                                    }
+            Some(handler_mapping) => {
+                let handler_type_name = handler_mapping.handler_type_name.clone();
+                let handler_config_path = handler_mapping.handler_config_path.clone();
+
+                match handler_mapping.status() {
+                    handler_summary::Status::Dead => {
+                        let mut message = String::from("Handler already stopped");
+                        if request.remove {
+                            mapping.directory_mapping.remove(&request.directory_path);
+                            message.push_str(" & removed");
+                        }
+                        else {
+                            mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
+                                handler_thread_tx: Option::None,
+                                handler_type_name,
+                                handler_config_path,
+                            });
+                        }
+                        Ok(Response::new(StopHandlerResponse {
+                            message,
+                        }))
+                    }
+                    handler_summary::Status::Live => {
+                        match handler_mapping.stop_handler_thread().await {
+                            Ok(mut message) => {
+                                if request.remove {
+                                    mapping.directory_mapping.remove(&request.directory_path);
+                                    message.push_str(" & removed");
                                 }
-                            }
-                            None => {
+                                else {
+                                    mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
+                                        handler_thread_tx: Option::None,
+                                        handler_type_name,
+                                        handler_config_path,
+                                    });
+                                }
                                 Ok(Response::new(StopHandlerResponse {
-                                    message: String::from("")
+                                    message,
+                                }))
+                            }
+                            Err(message) => {
+                                Ok(Response::new(StopHandlerResponse {
+                                    message,
                                 }))
                             }
                         }
-                    }
-                    None => {
-                        Ok(Response::new(StopHandlerResponse {
-                            message: "Handler not found".to_string(),
-                        }))
                     }
                 }
             }
             None => {
                 Ok(Response::new(StopHandlerResponse {
-                    message: "Directory unhandled".to_string(),
+                    message: String::from("Directory unhandled"),
                 }))
             }
         }

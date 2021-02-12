@@ -61,4 +61,17 @@ impl HandlerMapping {
             None => handler_summary::Status::Dead
         }
     }
+
+    pub async fn stop_handler_thread(&self) -> Result<String, String> {
+        match self.handler_thread_tx.clone().unwrap().send(HandlerChannelMessage::Terminate).await {
+            Ok(_) => {
+                Ok(String::from("Handler stopped"))
+            }
+            Err(error) => {
+                let mut message = String::from("Failed to stop handler\nError: ");
+                message.push_str(error.to_string().as_str());
+                Err(message)
+            }
+        }
+    }
 }
