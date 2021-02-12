@@ -5,7 +5,7 @@ use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
 use super::{Server, start_handler_thread, get_handler_summary};
-use generated_types::{GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary, RegisterToDirectoryRequest, RegisterToDirectoryResponse, StartHandlerRequest, StartHandlerResponse, StopHandlerRequest, StopHandlerResponse, handler_summary, inter_process_server::InterProcess};
+use generated_types::{GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary, RegisterToDirectoryRequest, RegisterToDirectoryResponse, StartHandlerRequest, StartHandlerResponse, StopHandlerRequest, StopHandlerResponse, HandlerStatus, inter_process_server::InterProcess};
 
 #[tonic::async_trait]
 impl InterProcess for Server {
@@ -91,7 +91,7 @@ impl InterProcess for Server {
         match mapping.directory_mapping.get(&request.directory_path) {
             Some(handler_mapping) => {
                 match handler_mapping.status() {
-                    handler_summary::Status::Dead => {
+                    HandlerStatus::Dead => {
                         let handler_type_name = handler_mapping.handler_type_name.clone();
                         let handler_config_path = handler_mapping.handler_config_path.clone();
                         let handlers_json = self.handlers_json.clone();
@@ -103,7 +103,7 @@ impl InterProcess for Server {
                             message: String::from("Handler started")
                         }))
                     }
-                    handler_summary::Status::Live => {
+                    HandlerStatus::Live => {
                         Ok(Response::new(StartHandlerResponse {
                             message: String::from("Handler already up")
                         }))
@@ -128,7 +128,7 @@ impl InterProcess for Server {
                 let handler_config_path = handler_mapping.handler_config_path.clone();
 
                 match handler_mapping.status() {
-                    handler_summary::Status::Dead => {
+                    HandlerStatus::Dead => {
                         let mut message = String::from("Handler already stopped");
                         if request.remove {
                             mapping.directory_mapping.remove(&request.directory_path);
@@ -147,7 +147,7 @@ impl InterProcess for Server {
                             message,
                         }))
                     }
-                    handler_summary::Status::Live => {
+                    HandlerStatus::Live => {
                         match handler_mapping.stop_handler_thread().await {
                             Ok(mut message) => {
                                 if request.remove {

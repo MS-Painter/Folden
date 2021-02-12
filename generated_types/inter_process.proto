@@ -10,6 +10,17 @@ service InterProcess {
   rpc StopHandler (StopHandlerRequest) returns (StopHandlerResponse);
 }
 
+enum HandlerStatus {
+  Dead = 0;
+  Live = 1;
+}
+
+message HandlerSummary {
+  HandlerStatus state = 1;
+  string type_name = 2;
+  string config_path = 3;
+}
+
 message RegisterToDirectoryRequest {
   string directory_path = 1;
   string handler_type_name = 2;
@@ -26,16 +37,6 @@ message GetDirectoryStatusRequest {
 
 message GetDirectoryStatusResponse {
   map<string, HandlerSummary> directory_states_map = 1; // key is directory path
-}
-
-message HandlerSummary {
-  enum Status {
-    Dead = 0;
-    Live = 1;
-  }
-  Status state = 1;
-  string type_name = 2;
-  string config_path = 3;
 }
 
 message StartHandlerRequest {

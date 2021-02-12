@@ -3,7 +3,7 @@ use std::{fs, io::ErrorKind, ops::Deref, sync::Arc, thread};
 use tokio::sync::{RwLock, RwLockWriteGuard, mpsc};
 
 use crate::mapping::Mapping;
-use generated_types::{HandlerChannelMessage, HandlerSummary, handler_summary::Status as HandlerStatus};
+use generated_types::{HandlerChannelMessage, HandlerSummary, HandlerStatus};
 use folder_handler::handlers_json::HandlersJson;
 use crate::{config::Config, mapping::HandlerMapping};
 

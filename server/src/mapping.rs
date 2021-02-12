@@ -3,7 +3,7 @@ use std::{collections::HashMap, convert::TryFrom};
 use serde::{Serialize, Deserialize};
 use tokio::sync::mpsc::Sender;
 
-use generated_types::{HandlerChannelMessage, handler_summary};
+use generated_types::{HandlerChannelMessage, HandlerStatus};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -45,20 +45,20 @@ pub struct HandlerMapping {
 }
 
 impl HandlerMapping {
-    pub fn status(&self) -> handler_summary::Status {
+    pub fn status(&self) -> HandlerStatus {
         match self.handler_thread_tx.clone() {
             Some(mut handler_thread_tx) => {
                 match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
-                    Ok(_) => handler_summary::Status::Live,
+                    Ok(_) => HandlerStatus::Live,
                     Err(error) => {
                         match error {
-                            tokio::sync::mpsc::error::TrySendError::Full(_) => handler_summary::Status::Live,
-                            tokio::sync::mpsc::error::TrySendError::Closed(_) => handler_summary::Status::Dead,
+                            tokio::sync::mpsc::error::TrySendError::Full(_) => HandlerStatus::Live,
+                            tokio::sync::mpsc::error::TrySendError::Closed(_) => HandlerStatus::Dead,
                         }
                     }
                 }
             }
-            None => handler_summary::Status::Dead
+            None => HandlerStatus::Dead
         }
     }
 
