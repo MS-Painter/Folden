@@ -133,6 +133,8 @@ impl InterProcess for Server {
                         if request.remove {
                             mapping.directory_mapping.remove(&request.directory_path);
                             message.push_str(" & removed");
+                            drop(mapping);
+                            let _result = self.save_mapping().await;
                         }
                         else {
                             mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
@@ -151,6 +153,8 @@ impl InterProcess for Server {
                                 if request.remove {
                                     mapping.directory_mapping.remove(&request.directory_path);
                                     message.push_str(" & removed");
+                                    drop(mapping);
+                                    let _result = self.save_mapping().await;
                                 }
                                 else {
                                     mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
