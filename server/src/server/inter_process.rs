@@ -5,12 +5,14 @@ use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
 use super::{Server, start_handler_thread, get_handler_summary};
-use generated_types::{GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerSummary, RegisterToDirectoryRequest, RegisterToDirectoryResponse, StartHandlerRequest, StartHandlerResponse, StopHandlerRequest, StopHandlerResponse, HandlerStatus, inter_process_server::InterProcess};
+use generated_types::{
+    GetDirectoryStatusRequest, GetDirectoryStatusResponse, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest,  
+    HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerSummary, inter_process_server::InterProcess};
 
 #[tonic::async_trait]
 impl InterProcess for Server {
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) ->
-    Result<Response<RegisterToDirectoryResponse>,tonic::Status> {
+    Result<Response<HandlerStateResponse>,tonic::Status> {
         let request = request.into_inner();
         let mapping = self.mapping.write().await;
         let request_directory_path = request.directory_path.as_str();
@@ -18,8 +20,9 @@ impl InterProcess for Server {
             Some(handler_mapping) => {
                 let mut message = String::from("Directory already handled by handler - ");
                 message.push_str(handler_mapping.handler_type_name.as_str());
-                Ok(Response::new(RegisterToDirectoryResponse {
-                    message
+                Ok(Response::new(HandlerStateResponse {
+                    message,
+                    state: HandlerStatus::Live as i32,
                 }))
             }
             None => {
@@ -28,15 +31,17 @@ impl InterProcess for Server {
                     if request_directory_path.contains(directory_path) {
                         let mut message = "Couldn't register\nDirectory is a child of handled directory - ".to_string();
                         message.push_str(directory_path); 
-                        return Ok(Response::new(RegisterToDirectoryResponse {
+                        return Ok(Response::new(HandlerStateResponse {
                             message,
+                            state: HandlerStatus::Dead as i32,
                         }))
                     }
                     else if directory_path.contains(request_directory_path) {
                         let mut message = "Couldn't register\nDirectory is a parent of requested directory - ".to_string();
                         message.push_str(directory_path); 
-                        return Ok(Response::new(RegisterToDirectoryResponse {
+                        return Ok(Response::new(HandlerStateResponse {
                             message,
+                            state: HandlerStatus::Dead as i32,
                         }))
                     }
                 }
@@ -46,8 +51,9 @@ impl InterProcess for Server {
                     request.directory_path, request.handler_type_name, request.handler_config_path
                 );
                 let _result = self.save_mapping().await;
-                Ok(Response::new(RegisterToDirectoryResponse {
+                Ok(Response::new(HandlerStateResponse {
                     message: "".to_string(),
+                    state: HandlerStatus::Live as i32,
                 }))
             }
         }
@@ -84,11 +90,13 @@ impl InterProcess for Server {
         }
     }
 
-    async fn start_handler(&self,request:Request<StartHandlerRequest>,)->Result<Response<StartHandlerResponse>,tonic::Status> {
+    async fn start_handler(&self,request:Request<StartHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
         let request = request.into_inner();
         let mapping = self.mapping.write().await;
+        let directory_path = request.directory_path.as_str();
+        let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
                                 
-        match mapping.directory_mapping.get(&request.directory_path) {
+        match mapping.directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
                 match handler_mapping.status() {
                     HandlerStatus::Dead => {
@@ -97,30 +105,44 @@ impl InterProcess for Server {
                         let handlers_json = self.handlers_json.clone();
                         start_handler_thread(
                             mapping, handlers_json, 
-                            request.directory_path, handler_type_name, handler_config_path
+                            directory_path.to_string(), handler_type_name, handler_config_path
                         );
-                        Ok(Response::new(StartHandlerResponse {
-                            message: String::from("Handler started")
+                        states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                            state: HandlerStatus::Live as i32,
+                            message: String::from("Handler started"),
+                        });
+                        Ok(Response::new(HandlerStatesMapResponse {
+                            states_map,
                         }))
                     }
                     HandlerStatus::Live => {
-                        Ok(Response::new(StartHandlerResponse {
-                            message: String::from("Handler already up")
+                        states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                            state: HandlerStatus::Live as i32,
+                            message: String::from("Handler already up"),
+                        });
+                        Ok(Response::new(HandlerStatesMapResponse {
+                            states_map,
                         }))
                     }
                 }
             }
             None => {
-                Ok(Response::new(StartHandlerResponse {
+                states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                    state: HandlerStatus::Dead as i32,
                     message: String::from("Directory unhandled"),
+                });
+                Ok(Response::new(HandlerStatesMapResponse {
+                    states_map,
                 }))
             }
         }
     }
 
-    async fn stop_handler(&self,request:Request<StopHandlerRequest>,)->Result<Response<StopHandlerResponse>,tonic::Status> {
+    async fn stop_handler(&self,request:Request<StopHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
         let request = request.into_inner();
         let mut mapping = self.mapping.write().await;
+        let directory_path = request.directory_path.as_str();
+        let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
         
         match mapping.directory_mapping.get(&request.directory_path) {
             Some(handler_mapping) => {
@@ -137,14 +159,18 @@ impl InterProcess for Server {
                             let _result = self.save_mapping().await;
                         }
                         else {
-                            mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
+                            mapping.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
                                 handler_thread_tx: Option::None,
                                 handler_type_name,
                                 handler_config_path,
                             });
                         }
-                        Ok(Response::new(StopHandlerResponse {
+                        states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                            state: HandlerStatus::Dead as i32,
                             message,
+                        });
+                        Ok(Response::new(HandlerStatesMapResponse {
+                            states_map,
                         }))
                     }
                     HandlerStatus::Live => {
@@ -157,19 +183,27 @@ impl InterProcess for Server {
                                     let _result = self.save_mapping().await;
                                 }
                                 else {
-                                    mapping.directory_mapping.insert(request.directory_path, HandlerMapping {
+                                    mapping.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
                                         handler_thread_tx: Option::None,
                                         handler_type_name,
                                         handler_config_path,
                                     });
                                 }
-                                Ok(Response::new(StopHandlerResponse {
+                                states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                                    state: HandlerStatus::Dead as i32,
                                     message,
+                                });
+                                Ok(Response::new(HandlerStatesMapResponse {
+                                    states_map,
                                 }))
                             }
                             Err(message) => {
-                                Ok(Response::new(StopHandlerResponse {
+                                states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                                    state: HandlerStatus::Live as i32,
                                     message,
+                                });
+                                Ok(Response::new(HandlerStatesMapResponse {
+                                    states_map,
                                 }))
                             }
                         }
@@ -177,8 +211,12 @@ impl InterProcess for Server {
                 }
             }
             None => {
-                Ok(Response::new(StopHandlerResponse {
+                states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                    state: HandlerStatus::Dead as i32,
                     message: String::from("Directory unhandled"),
+                });
+                Ok(Response::new(HandlerStatesMapResponse {
+                    states_map,
                 }))
             }
         }

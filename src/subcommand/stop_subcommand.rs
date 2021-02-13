@@ -42,6 +42,6 @@ impl SubCommandUtil for StopSubCommand {
             remove: is_handler_to_be_removed,
         });
         let response = block_on(response).unwrap().into_inner();
-        println!("{:?}", response.message);
+        println!("{:?}", response.states_map);
     }
 }

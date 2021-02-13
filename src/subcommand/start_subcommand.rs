@@ -35,6 +35,6 @@ impl SubCommandUtil for StartSubCommand {
             directory_path: String::from(path.as_os_str().to_str().unwrap()),
         });
         let response = block_on(response).unwrap().into_inner();
-        println!("{:?}", response.message);
+        println!("{:?}", response.states_map);
     }
 }

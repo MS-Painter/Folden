@@ -4,10 +4,10 @@ syntax = "proto3";
 package inter_process;
 
 service InterProcess {
-  rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (RegisterToDirectoryResponse);
+  rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (HandlerStateResponse);
   rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
-  rpc StartHandler (StartHandlerRequest) returns (StartHandlerResponse);
-  rpc StopHandler (StopHandlerRequest) returns (StopHandlerResponse);
+  rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
+  rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
 }
 
 enum HandlerStatus {
@@ -21,14 +21,19 @@ message HandlerSummary {
   string config_path = 3;
 }
 
+message HandlerStateResponse {
+  HandlerStatus state = 1;
+  string message = 2;
+}
+
+message HandlerStatesMapResponse {
+  map<string, HandlerStateResponse> states_map = 1; // key is directory path
+}
+
 message RegisterToDirectoryRequest {
   string directory_path = 1;
   string handler_type_name = 2;
   string handler_config_path = 3;
-}
-
-message RegisterToDirectoryResponse {
-  string message = 1;
 }
 
 message GetDirectoryStatusRequest {
@@ -43,15 +48,7 @@ message StartHandlerRequest {
   string directory_path = 1;
 }
 
-message StartHandlerResponse {
-  string message = 1;
-}
-
 message StopHandlerRequest {
   string directory_path = 1;
   bool remove = 2;
-}
-
-message StopHandlerResponse {
-  string message = 1;
 }
