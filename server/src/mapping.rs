@@ -1,8 +1,9 @@
-use std::{collections::HashMap, convert::TryFrom, sync::Arc, thread};
+use std::{collections::HashMap, convert::TryFrom, fs, io::ErrorKind, path::PathBuf, sync::Arc, thread};
 
 use serde::{Serialize, Deserialize};
 use tokio::sync::mpsc::{self, Sender};
 
+use crate::config::MappingStatusStrategy;
 use folder_handler::handlers_json::HandlersJson;
 use generated_types::{HandlerChannelMessage, HandlerStateResponse, HandlerStatus};
 
@@ -15,6 +16,16 @@ pub struct Mapping {
 }
 
 impl Mapping {
+    pub fn save(&self, mapping_status_strategy: &MappingStatusStrategy, mapping_state_path: &PathBuf) -> Result<(), std::io::Error> {
+        match mapping_status_strategy {
+            MappingStatusStrategy::None => Err(std::io::Error::new(ErrorKind::Other, "Not allowed current in config state")),
+            _ => {
+                let mapping_data: Vec<u8> = self.into();
+                fs::write(mapping_state_path, mapping_data)
+            }
+        }
+    }
+
     pub fn spawn_handler(&mut self, handlers_json: Arc<HandlersJson>, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
         match handler_mapping.status() {
             HandlerStatus::Dead => {

@@ -47,7 +47,7 @@ impl InterProcess for Server {
                 }
                 let handlers_json = self.handlers_json.clone();
                 mapping.spawn_handler_thread(handlers_json, request.directory_path, request.handler_type_name, request.handler_config_path);
-                let _result = self.save_mapping().await;
+                let _result = mapping.save(&self.config.mapping_status_strategy, &self.config.mapping_state_path);
                 Ok(Response::new(HandlerStateResponse {
                     message: "".to_string(),
                     state: HandlerStatus::Live as i32,
@@ -130,8 +130,8 @@ impl InterProcess for Server {
                         if request.remove {
                             mapping.directory_mapping.remove(&request.directory_path);
                             message.push_str(" & removed");
-                            drop(mapping);
-                            let _result = self.save_mapping().await;
+                            let _result = mapping.save(&self.config.mapping_status_strategy, &self.config.mapping_state_path);
+                
                         }
                         else {
                             mapping.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
@@ -154,8 +154,7 @@ impl InterProcess for Server {
                                 if request.remove {
                                     mapping.directory_mapping.remove(&request.directory_path);
                                     message.push_str(" & removed");
-                                    drop(mapping);
-                                    let _result = self.save_mapping().await;
+                                    let _result = mapping.save(&self.config.mapping_status_strategy, &self.config.mapping_state_path);
                                 }
                                 else {
                                     mapping.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {

@@ -1,11 +1,11 @@
-use std::{fs, io::ErrorKind, ops::Deref, sync::Arc, thread};
+use std::sync::Arc;
 
-use tokio::sync::{RwLock, RwLockWriteGuard, mpsc};
+use tokio::sync::{RwLock, mpsc};
 
 use crate::mapping::Mapping;
-use generated_types::{HandlerChannelMessage, HandlerStatus, HandlerSummary};
 use folder_handler::handlers_json::HandlersJson;
 use crate::{config::Config, mapping::HandlerMapping};
+use generated_types::{HandlerChannelMessage, HandlerStatus, HandlerSummary};
 
 pub mod inter_process;
 
@@ -13,21 +13,6 @@ pub struct Server {
     pub config: Arc<Config>,
     pub mapping: Arc<RwLock<Mapping>>,
     pub handlers_json: Arc<HandlersJson>,
-}
-
-impl Server {
-    pub async fn save_mapping(&self) -> Result<(), std::io::Error> {
-        match self.config.mapping_status_strategy {
-            crate::config::MappingStatusStrategy::None => Err(std::io::Error::new(ErrorKind::Other, "Not allowed current in config state")),
-            _ => {
-                let mapping = self.mapping.read().await;
-                let mapping = mapping.deref();
-                let mapping_data: Vec<u8> = mapping.into();
-                fs::write(&self.config.mapping_state_path, mapping_data)
-            }
-        }
-        
-    }
 }
 
 pub fn get_handler_summary(handler_mapping: &HandlerMapping) -> HandlerSummary {
