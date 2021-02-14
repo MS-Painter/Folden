@@ -95,7 +95,7 @@ impl InterProcess for Server {
                                 
         match mapping.clone().directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
-                let response = mapping.spawn_handler(self.handlers_json.clone(), directory_path, handler_mapping);
+                let response = mapping.start_handler(self.handlers_json.clone(), directory_path, handler_mapping);
                 states_map.insert(directory_path.to_owned(), response);
                 Ok(Response::new(HandlerStatesMapResponse {
                     states_map,
@@ -104,7 +104,7 @@ impl InterProcess for Server {
             None => {
                 if request.directory_path.is_empty() { // If empty - All directories are requested
                     for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter() {
-                        let response = mapping.spawn_handler(self.handlers_json.clone(), directory_path, handler_mapping);
+                        let response = mapping.start_handler(self.handlers_json.clone(), directory_path, handler_mapping);
                         states_map.insert(directory_path.to_owned(), response);
                     }
                 }

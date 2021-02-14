@@ -26,7 +26,7 @@ impl Mapping {
         }
     }
 
-    pub fn spawn_handler(&mut self, handlers_json: Arc<HandlersJson>, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
+    pub fn start_handler(&mut self, handlers_json: Arc<HandlersJson>, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
         match handler_mapping.status() {
             HandlerStatus::Dead => {
                 let handler_type_name = handler_mapping.handler_type_name.clone();
