@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
-use super::{Server, spawn_handler_thread, get_handler_summary};
+use super::{Server, spawn_handler, spawn_handler_thread, get_handler_summary};
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest,  
     HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerSummary, inter_process_server::InterProcess};
@@ -96,35 +96,13 @@ impl InterProcess for Server {
         let directory_path = request.directory_path.as_str();
         let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
                                 
-        match mapping.directory_mapping.get(directory_path) {
+        match mapping.clone().directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
-                match handler_mapping.status() {
-                    HandlerStatus::Dead => {
-                        let handler_type_name = handler_mapping.handler_type_name.clone();
-                        let handler_config_path = handler_mapping.handler_config_path.clone();
-                        let handlers_json = self.handlers_json.clone();
-                        spawn_handler_thread(
-                            mapping, handlers_json, 
-                            directory_path.to_string(), handler_type_name, handler_config_path
-                        );
-                        states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                            state: HandlerStatus::Live as i32,
-                            message: String::from("Handler started"),
-                        });
-                        Ok(Response::new(HandlerStatesMapResponse {
-                            states_map,
-                        }))
-                    }
-                    HandlerStatus::Live => {
-                        states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                            state: HandlerStatus::Live as i32,
-                            message: String::from("Handler already up"),
-                        });
-                        Ok(Response::new(HandlerStatesMapResponse {
-                            states_map,
-                        }))
-                    }
-                }
+                let response = spawn_handler(mapping, self.handlers_json.clone(), directory_path, handler_mapping);
+                states_map.insert(directory_path.to_owned(), response);
+                Ok(Response::new(HandlerStatesMapResponse {
+                    states_map,
+                }))
             }
             None => {
                 states_map.insert(directory_path.to_owned(), HandlerStateResponse {

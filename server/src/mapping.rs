@@ -8,7 +8,7 @@ use generated_types::{HandlerChannelMessage, HandlerStatus};
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Mapping {
     pub directory_mapping: HashMap<String, HandlerMapping> // Hash map key binds to directory path
 }
@@ -36,7 +36,7 @@ impl Into<Vec<u8>> for &Mapping {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HandlerMapping {
     #[serde(skip)]
     pub handler_thread_tx: Option<Sender<HandlerChannelMessage>>, // Channel sender providing thread health and allowing manual thread shutdown

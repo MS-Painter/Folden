@@ -3,7 +3,7 @@ use std::{fs, io::ErrorKind, ops::Deref, sync::Arc, thread};
 use tokio::sync::{RwLock, RwLockWriteGuard, mpsc};
 
 use crate::mapping::Mapping;
-use generated_types::{HandlerChannelMessage, HandlerSummary, HandlerStatus};
+use generated_types::{HandlerChannelMessage, HandlerStateResponse, HandlerStatus, HandlerSummary};
 use folder_handler::handlers_json::HandlersJson;
 use crate::{config::Config, mapping::HandlerMapping};
 
@@ -27,6 +27,27 @@ impl Server {
             }
         }
         
+    }
+}
+
+pub fn spawn_handler(mapping: RwLockWriteGuard<Mapping>, handlers_json: Arc<HandlersJson>, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
+    match handler_mapping.status() {
+        HandlerStatus::Dead => {
+            let handler_type_name = handler_mapping.handler_type_name.clone();
+            let handler_config_path = handler_mapping.handler_config_path.clone();
+            spawn_handler_thread(
+                mapping, handlers_json, 
+                directory_path.to_string(), handler_type_name, handler_config_path
+            );
+            HandlerStateResponse {
+                state: HandlerStatus::Live as i32,
+                message: String::from("Handler started"),
+            }
+        }
+        HandlerStatus::Live => HandlerStateResponse {
+            state: HandlerStatus::Live as i32,
+            message: String::from("Handler already up"),
+        },
     }
 }
 
