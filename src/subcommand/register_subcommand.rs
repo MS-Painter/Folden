@@ -10,7 +10,7 @@ use folder_handler::handlers_json::HandlersJson;
 use generated_types::{RegisterToDirectoryRequest, inter_process_client::InterProcessClient};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use super::subcommand::{construct_handler_arg, is_existing_directory_validator};
+use super::subcommand::{construct_handler_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
 
 #[derive(Clone)]
 pub struct RegisterSubCommand {
@@ -45,7 +45,7 @@ impl SubCommandUtil for RegisterSubCommand {
 
         let handler_match = sub_matches.value_of("handler").unwrap();
 
-        let path = RegisterSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+        let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
 
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.register_to_directory(RegisterToDirectoryRequest {

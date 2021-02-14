@@ -37,15 +37,15 @@ pub trait SubCommandUtil {
                 .takes_value(false)
                 .conflicts_with("directory"))
     }
+}
 
-    fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_name: &str) -> Result<std::path::PathBuf, std::io::Error> {
-        match sub_matches.value_of(match_name) {
-            Some(directory_match) => {
-                Path::new(directory_match).canonicalize()
-            }
-            None => {
-                env::current_dir().unwrap().canonicalize()
-            }
+pub fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_name: &str) -> Result<std::path::PathBuf, std::io::Error> {
+    match sub_matches.value_of(match_name) {
+        Some(directory_match) => {
+            Path::new(directory_match).canonicalize()
+        }
+        None => {
+            env::current_dir().unwrap().canonicalize()
         }
     }
 }

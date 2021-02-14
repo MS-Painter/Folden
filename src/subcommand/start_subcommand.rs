@@ -5,6 +5,7 @@ use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
 
 use crate::subcommand::subcommand::SubCommandUtil;
+use super::subcommand::get_path_from_matches_or_current_path;
 use generated_types::StartHandlerRequest;
 use generated_types::inter_process_client::InterProcessClient;
 
@@ -24,7 +25,7 @@ impl SubCommandUtil for StartSubCommand {
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) { 
         let mut path = PathBuf::new();
         if !sub_matches.is_present("all") {
-            path = StartSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+            path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         }
         
         let mut client = block_on(client_connect_future).unwrap();

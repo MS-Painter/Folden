@@ -5,8 +5,10 @@ use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
 
 use crate::subcommand::subcommand::SubCommandUtil;
+use super::subcommand::get_path_from_matches_or_current_path;
 use generated_types::StopHandlerRequest;
 use generated_types::inter_process_client::InterProcessClient;
+
 
 pub struct StopSubCommand  {}
 
@@ -28,7 +30,7 @@ impl SubCommandUtil for StopSubCommand {
         let is_handler_to_be_removed = sub_matches.is_present("remove");
         let mut path = PathBuf::new();
         if !sub_matches.is_present("all") {
-            path = StopSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+            path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         }
         
         let mut client = block_on(client_connect_future).unwrap();
