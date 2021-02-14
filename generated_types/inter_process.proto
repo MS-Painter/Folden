@@ -1,14 +1,33 @@
-// Definition of gRPC communication between different processes.
-// Definition of communication between client and server instances exclusively.
+// Definition of gRPC communication between client and server instances exclusively.
 
 syntax = "proto3";
 package inter_process;
 
 service InterProcess {
-  rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (RegisterToDirectoryResponse);
+  rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (HandlerStateResponse);
   rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
-  rpc StartHandler (StartHandlerRequest) returns (StartHandlerResponse);
-  rpc StopHandler (StopHandlerRequest) returns (StopHandlerResponse);
+  rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
+  rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
+}
+
+enum HandlerStatus {
+  Dead = 0;
+  Live = 1;
+}
+
+message HandlerSummary {
+  HandlerStatus state = 1;
+  string type_name = 2;
+  string config_path = 3;
+}
+
+message HandlerStateResponse {
+  HandlerStatus state = 1;
+  string message = 2;
+}
+
+message HandlerStatesMapResponse {
+  map<string, HandlerStateResponse> states_map = 1; // key is directory path
 }
 
 message RegisterToDirectoryRequest {
@@ -17,31 +36,19 @@ message RegisterToDirectoryRequest {
   string handler_config_path = 3;
 }
 
-message RegisterToDirectoryResponse {
-  string message = 1;
-}
-
 message GetDirectoryStatusRequest {
   string directory_path = 1;
 }
 
 message GetDirectoryStatusResponse {
-  string message = 1;
+  map<string, HandlerSummary> directory_states_map = 1; // key is directory path
 }
 
 message StartHandlerRequest {
   string directory_path = 1;
 }
 
-message StartHandlerResponse {
-  string message = 1;
-}
-
 message StopHandlerRequest {
   string directory_path = 1;
-  bool is_handler_to_be_removed = 2;
-}
-
-message StopHandlerResponse {
-  string message = 1;
+  bool remove = 2;
 }
