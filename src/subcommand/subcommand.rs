@@ -3,7 +3,6 @@ use std::path::Path;
 use std::option::Option;
 use std::ffi::{OsStr, OsString};
 
-use futures::Future;
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
@@ -16,7 +15,7 @@ pub trait SubCommandUtil {
     
     fn construct_subcommand(&self) -> App;
     
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl Future<Output = Result<InterProcessClient<Channel>, tonic::transport::Error>>) where Self: Sized;
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>);
     
     fn create_instance(&self) -> App {
         SubCommand::with_name(self.name())

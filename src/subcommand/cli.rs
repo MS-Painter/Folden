@@ -1,6 +1,7 @@
-use clap::App;
+use clap::{App, ArgMatches};
 
 use folder_handler::handlers_json::HandlersJson;
+use futures::executor::block_on;
 use generated_types::inter_process_client::InterProcessClient;
 use super::{generate_subcommand::GenerateSubCommand, register_subcommand::RegisterSubCommand, start_subcommand::StartSubCommand, status_subcommand::StatusSubCommand, stop_subcommand::StopSubCommand, subcommand::SubCommandUtil};
 
@@ -13,6 +14,10 @@ impl SubCommandCollection {
 
     pub fn add(&mut self, elem: Box<dyn SubCommandUtil>) {
         self.0.push(elem);
+    }
+
+    pub fn pop(&mut self) -> Option<Box<dyn SubCommandUtil>> {
+        self.0.pop()
     }
 
     pub fn collect_as_apps(&self) -> Vec<App> {
@@ -52,26 +57,21 @@ impl<'a, 'b> Cli<'a, 'b> {
         Self { base_app, subcommands}
     }
 
-    pub fn construct_app(&mut self) -> App {
+    fn construct_app(&mut self) -> App {
         self.base_app.clone().subcommands(self.subcommands.collect_as_apps())
     }
 
-    pub fn execute(&mut self) {
-        
-        for subcommand in self.subcommands.into_iter() {           
+    pub fn execute(&mut self, url: &'static str) {
+        let matches = self.construct_app().clone().get_matches();
+        let subcommand = self.subcommands.pop();
+        while let Some(ref command) = subcommand {
+            if let Some(sub_matches) = command.subcommand_matches(&matches) {
+                let client_connect_future = InterProcessClient::connect(url);
+                let client = &mut block_on(client_connect_future).unwrap();
+                command.subcommand_runtime(sub_matches, client);
+                //Ok(())
+            }
         }
+        //Err("No subcommand matched")
     }
-}
-
-pub fn excute(mut cli: Cli, url: &str)
- {
-    let client_connect_future = InterProcessClient::connect(url);
-    let matches = cli.construct_app().get_matches();
-    for subcommand in cli.subcommands {
-        if let Some(sub_matches) = subcommand.subcommand_matches(&matches) {
-            subcommand.subcommand_runtime(sub_matches, client_connect_future);
-            // Ok(())
-        }
-    }
-    // Err("No subcommand matched")
 }

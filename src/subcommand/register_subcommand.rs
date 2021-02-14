@@ -1,10 +1,8 @@
 use std::path::Path;
 
-use futures::executor::block_on;
 use tonic::transport::Channel;
-use tonic::transport::Error as TransportError;
-use clap::Error as CliError;
-use clap::{App, Arg, ArgMatches, ErrorKind};
+use futures::executor::block_on;
+use clap::{App, Arg, ArgMatches, Error as CliError, ErrorKind};
 
 use folder_handler::handlers_json::HandlersJson;
 use generated_types::{RegisterToDirectoryRequest, inter_process_client::InterProcessClient};
@@ -36,18 +34,15 @@ impl SubCommandUtil for RegisterSubCommand {
                 .validator_os(is_existing_directory_validator))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) where Self: Sized {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
         let handler_config_match = sub_matches.value_of("handler_config").unwrap();
         let handler_config_path = Path::new(handler_config_match);
         if !handler_config_path.exists() {
             CliError::with_description("Config file doesn't exist", ErrorKind::InvalidValue).exit();
         }
-
         let handler_match = sub_matches.value_of("handler").unwrap();
-
         let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
 
-        let mut client = block_on(client_connect_future).unwrap();
         let response = client.register_to_directory(RegisterToDirectoryRequest {
             directory_path: String::from(path.as_os_str().to_str().unwrap()),
             handler_type_name: handler_match.to_string(),
