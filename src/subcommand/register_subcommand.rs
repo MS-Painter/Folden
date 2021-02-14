@@ -10,7 +10,7 @@ use folder_handler::handlers_json::HandlersJson;
 use generated_types::{RegisterToDirectoryRequest, inter_process_client::InterProcessClient};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use super::subcommand::is_existing_directory_validator;
+use super::subcommand::{construct_handler_arg, is_existing_directory_validator};
 
 #[derive(Clone)]
 pub struct RegisterSubCommand {
@@ -25,7 +25,7 @@ impl SubCommandUtil for RegisterSubCommand {
             .about("Register handler to directory")
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-            .arg(RegisterSubCommand::construct_handler_arg("handler", &self.handlers_json))
+            .arg(construct_handler_arg("handler", &self.handlers_json))
             .arg(Arg::with_name("handler_config").value_name("FILE")
                 .takes_value(true).required(true)
                 .help("Handler configuration file"))

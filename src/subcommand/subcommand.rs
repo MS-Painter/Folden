@@ -26,14 +26,6 @@ pub trait SubCommandUtil {
         matches.subcommand_matches(self.name())
     }
 
-    fn construct_handler_arg<'a, 'b>(name: &'a str, handlers_json: &'b HandlersJson) -> Arg<'a, 'b> {
-        Arg::with_name(name)
-            .required(true)
-            .empty_values(false)
-            .case_insensitive(true)
-            .possible_values(&handlers_json.get_handler_types().as_slice())
-    }
-
     fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
         vec!(Arg::with_name("directory").long("directory")
                 .required(false)
@@ -56,6 +48,14 @@ pub trait SubCommandUtil {
             }
         }
     }
+}
+
+pub fn construct_handler_arg<'a, 'b>(name: &'a str, handlers_json: &'b HandlersJson) -> Arg<'a, 'b> {
+    Arg::with_name(name)
+        .required(true)
+        .empty_values(false)
+        .case_insensitive(true)
+        .possible_values(&handlers_json.get_handler_types().as_slice())
 }
 
 pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {

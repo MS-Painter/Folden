@@ -6,6 +6,8 @@ use clap::{App, Arg, ArgMatches};
 use folder_handler::handlers_json::HandlersJson;
 use crate::subcommand::subcommand::SubCommandUtil;
 
+use super::subcommand::construct_handler_arg;
+
 pub struct GenerateSubCommand {
     pub handlers_json: HandlersJson
 }
@@ -40,7 +42,7 @@ impl SubCommandUtil for GenerateSubCommand {
             .arg(Arg::with_name("debug")
                 .short("d")
                 .help("print debug information verbosely"))
-            .arg(GenerateSubCommand::construct_handler_arg("handler", &self.handlers_json))
+            .arg(construct_handler_arg("handler", &self.handlers_json))
             .arg(Arg::with_name("path")
                 .required(false))
     }
