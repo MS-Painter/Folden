@@ -3,7 +3,7 @@ use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use super::subcommand::get_path_from_matches_or_current_path;
+use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
 use generated_types::GetDirectoryStatusRequest;
 use generated_types::inter_process_client::InterProcessClient;
 
@@ -18,7 +18,7 @@ impl SubCommandUtil for StatusSubCommand {
             .about("Fun folder usage in current working directory")
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-            .args(StatusSubCommand::construct_directory_or_all_args().as_slice())
+            .args(construct_directory_or_all_args().as_slice())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {  

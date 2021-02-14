@@ -5,7 +5,7 @@ use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use super::subcommand::get_path_from_matches_or_current_path;
+use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
 use generated_types::StartHandlerRequest;
 use generated_types::inter_process_client::InterProcessClient;
 
@@ -19,7 +19,7 @@ impl SubCommandUtil for StartSubCommand {
             .about("Start handler on directory")
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-            .args(StartSubCommand::construct_directory_or_all_args().as_slice())
+            .args(construct_directory_or_all_args().as_slice())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) { 

@@ -25,18 +25,18 @@ pub trait SubCommandUtil {
     fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {
         matches.subcommand_matches(self.name())
     }
+}
 
-    fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
-        vec!(Arg::with_name("directory").long("directory")
-                .required(false)
-                .empty_values(false)
-                .takes_value(true)
-                .validator_os(is_existing_directory_validator),
-            Arg::with_name("all").long("all")
-                .required(false)
-                .takes_value(false)
-                .conflicts_with("directory"))
-    }
+pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
+    vec!(Arg::with_name("directory").long("directory")
+            .required(false)
+            .empty_values(false)
+            .takes_value(true)
+            .validator_os(is_existing_directory_validator),
+        Arg::with_name("all").long("all")
+            .required(false)
+            .takes_value(false)
+            .conflicts_with("directory"))
 }
 
 pub fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_name: &str) -> Result<std::path::PathBuf, std::io::Error> {
