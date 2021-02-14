@@ -3,7 +3,7 @@ use std::{collections::HashMap, convert::TryFrom, fs, io::ErrorKind, path::PathB
 use serde::{Serialize, Deserialize};
 use tokio::sync::mpsc::{self, Sender};
 
-use crate::config::MappingStatusStrategy;
+use crate::config::{Config, MappingStatusStrategy};
 use folder_handler::handlers_json::HandlersJson;
 use generated_types::{HandlerChannelMessage, HandlerStateResponse, HandlerStatus, HandlerSummary};
 
@@ -61,6 +61,61 @@ impl Mapping {
                 });
             },
             Err(e) => panic!(e)
+        }
+    }
+
+    pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &HandlerMapping, remove: bool) -> HandlerStateResponse {
+        let handler_type_name = handler_mapping.handler_type_name.clone();
+        let handler_config_path = handler_mapping.handler_config_path.clone();
+
+        match handler_mapping.status() {
+            HandlerStatus::Dead => {
+                let mut message = String::from("Handler already stopped");
+                if remove {
+                    self.directory_mapping.remove(directory_path);
+                    message.push_str(" & removed");
+                    let _result = self.save(&config.mapping_status_strategy, &config.mapping_state_path);
+                }
+                else {
+                    self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
+                        handler_thread_tx: Option::None,
+                        handler_type_name,
+                        handler_config_path,
+                    });
+                }
+                HandlerStateResponse {
+                    state: HandlerStatus::Dead as i32,
+                    message,
+                }
+            }
+            HandlerStatus::Live => {
+                match handler_mapping.stop_handler_thread().await {
+                    Ok(mut message) => {
+                        if remove {
+                            self.directory_mapping.remove(directory_path);
+                            message.push_str(" & removed");
+                            let _result = self.save(&config.mapping_status_strategy, &config.mapping_state_path);
+                        }
+                        else {
+                            self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
+                                handler_thread_tx: Option::None,
+                                handler_type_name,
+                                handler_config_path,
+                            });
+                        }
+                        HandlerStateResponse {
+                            state: HandlerStatus::Dead as i32,
+                            message,
+                        }
+                    }
+                    Err(message) => {
+                        HandlerStateResponse {
+                            state: HandlerStatus::Live as i32,
+                            message,
+                        }
+                    }
+                }
+            }
         }
     }
 }

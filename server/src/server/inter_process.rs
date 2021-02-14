@@ -127,70 +127,13 @@ impl InterProcess for Server {
         let directory_path = request.directory_path.as_str();
         let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
         
-        match mapping.directory_mapping.get(&request.directory_path) {
+        match mapping.clone().directory_mapping.get(&request.directory_path) {
             Some(handler_mapping) => {
-                let handler_type_name = handler_mapping.handler_type_name.clone();
-                let handler_config_path = handler_mapping.handler_config_path.clone();
-
-                match handler_mapping.status() {
-                    HandlerStatus::Dead => {
-                        let mut message = String::from("Handler already stopped");
-                        if request.remove {
-                            mapping.directory_mapping.remove(&request.directory_path);
-                            message.push_str(" & removed");
-                            let _result = mapping.save(&self.config.mapping_status_strategy, &self.config.mapping_state_path);
-                
-                        }
-                        else {
-                            mapping.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
-                                handler_thread_tx: Option::None,
-                                handler_type_name,
-                                handler_config_path,
-                            });
-                        }
-                        states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                            state: HandlerStatus::Dead as i32,
-                            message,
-                        });
-                        Ok(Response::new(HandlerStatesMapResponse {
-                            states_map,
-                        }))
-                    }
-                    HandlerStatus::Live => {
-                        match handler_mapping.stop_handler_thread().await {
-                            Ok(mut message) => {
-                                if request.remove {
-                                    mapping.directory_mapping.remove(&request.directory_path);
-                                    message.push_str(" & removed");
-                                    let _result = mapping.save(&self.config.mapping_status_strategy, &self.config.mapping_state_path);
-                                }
-                                else {
-                                    mapping.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
-                                        handler_thread_tx: Option::None,
-                                        handler_type_name,
-                                        handler_config_path,
-                                    });
-                                }
-                                states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                                    state: HandlerStatus::Dead as i32,
-                                    message,
-                                });
-                                Ok(Response::new(HandlerStatesMapResponse {
-                                    states_map,
-                                }))
-                            }
-                            Err(message) => {
-                                states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                                    state: HandlerStatus::Live as i32,
-                                    message,
-                                });
-                                Ok(Response::new(HandlerStatesMapResponse {
-                                    states_map,
-                                }))
-                            }
-                        }
-                    }
-                }
+                let response = mapping.stop_handler(&self.config, directory_path, handler_mapping, request.remove).await;
+                states_map.insert(directory_path.to_owned(), response);
+                Ok(Response::new(HandlerStatesMapResponse {
+                    states_map,
+                }))
             }
             None => {
                 states_map.insert(directory_path.to_owned(), HandlerStateResponse {
