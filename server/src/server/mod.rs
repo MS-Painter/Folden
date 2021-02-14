@@ -30,7 +30,7 @@ impl Server {
     }
 }
 
-pub fn start_handler_thread(
+pub fn spawn_handler_thread(
     mut mapping: RwLockWriteGuard<Mapping>, handlers_json: Arc<HandlersJson>, 
     directory_path: String, handler_type_name: String, handler_config_path: String) {
     match handlers_json.get_handler_by_name(&handler_type_name) {

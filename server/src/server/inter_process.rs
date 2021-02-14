@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
-use super::{Server, start_handler_thread, get_handler_summary};
+use super::{Server, spawn_handler_thread, get_handler_summary};
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest,  
     HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerSummary, inter_process_server::InterProcess};
@@ -46,7 +46,7 @@ impl InterProcess for Server {
                     }
                 }
                 let handlers_json = self.handlers_json.clone();
-                start_handler_thread(
+                spawn_handler_thread(
                     mapping, handlers_json, 
                     request.directory_path, request.handler_type_name, request.handler_config_path
                 );
@@ -103,7 +103,7 @@ impl InterProcess for Server {
                         let handler_type_name = handler_mapping.handler_type_name.clone();
                         let handler_config_path = handler_mapping.handler_config_path.clone();
                         let handlers_json = self.handlers_json.clone();
-                        start_handler_thread(
+                        spawn_handler_thread(
                             mapping, handlers_json, 
                             directory_path.to_string(), handler_type_name, handler_config_path
                         );
