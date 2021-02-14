@@ -36,7 +36,7 @@ impl SubCommandUtil for RegisterSubCommand {
                 .validator_os(is_existing_directory_validator))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) where Self: Sized {
         let handler_config_match = sub_matches.value_of("handler_config").unwrap();
         let handler_config_path = Path::new(handler_config_match);
         if !handler_config_path.exists() {

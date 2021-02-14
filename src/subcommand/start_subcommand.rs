@@ -22,7 +22,7 @@ impl SubCommandUtil for StartSubCommand {
             .args(construct_directory_or_all_args().as_slice())
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) { 
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) where Self: Sized { 
         let mut path = PathBuf::new();
         if !sub_matches.is_present("all") {
             path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();

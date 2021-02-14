@@ -16,7 +16,7 @@ pub trait SubCommandUtil {
     
     fn construct_subcommand(&self) -> App;
     
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl Future<Output = Result<InterProcessClient<Channel>, tonic::transport::Error>>);
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl Future<Output = Result<InterProcessClient<Channel>, tonic::transport::Error>>) where Self: Sized;
     
     fn create_instance(&self) -> App {
         SubCommand::with_name(self.name())
