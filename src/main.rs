@@ -21,11 +21,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client_connect_future = InterProcessClient::connect(GRPC_URL_BASE);
 
     let handlers_json = HandlersJson::new();
-    let register_subcommand = RegisterSubCommand::new(handlers_json.clone());
-    let status_subcommand = StatusSubCommand::new(handlers_json.clone());
-    let start_subcommand = StartSubCommand::new(handlers_json.clone());
-    let stop_subcommand = StopSubCommand::new(handlers_json.clone());
-    let gen_subcommand = GenerateSubCommand::new(handlers_json.clone());
+    let register_subcommand = RegisterSubCommand {
+        handlers_json: handlers_json.clone(),        
+    };
+    let status_subcommand = StatusSubCommand {};
+    let start_subcommand = StartSubCommand {};
+    let stop_subcommand = StopSubCommand {};
+    let gen_subcommand = GenerateSubCommand {
+        handlers_json,        
+    };
     let app = App::new("Folden")
         .version("0.1")
         .about("System-wide folder event handling")

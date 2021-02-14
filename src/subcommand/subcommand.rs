@@ -12,8 +12,6 @@ use folder_handler::handlers_json::HandlersJson;
 use generated_types::inter_process_client::InterProcessClient;
 
 pub trait SubCommandUtil {
-    fn new(handlers_json: HandlersJson) -> Self;
-    
     fn name(&self) -> &str;
     
     fn construct_subcommand(&self) -> App;
@@ -58,8 +56,6 @@ pub trait SubCommandUtil {
             }
         }
     }
-
-    
 }
 
 pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {

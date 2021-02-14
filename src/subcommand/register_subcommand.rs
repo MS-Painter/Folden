@@ -14,17 +14,11 @@ use super::subcommand::is_existing_directory_validator;
 
 #[derive(Clone)]
 pub struct RegisterSubCommand {
-    handlers_json: HandlersJson
+    pub handlers_json: HandlersJson
 }
 
 impl SubCommandUtil for RegisterSubCommand {
-    fn new(handlers_json: HandlersJson) -> Self {
-        Self { handlers_json }
-    }
-
-    fn name(&self) -> &str {
-        "register"
-    }
+    fn name(&self) -> &str { "register" }
 
     fn construct_subcommand(&self) -> App {
         self.create_instance()

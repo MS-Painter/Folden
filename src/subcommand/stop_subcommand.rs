@@ -4,23 +4,14 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
 
-use folder_handler::handlers_json::HandlersJson;
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::StopHandlerRequest;
 use generated_types::inter_process_client::InterProcessClient;
 
-pub struct StopSubCommand  {
-    handlers_json: HandlersJson
-}
+pub struct StopSubCommand  {}
 
 impl SubCommandUtil for StopSubCommand {
-    fn new(handlers_json: HandlersJson) -> Self {
-        Self { handlers_json }
-    }
-
-    fn name(&self) -> &str {
-        "stop"
-    }
+    fn name(&self) -> &str { "stop" }
 
     fn construct_subcommand(&self) -> App {
         self.create_instance()

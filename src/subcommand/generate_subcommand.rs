@@ -7,7 +7,7 @@ use folder_handler::handlers_json::HandlersJson;
 use crate::subcommand::subcommand::SubCommandUtil;
 
 pub struct GenerateSubCommand {
-    handlers_json: HandlersJson
+    pub handlers_json: HandlersJson
 }
 
 impl GenerateSubCommand {
@@ -32,10 +32,6 @@ impl GenerateSubCommand {
 }
 
 impl SubCommandUtil for GenerateSubCommand {
-    fn new(handlers_json: HandlersJson) -> Self {
-        Self { handlers_json }
-    }
-
     fn name(&self) -> &str { "generate" }
 
     fn construct_subcommand(&self) -> App {
