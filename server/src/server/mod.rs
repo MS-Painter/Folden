@@ -3,7 +3,7 @@ use std::{fs, io::ErrorKind, ops::Deref, sync::Arc, thread};
 use tokio::sync::{RwLock, RwLockWriteGuard, mpsc};
 
 use crate::mapping::Mapping;
-use generated_types::{HandlerChannelMessage, HandlerStateResponse, HandlerStatus, HandlerSummary};
+use generated_types::{HandlerChannelMessage, HandlerStatus, HandlerSummary};
 use folder_handler::handlers_json::HandlersJson;
 use crate::{config::Config, mapping::HandlerMapping};
 
@@ -27,49 +27,6 @@ impl Server {
             }
         }
         
-    }
-}
-
-pub fn spawn_handler(mapping: RwLockWriteGuard<Mapping>, handlers_json: Arc<HandlersJson>, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
-    match handler_mapping.status() {
-        HandlerStatus::Dead => {
-            let handler_type_name = handler_mapping.handler_type_name.clone();
-            let handler_config_path = handler_mapping.handler_config_path.clone();
-            spawn_handler_thread(
-                mapping, handlers_json, 
-                directory_path.to_string(), handler_type_name, handler_config_path
-            );
-            HandlerStateResponse {
-                state: HandlerStatus::Live as i32,
-                message: String::from("Handler started"),
-            }
-        }
-        HandlerStatus::Live => HandlerStateResponse {
-            state: HandlerStatus::Live as i32,
-            message: String::from("Handler already up"),
-        },
-    }
-}
-
-pub fn spawn_handler_thread(
-    mut mapping: RwLockWriteGuard<Mapping>, handlers_json: Arc<HandlersJson>, 
-    directory_path: String, handler_type_name: String, handler_config_path: String) {
-    match handlers_json.get_handler_by_name(&handler_type_name) {
-        Ok(handler) => {
-            let (tx, rx) = mpsc::channel::<HandlerChannelMessage>(2);
-            thread::spawn(move || {
-                let handler = handler;
-                let rx = rx;
-                handler.watch(rx);
-            });            
-            // Insert or update the value of the current handled directory
-            mapping.directory_mapping.insert(directory_path, HandlerMapping {
-                handler_thread_tx: Option::Some(tx),
-                handler_type_name,
-                handler_config_path,
-            });
-        },
-        Err(e) => panic!(e)
     }
 }
 

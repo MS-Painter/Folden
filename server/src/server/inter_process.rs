@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tonic::{Request, Response};
 
 use crate::mapping::HandlerMapping;
-use super::{Server, spawn_handler, spawn_handler_thread, get_handler_summary};
+use super::{Server, get_handler_summary};
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest,  
     HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerSummary, inter_process_server::InterProcess};
@@ -14,7 +14,7 @@ impl InterProcess for Server {
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) ->
     Result<Response<HandlerStateResponse>,tonic::Status> {
         let request = request.into_inner();
-        let mapping = self.mapping.write().await;
+        let mut mapping = self.mapping.write().await;
         let request_directory_path = request.directory_path.as_str();
         match mapping.directory_mapping.get(request_directory_path) {
             Some(handler_mapping) => {
@@ -46,10 +46,7 @@ impl InterProcess for Server {
                     }
                 }
                 let handlers_json = self.handlers_json.clone();
-                spawn_handler_thread(
-                    mapping, handlers_json, 
-                    request.directory_path, request.handler_type_name, request.handler_config_path
-                );
+                mapping.spawn_handler_thread(handlers_json, request.directory_path, request.handler_type_name, request.handler_config_path);
                 let _result = self.save_mapping().await;
                 Ok(Response::new(HandlerStateResponse {
                     message: "".to_string(),
@@ -92,13 +89,13 @@ impl InterProcess for Server {
 
     async fn start_handler(&self,request:Request<StartHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
         let request = request.into_inner();
-        let mapping = self.mapping.write().await;
+        let mut mapping = self.mapping.write().await;
         let directory_path = request.directory_path.as_str();
         let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
                                 
         match mapping.clone().directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
-                let response = spawn_handler(mapping, self.handlers_json.clone(), directory_path, handler_mapping);
+                let response = mapping.spawn_handler(self.handlers_json.clone(), directory_path, handler_mapping);
                 states_map.insert(directory_path.to_owned(), response);
                 Ok(Response::new(HandlerStatesMapResponse {
                     states_map,
