@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use tonic::{Request, Response};
 
 use super::Server;
-use crate::mapping::HandlerMapping;
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest,  
     HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerSummary, inter_process_server::InterProcess};
