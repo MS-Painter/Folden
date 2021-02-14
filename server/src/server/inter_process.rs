@@ -102,10 +102,18 @@ impl InterProcess for Server {
                 }))
             }
             None => {
-                states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                    state: HandlerStatus::Dead as i32,
-                    message: String::from("Directory unhandled"),
-                });
+                if request.directory_path.is_empty() { // If empty - All directories are requested
+                    for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter() {
+                        let response = mapping.spawn_handler(self.handlers_json.clone(), directory_path, handler_mapping);
+                        states_map.insert(directory_path.to_owned(), response);
+                    }
+                }
+                else {
+                    states_map.insert(directory_path.to_owned(), HandlerStateResponse {
+                        state: HandlerStatus::Dead as i32,
+                        message: String::from("Directory unhandled"),
+                    });
+                }
                 Ok(Response::new(HandlerStatesMapResponse {
                     states_map,
                 }))
