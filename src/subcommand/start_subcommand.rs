@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
@@ -29,7 +31,11 @@ impl SubCommandUtil for StartSubCommand {
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) { 
-        let path = StartSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+        let mut path = PathBuf::new();
+        if !sub_matches.is_present("all") {
+            path = StartSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+        }
+        
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.start_handler(StartHandlerRequest {
             directory_path: String::from(path.as_os_str().to_str().unwrap()),
