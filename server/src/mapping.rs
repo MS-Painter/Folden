@@ -5,7 +5,7 @@ use tokio::sync::mpsc::{self, Sender};
 
 use crate::config::MappingStatusStrategy;
 use folder_handler::handlers_json::HandlersJson;
-use generated_types::{HandlerChannelMessage, HandlerStateResponse, HandlerStatus};
+use generated_types::{HandlerChannelMessage, HandlerStateResponse, HandlerStatus, HandlerSummary};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -112,6 +112,29 @@ impl HandlerMapping {
             }
             None => HandlerStatus::Dead
         }
+    }
+
+    pub fn summary(&self) -> HandlerSummary {
+        let mut state = HandlerSummary {
+            state: HandlerStatus::Live as i32,
+            type_name: self.handler_type_name.clone(),
+            config_path: self.handler_config_path.clone(),
+        };
+        match self.handler_thread_tx.clone() {
+            Some(mut handler_thread_tx) => {
+                match handler_thread_tx.try_send(HandlerChannelMessage::Ping) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        match err {
+                            mpsc::error::TrySendError::Full(_) => {},
+                            mpsc::error::TrySendError::Closed(_) => state.state = HandlerStatus::Dead as i32
+                        }
+                    }
+                }
+            }
+            None => state.state = HandlerStatus::Dead as i32
+        }
+        state
     }
 
     pub async fn stop_handler_thread(&self) -> Result<String, String> {

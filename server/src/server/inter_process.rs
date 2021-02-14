@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use tonic::{Request, Response};
 
+use super::Server;
 use crate::mapping::HandlerMapping;
-use super::{Server, get_handler_summary};
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest,  
     HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerSummary, inter_process_server::InterProcess};
@@ -67,7 +67,7 @@ impl InterProcess for Server {
         
         match mapping.directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
-                let state = get_handler_summary(handler_mapping);
+                let state = handler_mapping.summary();
                 directory_states_map.insert(directory_path.to_string(), state);
                 Ok(Response::new(GetDirectoryStatusResponse {
                     directory_states_map
@@ -76,7 +76,7 @@ impl InterProcess for Server {
             None => {
                 if directory_path.is_empty() { // If empty - All directories are requested
                     for (directory_path, handler_mapping) in mapping.directory_mapping.iter() {
-                        let state = get_handler_summary(handler_mapping);
+                        let state = handler_mapping.summary();
                         directory_states_map.insert(directory_path.to_owned(), state);
                     }
                 }
