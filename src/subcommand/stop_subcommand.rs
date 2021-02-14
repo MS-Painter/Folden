@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 use tonic::transport::{Channel, Error as TransportError};
@@ -33,8 +35,10 @@ impl SubCommandUtil for StopSubCommand {
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
         let is_handler_to_be_removed = sub_matches.is_present("remove");
-        
-        let path = StopSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+        let mut path = PathBuf::new();
+        if !sub_matches.is_present("all") {
+            path = StopSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+        }
         
         let mut client = block_on(client_connect_future).unwrap();
         let response = client.stop_handler(StopHandlerRequest {
