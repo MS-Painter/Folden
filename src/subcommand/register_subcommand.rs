@@ -4,16 +4,14 @@ use tonic::transport::Channel;
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches, Error as CliError, ErrorKind};
 
-use folder_handler::handlers_json::HandlersJson;
+use folder_handler::handlers_json::HANDLERS_JSON;
 use generated_types::{RegisterToDirectoryRequest, inter_process_client::InterProcessClient};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use super::subcommand::{construct_handler_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
 
 #[derive(Clone)]
-pub struct RegisterSubCommand {
-    pub handlers_json: HandlersJson
-}
+pub struct RegisterSubCommand {}
 
 impl SubCommandUtil for RegisterSubCommand {
     fn name(&self) -> &str { "register" }
@@ -23,7 +21,7 @@ impl SubCommandUtil for RegisterSubCommand {
             .about("Register handler to directory")
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
-            .arg(construct_handler_arg("handler", &self.handlers_json))
+            .arg(construct_handler_arg("handler", &HANDLERS_JSON))
             .arg(Arg::with_name("handler_config").value_name("FILE")
                 .takes_value(true).required(true)
                 .help("Handler configuration file"))

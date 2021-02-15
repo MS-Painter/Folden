@@ -1,5 +1,5 @@
-use std::fs;
 use std::sync::Arc;
+use std::{fs, ops::Deref};
 use std::convert::TryFrom;
 use std::collections::HashMap;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
@@ -14,7 +14,7 @@ mod config;
 use config::{Config, MappingStatusStrategy};
 mod mapping;
 use mapping::Mapping;
-use folder_handler::handlers_json::HandlersJson;
+use folder_handler::handlers_json::HANDLERS_JSON;
 use generated_types::{StartHandlerRequest, inter_process_server::{InterProcess, InterProcessServer}};
 
 const DEFAULT_CONFIG_PATH: &str = "default_config.toml";
@@ -65,13 +65,13 @@ async fn handle_mapping_strategy(server: &Server) -> () {
     }
 }
 
-async fn startup_server(config: Config, mapping: Mapping, handlers_json: HandlersJson) -> Result<(), Box<dyn std::error::Error>> {
+async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn std::error::Error>> {
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
     
     let server = Server {
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
-        handlers_json: Arc::new(handlers_json), 
+        handlers_json: Arc::new(HANDLERS_JSON.deref().to_owned()), 
     };
 
     handle_mapping_strategy(&server).await; // The handlers are raised before being able to accept client calls.
@@ -127,9 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }    
                 }
             }
-            let handlers_json = HandlersJson::new();
             if let Some(_) = matches.subcommand_matches("run") {
-                startup_server(config, mapping, handlers_json).await?;
+                startup_server(config, mapping).await?;
             }
             Ok(())
         }

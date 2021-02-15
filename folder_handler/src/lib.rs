@@ -16,10 +16,11 @@ pub trait Handler: Send    {
 }
 
 pub mod handlers_json {
+    use lazy_static::lazy_static;
     use serde_json::Value;
     use crate::common_handlers::archive_join_handler::ArchiveJoinHandler;
     use crate::Handler;
-
+ 
     #[derive(Clone)]
     pub struct HandlersJson {
         pub(crate) handlers: Vec<Value>
@@ -54,8 +55,11 @@ pub mod handlers_json {
             return Err("Handler not found by given name");
         }
     }
-}
 
+    lazy_static! {
+        pub static ref HANDLERS_JSON: HandlersJson = HandlersJson::new();
+    }
+}
 
 pub mod common_handlers;
 
