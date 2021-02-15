@@ -41,10 +41,6 @@ impl SubCommandCollection {
         self.0.push(elem);
     }
 
-    pub fn pop(&mut self) -> Option<Box<dyn SubCommandUtil>> {
-        self.0.pop()
-    }
-
     pub fn collect_as_apps(&self) -> Vec<App> {
         self.0.as_slice().into_iter()
         .map(|item| item.construct_subcommand())
