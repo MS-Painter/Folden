@@ -1,13 +1,17 @@
 use std::env;
 use std::path::PathBuf;
 
+use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches};
 
-use folder_handler::handlers_json::HandlersJson;
+use super::subcommand::construct_handler_arg;
 use crate::subcommand::subcommand::SubCommandUtil;
+use folder_handler::handlers_json::HandlersJson;
+use generated_types::inter_process_client::InterProcessClient;
 
+#[derive(Clone)]
 pub struct GenerateSubCommand {
-    handlers_json: HandlersJson
+    pub handlers_json: HandlersJson
 }
 
 impl GenerateSubCommand {
@@ -32,10 +36,6 @@ impl GenerateSubCommand {
 }
 
 impl SubCommandUtil for GenerateSubCommand {
-    fn new(handlers_json: HandlersJson) -> Self {
-        Self { handlers_json }
-    }
-
     fn name(&self) -> &str { "generate" }
 
     fn construct_subcommand(&self) -> App {
@@ -44,12 +44,12 @@ impl SubCommandUtil for GenerateSubCommand {
             .arg(Arg::with_name("debug")
                 .short("d")
                 .help("print debug information verbosely"))
-            .arg(GenerateSubCommand::construct_handler_arg("handler", &self.handlers_json))
+            .arg(construct_handler_arg("handler", &self.handlers_json))
             .arg(Arg::with_name("path")
                 .required(false))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<generated_types::inter_process_client::InterProcessClient<tonic::transport::Channel>, tonic::transport::Error>>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, _client: &mut InterProcessClient<Channel>) {
         let handler_match = sub_matches.value_of("handler").unwrap();
         let path_match = match sub_matches.value_of("path") {
             None => GenerateSubCommand::generate_config_path(handler_match, None),

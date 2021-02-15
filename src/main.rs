@@ -1,53 +1,42 @@
-use std::error::Error;
-
 extern crate clap;
 use clap::{App, AppSettings};
+use futures::executor::block_on;
 
 mod subcommand;
 use folder_handler::handlers_json::HandlersJson;
-use crate::subcommand::subcommand::SubCommandUtil;
-use crate::subcommand::start_subcommand::StartSubCommand;
-use crate::subcommand::stop_subcommand::StopSubCommand;
-use crate::subcommand::status_subcommand::StatusSubCommand;
-use crate::subcommand::generate_subcommand::GenerateSubCommand;
-use crate::subcommand::register_subcommand::RegisterSubCommand;
 
 use generated_types::inter_process_client::InterProcessClient;
+use subcommand::{generate_subcommand::GenerateSubCommand, register_subcommand::RegisterSubCommand, start_subcommand::StartSubCommand, status_subcommand::StatusSubCommand, stop_subcommand::StopSubCommand, subcommand::SubCommandCollection};
 
 const GRPC_URL_BASE: &str = "http://localhost:8080/";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let client_connect_future = InterProcessClient::connect(GRPC_URL_BASE);
-
+async fn main() {
+    let mut subcommands = SubCommandCollection::new();
     let handlers_json = HandlersJson::new();
-    let register_subcommand = RegisterSubCommand::new(handlers_json.clone());
-    let status_subcommand = StatusSubCommand::new(handlers_json.clone());
-    let start_subcommand = StartSubCommand::new(handlers_json.clone());
-    let stop_subcommand = StopSubCommand::new(handlers_json.clone());
-    let gen_subcommand = GenerateSubCommand::new(handlers_json.clone());
+    subcommands.add(Box::new(RegisterSubCommand {
+        handlers_json: handlers_json.clone(),        
+    }));
+    subcommands.add(Box::new(StatusSubCommand {}));
+    subcommands.add(Box::new(StartSubCommand {}));
+    subcommands.add(Box::new(StopSubCommand {}));
+    subcommands.add(Box::new(GenerateSubCommand {
+        handlers_json,        
+    }));
+    let subcommands_clone = subcommands.clone();
+
     let app = App::new("Folden")
-        .version("0.1")
-        .about("System-wide folder event handling")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommand(start_subcommand.construct_subcommand())
-        .subcommand(stop_subcommand.construct_subcommand())
-        .subcommand(status_subcommand.construct_subcommand())
-        .subcommand(gen_subcommand.construct_subcommand())
-        .subcommand(register_subcommand.construct_subcommand());
+    .version("0.1")
+    .about("System-wide folder event handling")
+    .setting(AppSettings::SubcommandRequiredElseHelp)
+    .subcommands(subcommands_clone.collect_as_apps());
+
     let matches = app.get_matches();
-
-    if let Some(sub_matches) = status_subcommand.subcommand_matches(&matches) {
-        status_subcommand.subcommand_runtime(sub_matches, client_connect_future);
-    } else if let Some(sub_matches) = start_subcommand.subcommand_matches(&matches) {
-        start_subcommand.subcommand_runtime(sub_matches, client_connect_future);
-    }else if let Some(sub_matches) = stop_subcommand.subcommand_matches(&matches) {
-        stop_subcommand.subcommand_runtime(sub_matches, client_connect_future);
-    } else if let Some(sub_matches) = gen_subcommand.subcommand_matches(&matches) {
-        gen_subcommand.subcommand_runtime(sub_matches, client_connect_future);
-    } else if let Some(sub_matches) = register_subcommand.subcommand_matches(&matches) {
-        register_subcommand.subcommand_runtime(sub_matches, client_connect_future);
+    for subcommand in subcommands {
+        if let Some(sub_matches) = subcommand.subcommand_matches(&matches) {
+            let client_connect_future = InterProcessClient::connect(GRPC_URL_BASE);
+            let client = &mut block_on(client_connect_future).unwrap();
+            subcommand.subcommand_runtime(sub_matches, client);
+        }
     }
-
-    Ok(())
 }

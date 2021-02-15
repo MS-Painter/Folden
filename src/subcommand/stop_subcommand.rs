@@ -1,26 +1,19 @@
 use std::path::PathBuf;
 
+use tonic::transport::Channel;
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
-use tonic::transport::{Channel, Error as TransportError};
 
-use folder_handler::handlers_json::HandlersJson;
 use crate::subcommand::subcommand::SubCommandUtil;
+use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
 use generated_types::StopHandlerRequest;
 use generated_types::inter_process_client::InterProcessClient;
 
-pub struct StopSubCommand  {
-    handlers_json: HandlersJson
-}
+#[derive(Clone)]
+pub struct StopSubCommand  {}
 
 impl SubCommandUtil for StopSubCommand {
-    fn new(handlers_json: HandlersJson) -> Self {
-        Self { handlers_json }
-    }
-
-    fn name(&self) -> &str {
-        "stop"
-    }
+    fn name(&self) -> &str { "stop" }
 
     fn construct_subcommand(&self) -> App {
         self.create_instance()
@@ -30,17 +23,15 @@ impl SubCommandUtil for StopSubCommand {
             .arg(Arg::with_name("remove").long("remove")
                 .required(false)
                 .takes_value(false))
-            .args(StopSubCommand::construct_directory_or_all_args().as_slice())
+            .args(construct_directory_or_all_args().as_slice())
         }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client_connect_future: impl futures::Future<Output = Result<InterProcessClient<Channel>, TransportError>>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
         let is_handler_to_be_removed = sub_matches.is_present("remove");
         let mut path = PathBuf::new();
         if !sub_matches.is_present("all") {
-            path = StopSubCommand::get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+            path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         }
-        
-        let mut client = block_on(client_connect_future).unwrap();
         let response = client.stop_handler(StopHandlerRequest {
             directory_path: String::from(path.as_os_str().to_str().unwrap()),
             remove: is_handler_to_be_removed,
