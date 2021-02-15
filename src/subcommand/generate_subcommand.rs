@@ -9,7 +9,7 @@ use crate::subcommand::subcommand::SubCommandUtil;
 use folder_handler::handlers_json::HandlersJson;
 use generated_types::inter_process_client::InterProcessClient;
 
-
+#[derive(Clone)]
 pub struct GenerateSubCommand {
     pub handlers_json: HandlersJson
 }

@@ -3,6 +3,7 @@ use std::path::Path;
 use std::option::Option;
 use std::ffi::{OsStr, OsString};
 
+use dyn_clone::DynClone;
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
@@ -10,7 +11,7 @@ extern crate folder_handler;
 use folder_handler::handlers_json::HandlersJson;
 use generated_types::inter_process_client::InterProcessClient;
 
-pub trait SubCommandUtil {
+pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
     
     fn construct_subcommand(&self) -> App;
@@ -23,6 +24,40 @@ pub trait SubCommandUtil {
 
     fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {
         matches.subcommand_matches(self.name())
+    }
+}
+
+dyn_clone::clone_trait_object!(SubCommandUtil);
+
+#[derive(Clone)]
+pub struct SubCommandCollection(Vec<Box<dyn SubCommandUtil>>);
+
+impl SubCommandCollection {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    pub fn add(&mut self, elem: Box<dyn SubCommandUtil>) {
+        self.0.push(elem);
+    }
+
+    pub fn pop(&mut self) -> Option<Box<dyn SubCommandUtil>> {
+        self.0.pop()
+    }
+
+    pub fn collect_as_apps(&self) -> Vec<App> {
+        self.0.as_slice().into_iter()
+        .map(|item| item.construct_subcommand())
+        .collect()
+    }
+}
+
+impl IntoIterator for SubCommandCollection {
+    type Item = Box<dyn SubCommandUtil>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 

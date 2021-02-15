@@ -21,6 +21,7 @@ server = {path = "server"}
 tonic = "0.3.1"
 clap = "2.33.3"
 typetag = "0.1.6"
+dyn-clone = "1.0.4"
 toml = "0.5.7"
 futures = "0.3"
 tokio = { version = "0.2", features = ["full"]}

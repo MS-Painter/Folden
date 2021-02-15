@@ -9,7 +9,7 @@ use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_o
 use generated_types::StopHandlerRequest;
 use generated_types::inter_process_client::InterProcessClient;
 
-
+#[derive(Clone)]
 pub struct StopSubCommand  {}
 
 impl SubCommandUtil for StopSubCommand {
@@ -26,7 +26,7 @@ impl SubCommandUtil for StopSubCommand {
             .args(construct_directory_or_all_args().as_slice())
         }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, mut client: &mut InterProcessClient<Channel>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
         let is_handler_to_be_removed = sub_matches.is_present("remove");
         let mut path = PathBuf::new();
         if !sub_matches.is_present("all") {
