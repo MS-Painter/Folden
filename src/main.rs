@@ -2,27 +2,21 @@ extern crate clap;
 use clap::{App, AppSettings};
 use futures::executor::block_on;
 
-mod subcommand;
-use folder_handler::handlers_json::HandlersJson;
-
 use generated_types::inter_process_client::InterProcessClient;
 use subcommand::{generate_subcommand::GenerateSubCommand, register_subcommand::RegisterSubCommand, start_subcommand::StartSubCommand, status_subcommand::StatusSubCommand, stop_subcommand::StopSubCommand, subcommand::SubCommandCollection};
+
+mod subcommand;
 
 const GRPC_URL_BASE: &str = "http://localhost:8080/";
 
 #[tokio::main]
 async fn main() {
     let mut subcommands = SubCommandCollection::new();
-    let handlers_json = HandlersJson::new();
-    subcommands.add(Box::new(RegisterSubCommand {
-        handlers_json: handlers_json.clone(),        
-    }));
+    subcommands.add(Box::new(RegisterSubCommand {}));
     subcommands.add(Box::new(StatusSubCommand {}));
     subcommands.add(Box::new(StartSubCommand {}));
     subcommands.add(Box::new(StopSubCommand {}));
-    subcommands.add(Box::new(GenerateSubCommand {
-        handlers_json,        
-    }));
+    subcommands.add(Box::new(GenerateSubCommand {}));
     let subcommands_clone = subcommands.clone();
 
     let app = App::new("Folden")

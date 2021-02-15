@@ -1,18 +1,15 @@
-use std::env;
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches};
 
 use super::subcommand::construct_handler_arg;
 use crate::subcommand::subcommand::SubCommandUtil;
-use folder_handler::handlers_json::HandlersJson;
+use folder_handler::handlers_json::HANDLERS_JSON;
 use generated_types::inter_process_client::InterProcessClient;
 
 #[derive(Clone)]
-pub struct GenerateSubCommand {
-    pub handlers_json: HandlersJson
-}
+pub struct GenerateSubCommand {}
 
 impl GenerateSubCommand {
     fn generate_config_path(handler_match: &str, path: Option<&str>) -> PathBuf {
@@ -44,7 +41,7 @@ impl SubCommandUtil for GenerateSubCommand {
             .arg(Arg::with_name("debug")
                 .short("d")
                 .help("print debug information verbosely"))
-            .arg(construct_handler_arg("handler", &self.handlers_json))
+            .arg(construct_handler_arg("handler", &HANDLERS_JSON))
             .arg(Arg::with_name("path")
                 .required(false))
     }
@@ -55,7 +52,7 @@ impl SubCommandUtil for GenerateSubCommand {
             None => GenerateSubCommand::generate_config_path(handler_match, None),
             Some(path) => GenerateSubCommand::generate_config_path(handler_match, Some(path))
         };
-        match self.handlers_json.get_handler_by_name(&handler_match) {
+        match HANDLERS_JSON.get_handler_by_name(&handler_match) {
             Ok(handler) => handler.generate_config(path_match.as_ref()).unwrap(),
             Err(e) => panic!(e)
         }
