@@ -1,10 +1,7 @@
 use crate::Handler;
 
-use tokio::sync::mpsc;
-use mpsc::error::TryRecvError;
+use crossbeam::channel::Receiver;
 use serde::{Serialize, Deserialize};
-
-use generated_types::HandlerChannelMessage;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ArchiveJoinHandler {
@@ -24,27 +21,28 @@ fn datetime_default() -> String {
 
 #[typetag::serde]
 impl Handler for ArchiveJoinHandler {
-    fn watch(&self, mut shutdown_channel_rx: mpsc::Receiver<HandlerChannelMessage> ) {
-        let mut is_shutdown_required = false;
-        while !is_shutdown_required {
-            match shutdown_channel_rx.try_recv() {
-                Ok(_val) => {
-                    match _val  {
-                        HandlerChannelMessage::Terminate => {
-                            is_shutdown_required = true;
-                        }
-                        HandlerChannelMessage::Ping => {}
+    fn watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
+        for result in watcher_rx {
+            match result {
+                Ok(event) => {
+                    match event.kind {
+                        notify::EventKind::Any => {}
+                        notify::EventKind::Access(_) => {}
+                        notify::EventKind::Create(_) => {}
+                        notify::EventKind::Modify(_) => {}
+                        notify::EventKind::Remove(_) => {}
+                        notify::EventKind::Other => {}
                     }
-                    
                 }
-                Err(err) => {
-                    match err {
-                        TryRecvError::Empty => {
-                            // TODO: Handler logic... 
+                Err(error) => {
+                    match error.kind {
+                        notify::ErrorKind::Generic(_) => {}
+                        notify::ErrorKind::Io(_) => {}
+                        notify::ErrorKind::PathNotFound => {}
+                        notify::ErrorKind::WatchNotFound => {
+                            break;
                         }
-                        TryRecvError::Closed => {
-                            is_shutdown_required = true;
-                        }
+                        notify::ErrorKind::InvalidConfig(_) => {}
                     }
                 }
             }
