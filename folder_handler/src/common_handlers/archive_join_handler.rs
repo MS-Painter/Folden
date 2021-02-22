@@ -25,24 +25,18 @@ impl Handler for ArchiveJoinHandler {
         for result in watcher_rx {
             match result {
                 Ok(event) => {
+                    println!("eve - {:?}", event);
                     match event.kind {
-                        notify::EventKind::Any => {}
-                        notify::EventKind::Access(_) => {}
                         notify::EventKind::Create(_) => {}
-                        notify::EventKind::Modify(_) => {}
                         notify::EventKind::Remove(_) => {}
-                        notify::EventKind::Other => {}
+                        _ => {}
                     }
                 }
                 Err(error) => {
+                    println!("error - {:?}", error);
                     match error.kind {
-                        notify::ErrorKind::Generic(_) => {}
-                        notify::ErrorKind::Io(_) => {}
-                        notify::ErrorKind::PathNotFound => {}
-                        notify::ErrorKind::WatchNotFound => {
-                            break;
-                        }
-                        notify::ErrorKind::InvalidConfig(_) => {}
+                        notify::ErrorKind::WatchNotFound => break,
+                        _ => {}
                     }
                 }
             }
