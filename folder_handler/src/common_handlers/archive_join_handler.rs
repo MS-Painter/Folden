@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use crossbeam::channel::Receiver;
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ArchiveJoinHandler {
     max_parts: u8, // Max split archive parts supported to attempt rejoining
     max_file_size: u64, // Max file size to attempt computing
