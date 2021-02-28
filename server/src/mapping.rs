@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::{Config, MappingStatusStrategy};
-use folder_handler::handlers_json::HandlersJson;
+use folder_handler::{Handler, handlers_json::HandlersJson};
 use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary};
 
 // Mapping data used to handle known directories to handle
@@ -47,14 +47,15 @@ impl Mapping {
     
     pub fn spawn_handler_thread(&mut self, handlers_json: Arc<HandlersJson>, directory_path: String, handler_type_name: String, handler_config_path: String) {
         match handlers_json.get_handler_by_name(&handler_type_name) {
-            Ok(handler) => {
-                let path = directory_path.clone();
+            Ok(mut handler) => {
+                let path = PathBuf::from(directory_path.clone());
+                let config_path = PathBuf::from(handler_config_path.clone());
                 let (tx, rx) = crossbeam::channel::unbounded();
                 let thread_tx = tx.clone();
                 let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                 thread::spawn(move || {
-                    let _ = watcher.watch(path, notify::RecursiveMode::NonRecursive);
-                    handler.watch(rx);
+                    let _ = watcher.watch(path.clone(), notify::RecursiveMode::NonRecursive);
+                    handler.watch(&path, &config_path, rx);
                 });            
                 // Insert or update the value of the current handled directory
                 self.directory_mapping.insert(directory_path, HandlerMapping {

@@ -6,7 +6,7 @@ use crossbeam::channel::Receiver;
 #[typetag::serde(tag = "type")]
 pub trait Handler: Send {
     // Initialize handler to watch a folder
-    fn watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>);
+    fn watch(&mut self, path: &PathBuf, config_path: &PathBuf, watcher_rx: Receiver<Result<notify::Event, notify::Error>>);
     
     // Generate handler specific initialization config
     fn generate_config(&self, path: &Path) -> io::Result<()> where Self: serde::Serialize {

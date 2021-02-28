@@ -1,8 +1,10 @@
-use crate::Handler;
+use std::{fs, path::PathBuf};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local};
 use crossbeam::channel::Receiver;
 use serde::{Serialize, Deserialize};
+
+use crate::Handler;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ArchiveJoinHandler {
@@ -10,23 +12,23 @@ pub struct ArchiveJoinHandler {
     max_file_size: u64, // Max file size to attempt computing
     naming_regex_match: String, // Only files matching regex will attempt computing
     #[serde(with = "custom_datetime_format")]
-    from_date_created: DateTime<Utc>, // Compute only files created after given date (Date requires format as supplied from general project config)
+    from_date_created: DateTime<Local>, // Compute only files created after given date (Date requires format as supplied from general project config)
 }
 
-impl Default for ArchiveJoinHandler {
-    fn default() -> Self {
-        Self { 
-            max_parts: 2, 
-            max_file_size: 50000, 
-            naming_regex_match: String::from("*"), 
-            from_date_created: Utc::now()
+impl ArchiveJoinHandler {
+    fn on_startup(&self, path: &PathBuf) {
+        println!("{}", self.from_date_created);
+        for entry in fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+            let file_creation_time: DateTime<Local> = DateTime::from(entry.metadata().unwrap().created().unwrap());
+            if self.from_date_created <= file_creation_time {
+                println!("{:?}", entry.file_name());
+            }
         }
+        println!("Ended startup phase");
     }
-}
 
-#[typetag::serde]
-impl Handler for ArchiveJoinHandler {
-    fn watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
+    fn on_watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
         for result in watcher_rx {
             match result {
                 Ok(event) => {
@@ -46,6 +48,26 @@ impl Handler for ArchiveJoinHandler {
                 }
             }
         }
+    }
+}
+
+impl Default for ArchiveJoinHandler {
+    fn default() -> Self {
+        Self { 
+            max_parts: 2, 
+            max_file_size: 50000, 
+            naming_regex_match: String::from("*"), 
+            from_date_created: Local::now()
+        }
+    }
+}
+
+#[typetag::serde]
+impl Handler for ArchiveJoinHandler {
+    fn watch(&mut self, path: &PathBuf, config_path: &PathBuf, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
+        self.from_config(config_path);
+        self.on_startup(path);
+        self.on_watch(watcher_rx);
         println!("Ending watch");
     }
 }
@@ -57,23 +79,23 @@ impl From<Vec<u8>> for ArchiveJoinHandler {
 }
 
 mod custom_datetime_format {
-    use chrono::{DateTime, Utc, TimeZone};
+    use chrono::{DateTime, Local, TimeZone};
     use serde::{self, Deserialize, Serializer, Deserializer};
     
     const FORMAT: &'static str = "%d-%m-%Y %H:%M:%S";
 
-    pub fn serialize<S>(date: &DateTime<Utc>, serializer: S,) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(date: &DateTime<Local>, serializer: S,) -> Result<S::Ok, S::Error>
     where S: Serializer,
     {
         let s = format!("{}", date.format(FORMAT));
         serializer.serialize_str(&s)
     }
 
-    pub fn deserialize<'de, D>(deserializer: D,) -> Result<DateTime<Utc>, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D,) -> Result<DateTime<Local>, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Utc.datetime_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+        Local.datetime_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
     }
 }
