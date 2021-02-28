@@ -17,7 +17,6 @@ pub struct ArchiveJoinHandler {
 
 impl ArchiveJoinHandler {
     fn on_startup(&self, path: &PathBuf) {
-        println!("{}", self.from_date_created);
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
             let file_creation_time: DateTime<Local> = DateTime::from(entry.metadata().unwrap().created().unwrap());
