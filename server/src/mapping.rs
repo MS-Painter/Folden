@@ -4,8 +4,8 @@ use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
 use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
 
+use folder_handler::handlers_json::HandlersJson;
 use crate::config::{Config, MappingStatusStrategy};
-use folder_handler::{Handler, handlers_json::HandlersJson};
 use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary};
 
 // Mapping data used to handle known directories to handle
