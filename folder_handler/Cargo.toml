@@ -11,7 +11,7 @@ generated_types = {path = "../generated_types"}
 
 chrono = "0.4"
 crossbeam = "0.8.0"
-notify = "5.0.0-pre.5"
+notify = "5.0.0-pre.6"
 lazy_static = "1.4.0"
 serde = {version = "1.0.117", features = ["derive"] }
 serde_json = "1.0.59"

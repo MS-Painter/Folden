@@ -11,7 +11,7 @@ folder_handler = {path = "../folder_handler"}
 generated_types = {path = "../generated_types"}
 
 crossbeam = "0.8.0"
-notify = "5.0.0-pre.5"
+notify = "5.0.0-pre.6"
 toml = "0.5.7"
 clap = "2.33.3"
 tonic = "0.3.1"
