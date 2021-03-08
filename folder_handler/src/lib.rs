@@ -1,17 +1,22 @@
-use std::{io, fs};
+use std::{fs, io, path::PathBuf};
 use std::path::Path;
 
-use tokio::sync::mpsc::Receiver;
-
-use generated_types::HandlerChannelMessage;
+use crossbeam::channel::Receiver;
 
 #[typetag::serde(tag = "type")]
-pub trait Handler: Send    {
+pub trait Handler: Send {
     // Initialize handler to watch a folder
-    fn watch(&self, shutdown_channel_rx: Receiver<HandlerChannelMessage> );
+    fn watch(&mut self, path: &PathBuf, config_path: &PathBuf, watcher_rx: Receiver<Result<notify::Event, notify::Error>>);
+    
     // Generate handler specific initialization config
-    fn generate_config(&self, path: &Path) -> io::Result<()> where Self: serde::ser::Serialize {
+    fn generate_config(&self, path: &Path) -> io::Result<()> where Self: serde::Serialize {
         fs::write(path, toml::to_vec(*Box::new(self)).unwrap())
+    }
+    
+    fn from_config(&mut self, path: &PathBuf) where Self: Clone + From<Vec<u8>> {
+        let data = fs::read(path).unwrap();
+        let config_clone = Self::from(data);
+        self.clone_from(&config_clone);
     }
 }
 

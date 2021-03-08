@@ -1,54 +1,72 @@
-use crate::Handler;
+use std::{fs, path::PathBuf};
 
-use tokio::sync::mpsc;
-use mpsc::error::TryRecvError;
+use chrono::{DateTime, Local};
+use crossbeam::channel::Receiver;
 use serde::{Serialize, Deserialize};
 
-use generated_types::HandlerChannelMessage;
+use crate::Handler;
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ArchiveJoinHandler {
-    #[serde(default)]
     max_parts: u8, // Max split archive parts supported to attempt rejoining
-    #[serde(default)]
     max_file_size: u64, // Max file size to attempt computing
-    #[serde(default)]
     naming_regex_match: String, // Only files matching regex will attempt computing
-    #[serde(default = "datetime_default")]
-    from_date_created: String, // Compute only files created after given date (Date requires format as supplied from general project config)
+    #[serde(with = "custom_datetime_format")]
+    from_date_created: DateTime<Local>, // Compute only files created after given date (Date requires format as supplied from general project config)
 }
 
-fn datetime_default() -> String {
-    "%d/%m/%yyyy".to_string()
-}
+impl ArchiveJoinHandler {
+    fn on_startup(&self, path: &PathBuf) {
+        for entry in fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+            let file_creation_time: DateTime<Local> = DateTime::from(entry.metadata().unwrap().created().unwrap());
+            if self.from_date_created <= file_creation_time {
+                println!("{:?}", entry.file_name());
+            }
+        }
+        println!("Ended startup phase");
+    }
 
-#[typetag::serde]
-impl Handler for ArchiveJoinHandler {
-    fn watch(&self, mut shutdown_channel_rx: mpsc::Receiver<HandlerChannelMessage> ) {
-        let mut is_shutdown_required = false;
-        while !is_shutdown_required {
-            match shutdown_channel_rx.try_recv() {
-                Ok(_val) => {
-                    match _val  {
-                        HandlerChannelMessage::Terminate => {
-                            is_shutdown_required = true;
-                        }
-                        HandlerChannelMessage::Ping => {}
+    fn on_watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
+        for result in watcher_rx {
+            match result {
+                Ok(event) => {
+                    println!("eve - {:?}", event);
+                    match event.kind {
+                        notify::EventKind::Create(_) => {}
+                        notify::EventKind::Remove(_) => {}
+                        _ => {}
                     }
-                    
                 }
-                Err(err) => {
-                    match err {
-                        TryRecvError::Empty => {
-                            // TODO: Handler logic... 
-                        }
-                        TryRecvError::Closed => {
-                            is_shutdown_required = true;
-                        }
+                Err(error) => {
+                    println!("error - {:?}", error);
+                    match error.kind {
+                        notify::ErrorKind::WatchNotFound => break,
+                        _ => {}
                     }
                 }
             }
         }
+    }
+}
+
+impl Default for ArchiveJoinHandler {
+    fn default() -> Self {
+        Self { 
+            max_parts: 2, 
+            max_file_size: 50000, 
+            naming_regex_match: String::from("*"), 
+            from_date_created: Local::now()
+        }
+    }
+}
+
+#[typetag::serde]
+impl Handler for ArchiveJoinHandler {
+    fn watch(&mut self, path: &PathBuf, config_path: &PathBuf, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
+        self.from_config(config_path);
+        self.on_startup(path);
+        self.on_watch(watcher_rx);
         println!("Ending watch");
     }
 }
@@ -56,5 +74,27 @@ impl Handler for ArchiveJoinHandler {
 impl From<Vec<u8>> for ArchiveJoinHandler {
     fn from(bytes: Vec<u8>) -> Self {
         toml::from_slice(&bytes).unwrap()
+    }
+}
+
+mod custom_datetime_format {
+    use chrono::{DateTime, Local, TimeZone};
+    use serde::{self, Deserialize, Serializer, Deserializer};
+    
+    const FORMAT: &'static str = "%d-%m-%Y %H:%M:%S";
+
+    pub fn serialize<S>(date: &DateTime<Local>, serializer: S,) -> Result<S::Ok, S::Error>
+    where S: Serializer,
+    {
+        let s = format!("{}", date.format(FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D,) -> Result<DateTime<Local>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Local.datetime_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
     }
 }
