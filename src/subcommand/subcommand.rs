@@ -13,13 +13,20 @@ use generated_types::inter_process_client::InterProcessClient;
 
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
+
+    fn alias(&self) -> &str;
     
     fn construct_subcommand(&self) -> App;
     
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>);
     
     fn create_instance(&self) -> App {
-        SubCommand::with_name(self.name())
+        if self.alias().is_empty() {
+            SubCommand::with_name(self.name())
+        }
+        else {
+            SubCommand::with_name(self.name()).visible_alias(self.alias())
+        }
     }
 
     fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {

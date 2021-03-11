@@ -15,6 +15,8 @@ pub struct StopSubCommand  {}
 impl SubCommandUtil for StopSubCommand {
     fn name(&self) -> &str { "stop" }
 
+    fn alias(&self) -> &str { "" }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Stop handler on directory")

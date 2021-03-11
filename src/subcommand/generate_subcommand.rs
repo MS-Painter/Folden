@@ -35,6 +35,8 @@ impl GenerateSubCommand {
 impl SubCommandUtil for GenerateSubCommand {
     fn name(&self) -> &str { "generate" }
 
+    fn alias(&self) -> &str { "" }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Generate default handler config for input registered handler")

@@ -16,6 +16,8 @@ pub struct RegisterSubCommand {}
 impl SubCommandUtil for RegisterSubCommand {
     fn name(&self) -> &str { "register" }
 
+    fn alias(&self) -> &str { "reg" }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Register handler to directory")
