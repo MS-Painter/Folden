@@ -1,6 +1,7 @@
 use std::io;
 
 use clap::Values;
+use itertools::Itertools;
 use notify::EventKind;
 use chrono::{DateTime, Local};
 use serde::{Serialize, Deserialize};
@@ -38,7 +39,7 @@ impl WorkflowEvent {
 impl From<Values<'_>> for WorkflowEvent {
     fn from(events: Values) -> Self {
         Self {
-            events: events.map(|event| event.to_string()).collect(),
+            events: events.map(|event| event.to_string()).unique().collect(),
             naming_regex_match: String::from("*"),
             from_date_created: Local::now(),
         }
