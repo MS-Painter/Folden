@@ -9,13 +9,18 @@ use self::{move_to_dir::MoveToDir, run_cmd::RunCmd};
 pub enum WorkflowActions {
     MoveToDir(MoveToDir),
     RunCmd(RunCmd),
+    None,
 }
 
 impl WorkflowActions {
-    pub fn defaults() -> Vec<WorkflowActions> {
-        vec![
-            Self::RunCmd(RunCmd::default()),
-            Self::MoveToDir(MoveToDir::default()),
-        ]
+    pub fn defaults<'a, I>(actions: I) -> Vec<WorkflowActions> 
+    where I: Iterator<Item = &'a str> {
+        actions.map(|action_name| {
+            match action_name {
+                "runcmd" => Self::RunCmd(RunCmd::default()),
+                "movetodir" => Self::MoveToDir(MoveToDir::default()),
+                _ => Self::None,
+            }
+        }).collect()
     }
 }

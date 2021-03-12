@@ -33,7 +33,7 @@ impl GenerateWorkflowSubCommand {
     fn generate_config(path: PathBuf, events: Values, actions: Values) -> () {
         let config = WorkflowConfig { 
             event: WorkflowEvent::from(events),
-            actions: WorkflowActions::defaults(),
+            actions: WorkflowActions::defaults(actions),
         };
         config.generate_config(path.deref()).unwrap();
     }
