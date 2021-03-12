@@ -1,3 +1,3 @@
 pub mod actions;
-pub mod events;
+pub mod event;
 pub mod workflow_config;

@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use std::{fs, io, path::{Path, PathBuf}};
 
-use crate::events::WorkflowEvent;
+use crate::event::WorkflowEvent;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkflowConfig {

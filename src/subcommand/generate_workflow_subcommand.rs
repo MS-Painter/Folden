@@ -2,7 +2,7 @@ use std::{env, ops::Deref, path::PathBuf};
 
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, Values};
-use workflows::{events::WorkflowEvent, workflow_config::WorkflowConfig};
+use workflows::{event::WorkflowEvent, workflow_config::WorkflowConfig};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::inter_process_client::InterProcessClient;
