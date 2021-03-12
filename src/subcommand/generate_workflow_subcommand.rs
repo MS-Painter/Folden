@@ -68,7 +68,7 @@ impl SubCommandUtil for GenerateWorkflowSubCommand {
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, _client: &mut InterProcessClient<Channel>) {
         let events = sub_matches.values_of("events").unwrap();
         let actions = sub_matches.values_of("actions").unwrap();
-        let path_match = GenerateWorkflowSubCommand::construct_config_path("folden_workflow",sub_matches.value_of("path"));
-        GenerateWorkflowSubCommand::generate_config(path_match, events, actions);
+        let path = GenerateWorkflowSubCommand::construct_config_path("folden_workflow",sub_matches.value_of("path"));
+        GenerateWorkflowSubCommand::generate_config(path, events, actions);
     }
 }
