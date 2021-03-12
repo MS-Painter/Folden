@@ -16,7 +16,7 @@ impl WorkflowActions {
     pub fn defaults<'a, I>(actions: I) -> Vec<WorkflowActions> 
     where I: Iterator<Item = &'a str> {
         actions.map(|action_name| {
-            match action_name {
+            match action_name.to_lowercase().as_str() {
                 "runcmd" => Self::RunCmd(RunCmd::default()),
                 "movetodir" => Self::MoveToDir(MoveToDir::default()),
                 _ => Self::None,
