@@ -1,8 +1,8 @@
 use std::io;
 
 use clap::Values;
-use itertools::Itertools;
 use notify::EventKind;
+use itertools::Itertools;
 use chrono::{DateTime, Local};
 use serde::{Serialize, Deserialize};
 
