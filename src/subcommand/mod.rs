@@ -4,3 +4,4 @@ pub mod start_subcommand;
 pub mod stop_subcommand;
 pub mod generate_subcommand;
 pub mod register_subcommand;
+pub mod generate_workflow_subcommand;
