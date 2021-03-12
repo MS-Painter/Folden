@@ -1,3 +1,5 @@
+use std::io;
+
 use clap::Values;
 use notify::EventKind;
 use chrono::{DateTime, Local};
@@ -22,13 +24,13 @@ impl WorkflowEvent {
         }
     }
 
-    fn get_event_kind(name: &str) -> EventKind {
+    fn get_event_kind(name: &str) -> Result<EventKind, io::Error> {
         match name.to_lowercase().as_str() {
-            "access" => EventKind::Access(notify::event::AccessKind::Any),
-            "create" => EventKind::Create(notify::event::CreateKind::Any),
-            "modify" => EventKind::Modify(notify::event::ModifyKind::Any),
-            "remove" => EventKind::Remove(notify::event::RemoveKind::Any),
-            _ => EventKind::Other
+            "access" => Ok(EventKind::Access(notify::event::AccessKind::Any)),
+            "create" => Ok(EventKind::Create(notify::event::CreateKind::Any)),
+            "modify" => Ok(EventKind::Modify(notify::event::ModifyKind::Any)),
+            "remove" => Ok(EventKind::Remove(notify::event::RemoveKind::Any)),
+            _ => Err(io::Error::new(io::ErrorKind::Other, "oh no!")),
         }
     }
 }
