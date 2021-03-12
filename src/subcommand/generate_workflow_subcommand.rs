@@ -2,7 +2,7 @@ use std::{env, ops::Deref, path::PathBuf};
 
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, Values};
-use workflows::{event::WorkflowEvent, workflow_config::WorkflowConfig};
+use workflows::{actions::WorkflowActions, event::WorkflowEvent, workflow_config::WorkflowConfig};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::inter_process_client::InterProcessClient;
@@ -33,6 +33,7 @@ impl GenerateWorkflowSubCommand {
     fn generate_config(path: PathBuf, events: Values, actions: Values) -> () {
         let config = WorkflowConfig { 
             event: WorkflowEvent::from(events),
+            actions: WorkflowActions::defaults(),
         };
         config.generate_config(path.deref()).unwrap();
     }

@@ -1,11 +1,12 @@
 use serde::{Serialize, Deserialize};
 use std::{fs, io, path::{Path, PathBuf}};
 
-use crate::event::WorkflowEvent;
+use crate::{actions::WorkflowActions, event::WorkflowEvent};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkflowConfig {
     pub event: WorkflowEvent,
+    pub actions: Vec<WorkflowActions>
 }
 
 impl WorkflowConfig {
