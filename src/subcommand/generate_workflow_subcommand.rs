@@ -61,7 +61,7 @@ impl SubCommandUtil for GenerateWorkflowSubCommand {
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&["movetodir"]))
+                .possible_values(&["movetodir", "runcmd"]))
             .arg(Arg::with_name("path")
                 .required(false))
     }
