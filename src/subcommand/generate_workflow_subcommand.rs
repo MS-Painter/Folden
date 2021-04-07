@@ -30,12 +30,12 @@ impl GenerateWorkflowSubCommand {
         }
     }
 
-    fn generate_config(path: PathBuf, events: Values, actions: Values) -> () {
+    fn generate_config(path: PathBuf, events: Values, actions: Values) -> Result<(), std::io::Error> {
         let config = WorkflowConfig { 
             event: WorkflowEvent::from(events),
             actions: WorkflowActions::defaults(actions),
         };
-        config.generate_config(path.deref()).unwrap();
+        config.generate_config(path.deref())
     }
 }
 
@@ -70,6 +70,6 @@ impl SubCommandUtil for GenerateWorkflowSubCommand {
         let events = sub_matches.values_of("events").unwrap();
         let actions = sub_matches.values_of("actions").unwrap();
         let path = GenerateWorkflowSubCommand::construct_config_path("folden_workflow",sub_matches.value_of("path"));
-        GenerateWorkflowSubCommand::generate_config(path, events, actions);
+        GenerateWorkflowSubCommand::generate_config(path, events, actions).unwrap();
     }
 }
