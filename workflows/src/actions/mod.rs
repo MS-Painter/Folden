@@ -8,6 +8,10 @@ mod run_cmd;
 mod move_to_dir;
 use self::{move_to_dir::MoveToDir, run_cmd::RunCmd};
 
+pub trait WorkflowAction {
+    fn run(&self);
+}
+
 #[derive(Clone, Debug, EnumIter, ToString, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum WorkflowActions {
@@ -32,5 +36,15 @@ impl WorkflowActions {
     
     pub fn names() -> Vec<String> {
         WorkflowActions::iter().map(|action| action.to_string()).collect()
+    }
+}
+
+impl WorkflowAction for WorkflowActions {
+    fn run(&self) {
+        match self {
+            WorkflowActions::MoveToDir(action) => action.run(),
+            WorkflowActions::RunCmd(action) => action.run(),
+            WorkflowActions::None => {}
+        }
     }
 }

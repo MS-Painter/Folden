@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+use super::WorkflowAction;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MoveToDir {
     pub directory_name: String,
@@ -14,5 +16,11 @@ impl Default for MoveToDir {
             requires_directory_exists: false,
             replace_older_files: true,
         }
+    }
+}
+
+impl WorkflowAction for MoveToDir {
+    fn run(&self) {
+        todo!()
     }
 }

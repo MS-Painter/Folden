@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use chrono::{DateTime, Local};
 use crossbeam::channel::Receiver;
 
+use crate::actions::WorkflowAction;
 use crate::workflow_config::WorkflowConfig;
 
 pub struct WorkflowHandler {
@@ -28,6 +29,10 @@ impl WorkflowHandler {
                 Ok(event) => {
                     if self.config.event.is_handled_event(&event.kind) {
                         println!("Event to handle!");
+                        for action in &self.config.actions {
+                            println!("{:?}", action);
+                            action.run();
+                        }
                     }
                 }
                 Err(error) => {
