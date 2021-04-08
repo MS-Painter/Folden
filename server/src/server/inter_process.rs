@@ -17,10 +17,8 @@ impl InterProcess for Server {
         let request_directory_path = request.directory_path.as_str();
         match mapping.directory_mapping.get(request_directory_path) {
             Some(handler_mapping) => {
-                let mut message = String::from("Directory already handled by handler - ");
-                message.push_str(handler_mapping.handler_type_name.as_str());
                 Ok(Response::new(HandlerStateResponse {
-                    message,
+                    message: String::from("Directory already handled by handler"),
                     state: HandlerStatus::Live as i32,
                 }))
             }
@@ -44,8 +42,7 @@ impl InterProcess for Server {
                         }))
                     }
                 }
-                let handlers_json = self.handlers_json.clone();
-                mapping.spawn_handler_thread(handlers_json, request.directory_path, request.handler_type_name, request.handler_config_path);
+                mapping.spawn_handler_thread(request.directory_path, request.handler_config_path);
                 let _result = mapping.save(&self.config.mapping_status_strategy, &self.config.mapping_state_path);
                 Ok(Response::new(HandlerStateResponse {
                     message: "".to_string(),
@@ -94,7 +91,7 @@ impl InterProcess for Server {
                                 
         match mapping.clone().directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
-                let response = mapping.start_handler(self.handlers_json.clone(), directory_path, handler_mapping);
+                let response = mapping.start_handler(directory_path, handler_mapping);
                 states_map.insert(directory_path.to_owned(), response);
                 Ok(Response::new(HandlerStatesMapResponse {
                     states_map,
@@ -103,7 +100,7 @@ impl InterProcess for Server {
             None => {
                 if request.directory_path.is_empty() { // If empty - All directories are requested
                     for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter() {
-                        let response = mapping.start_handler(self.handlers_json.clone(), directory_path, handler_mapping);
+                        let response = mapping.start_handler(directory_path, handler_mapping);
                         states_map.insert(directory_path.to_owned(), response);
                     }
                 }

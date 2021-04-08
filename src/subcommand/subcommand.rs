@@ -7,8 +7,6 @@ use dyn_clone::DynClone;
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-extern crate folder_handler;
-use folder_handler::handlers_json::HandlersJson;
 use generated_types::inter_process_client::InterProcessClient;
 
 pub trait SubCommandUtil: DynClone {
@@ -85,14 +83,6 @@ pub fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_nam
             env::current_dir().unwrap().canonicalize()
         }
     }
-}
-
-pub fn construct_handler_arg<'a, 'b>(name: &'a str, handlers_json: &'b HandlersJson) -> Arg<'a, 'b> {
-    Arg::with_name(name)
-        .required(true)
-        .empty_values(false)
-        .case_insensitive(true)
-        .possible_values(&handlers_json.get_handler_types().as_slice())
 }
 
 pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {

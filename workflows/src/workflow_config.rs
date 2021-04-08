@@ -14,10 +14,9 @@ impl WorkflowConfig {
         fs::write(path, toml::to_vec(*Box::new(self)).unwrap())
     }
     
-    pub fn from_config(&mut self, path: &PathBuf) {
+    pub fn from_config(path: &PathBuf) -> Self {
         let data = fs::read(path).unwrap();
-        let config_clone = Self::from(data);
-        self.clone_from(&config_clone);
+        Self::from(data)
     }
 }
 

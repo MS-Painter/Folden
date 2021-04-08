@@ -1,10 +1,10 @@
-use std::{collections::HashMap, convert::TryFrom, fs, io::ErrorKind as IOErrorKind, path::PathBuf, sync::Arc, thread};
+use std::{collections::HashMap, convert::TryFrom, fs, io::ErrorKind as IOErrorKind, path::PathBuf, thread};
 
 use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
 use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
+use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
 
-use folder_handler::handlers_json::HandlersJson;
 use crate::config::{Config, MappingStatusStrategy};
 use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary};
 
@@ -27,12 +27,11 @@ impl Mapping {
         }
     }
 
-    pub fn start_handler(&mut self, handlers_json: Arc<HandlersJson>, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
+    pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
         match handler_mapping.status() {
             HandlerStatus::Dead => {
-                let handler_type_name = handler_mapping.handler_type_name.clone();
                 let handler_config_path = handler_mapping.handler_config_path.clone();
-                self.spawn_handler_thread(handlers_json, directory_path.to_string(), handler_type_name, handler_config_path);
+                self.spawn_handler_thread(directory_path.to_string(), handler_config_path);
                 HandlerStateResponse {
                     state: HandlerStatus::Live as i32,
                     message: String::from("Handler started"),
@@ -45,31 +44,28 @@ impl Mapping {
         }
     }
     
-    pub fn spawn_handler_thread(&mut self, handlers_json: Arc<HandlersJson>, directory_path: String, handler_type_name: String, handler_config_path: String) {
-        match handlers_json.get_handler_by_name(&handler_type_name) {
-            Ok(mut handler) => {
-                let path = PathBuf::from(directory_path.clone());
+    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_config_path: String) {
+        let path = PathBuf::from(directory_path.clone());
                 let config_path = PathBuf::from(handler_config_path.clone());
+                let config = WorkflowConfig::from_config(&config_path);
                 let (tx, rx) = crossbeam::channel::unbounded();
                 let thread_tx = tx.clone();
                 let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                 thread::spawn(move || {
                     let _ = watcher.watch(path.clone(), notify::RecursiveMode::NonRecursive);
-                    handler.watch(&path, &config_path, rx);
+                    let mut handler = WorkflowHandler {
+                        config,
+                    };
+                    handler.watch(&path, rx);
                 });            
                 // Insert or update the value of the current handled directory
                 self.directory_mapping.insert(directory_path, HandlerMapping {
                     watcher_tx: Option::Some(tx),
-                    handler_type_name,
                     handler_config_path,
                 });
-            },
-            Err(e) => panic!(e)
-        }
     }
 
     pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &HandlerMapping, remove: bool) -> HandlerStateResponse {
-        let handler_type_name = handler_mapping.handler_type_name.clone();
         let handler_config_path = handler_mapping.handler_config_path.clone();
 
         match handler_mapping.status() {
@@ -83,7 +79,6 @@ impl Mapping {
                 else {
                     self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
                         watcher_tx: Option::None,
-                        handler_type_name,
                         handler_config_path,
                     });
                 }
@@ -103,7 +98,6 @@ impl Mapping {
                         else {
                             self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
                                 watcher_tx: Option::None,
-                                handler_type_name,
                                 handler_config_path,
                             });
                         }
@@ -151,7 +145,6 @@ impl Into<Vec<u8>> for &Mapping {
 pub struct HandlerMapping {
     #[serde(skip)]
     pub watcher_tx: Option<Sender<Result<Event, Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
-    pub handler_type_name: String,
     pub handler_config_path: String,
 }
 
@@ -171,7 +164,6 @@ impl HandlerMapping {
     pub fn summary(&self) -> HandlerSummary {
         let state = HandlerSummary {
             state: self.status() as i32,
-            type_name: self.handler_type_name.clone(),
             config_path: self.handler_config_path.clone(),
         };
         state

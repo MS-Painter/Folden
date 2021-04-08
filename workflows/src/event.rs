@@ -34,6 +34,20 @@ impl WorkflowEvent {
             _ => Err(io::Error::new(io::ErrorKind::Other, "oh no!")),
         }
     }
+
+    pub fn is_handled_event(&self, kind: &EventKind) -> bool {
+        for event_name in &self.events {
+            match WorkflowEvent::get_event_kind(event_name) {
+                Ok(handled_kind) => {
+                    if &handled_kind == kind {
+                        return true;
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+        return false;
+    }
 }
 
 impl From<Values<'_>> for WorkflowEvent {
