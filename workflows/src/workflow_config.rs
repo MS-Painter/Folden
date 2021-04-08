@@ -5,6 +5,7 @@ use crate::{actions::WorkflowActions, event::WorkflowEvent};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkflowConfig {
+    pub apply_on_startup: bool,
     pub event: WorkflowEvent,
     pub actions: Vec<WorkflowActions>
 }

@@ -1,7 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
 
-use chrono::{DateTime, Local};
 use crossbeam::channel::Receiver;
 
 use crate::actions::WorkflowAction;
@@ -15,8 +14,7 @@ impl WorkflowHandler {
     fn on_startup(&self, path: &PathBuf) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
-            let file_creation_time: DateTime<Local> = DateTime::from(entry.metadata().unwrap().created().unwrap());
-            if self.config.event.from_date_created <= file_creation_time {
+            if self.config.apply_on_startup {
                 println!("{:?}", entry.file_name());
             }
         }
