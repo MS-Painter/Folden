@@ -1,16 +1,26 @@
 use std::fs;
 use std::path::PathBuf;
 
+use notify::Event;
 use crossbeam::channel::Receiver;
 
 use crate::actions::WorkflowAction;
 use crate::workflow_config::WorkflowConfig;
+use crate::workflow_execution_context::WorkflowExecutionContext;
 
 pub struct WorkflowHandler {
     pub config: WorkflowConfig
 }
 
 impl WorkflowHandler {
+    fn handle_event(&self, event: Event) {
+        let mut context = WorkflowExecutionContext::new(event.paths.first().unwrap());
+        for action in &self.config.actions {
+            println!("{:?}", action);
+            action.run(&mut context);
+        }
+    }
+
     fn on_startup(&self, path: &PathBuf) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
@@ -27,10 +37,7 @@ impl WorkflowHandler {
                 Ok(event) => {
                     if self.config.event.is_handled_event(&event.kind) {
                         println!("Event to handle!");
-                        for action in &self.config.actions {
-                            println!("{:?}", action);
-                            action.run();
-                        }
+                        self.handle_event(event);
                     }
                 }
                 Err(error) => {

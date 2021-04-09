@@ -1,6 +1,8 @@
 use serde::{Serialize, Deserialize};
 
+
 use super::WorkflowAction;
+use crate::workflow_execution_context::WorkflowExecutionContext;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MoveToDir {
@@ -20,7 +22,7 @@ impl Default for MoveToDir {
 }
 
 impl WorkflowAction for MoveToDir {
-    fn run(&self) {
+    fn run(&self, mut context: &mut WorkflowExecutionContext) {
         todo!()
     }
 }

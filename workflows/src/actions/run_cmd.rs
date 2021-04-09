@@ -1,6 +1,8 @@
 use serde::{Serialize, Deserialize};
 
+
 use super::WorkflowAction;
+use crate::workflow_execution_context::WorkflowExecutionContext;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunCmd {
@@ -16,7 +18,7 @@ impl Default for RunCmd {
 }
 
 impl WorkflowAction for RunCmd {
-    fn run(&self) {
+    fn run(&self, mut context: &mut WorkflowExecutionContext) {
         todo!()
     }
 }
