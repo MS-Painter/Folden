@@ -7,7 +7,7 @@ use crate::workflow_execution_context::WorkflowExecutionContext;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MoveToDir {
-    pub directory_name: PathBuf,
+    pub directory_path: PathBuf,
     pub requires_directory_exists: bool,
     pub replace_older_files: bool,
 }
@@ -15,7 +15,7 @@ pub struct MoveToDir {
 impl Default for MoveToDir {
     fn default() -> Self {
         Self {
-            directory_name: PathBuf::from("new_dir_name"),
+            directory_path: PathBuf::from("output_dir_path"),
             requires_directory_exists: false,
             replace_older_files: true,
         }
@@ -26,15 +26,15 @@ impl WorkflowAction for MoveToDir {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
         match context.event_file_path.file_name() {
             Some(event_file_name) => {
-                if !self.directory_name.is_dir() {
+                if !self.directory_path.is_dir() {
                     if self.requires_directory_exists {
                         return context.handle_error("Directory required to exist");
                     }
                     else {
-                        fs::create_dir(&self.directory_name).unwrap();
+                        fs::create_dir(&self.directory_path).unwrap();
                     }
                 }
-                let mut new_file_path = PathBuf::from(&self.directory_name);
+                let mut new_file_path = PathBuf::from(&self.directory_path);
                 new_file_path.push(event_file_name);
                 if new_file_path.is_file() && !self.replace_older_files {
                     return context.handle_error("Can't replace older file");
