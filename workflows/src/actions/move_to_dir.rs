@@ -11,15 +11,17 @@ pub struct MoveToDir {
     pub directory_path: PathBuf,
     pub requires_directory_exists: bool,
     pub replace_older_files: bool,
+    pub keep_input_file_intact: bool,
 }
 
 impl Default for MoveToDir {
     fn default() -> Self {
         Self {
+            input: WorkflowContextInput::EventFilePath,
             directory_path: PathBuf::from("output_dir_path"),
             requires_directory_exists: false,
             replace_older_files: true,
-            input: WorkflowContextInput::EventFilePath,
+            keep_input_file_intact: false,
         }
     }
 }
@@ -46,12 +48,17 @@ impl WorkflowAction for MoveToDir {
                         else {
                             match fs::copy(&input_path, &new_file_path) {
                                 Ok(_) => {
-                                    match fs::remove_file(input_path) {
-                                        Ok(_) => {
-                                            context.action_file_path = Some(new_file_path);
-                                            true
-                                        },
-                                        Err(err) => context.handle_error(format!("{}", err))
+                                    if self.keep_input_file_intact {
+                                        true
+                                    }
+                                    else {
+                                        match fs::remove_file(input_path) {
+                                            Ok(_) => {
+                                                context.action_file_path = Some(new_file_path);
+                                                true
+                                            },
+                                            Err(err) => context.handle_error(format!("{}", err))
+                                        }
                                     }
                                 },
                                 Err(err) => context.handle_error(format!("{}", err))
