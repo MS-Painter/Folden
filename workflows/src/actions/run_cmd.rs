@@ -17,7 +17,7 @@ impl Default for RunCmd {
 }
 
 impl WorkflowAction for RunCmd {
-    fn run(&self, context: &mut WorkflowExecutionContext) {
+    fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
         todo!()
     }
 }

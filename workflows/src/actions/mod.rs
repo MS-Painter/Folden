@@ -6,7 +6,8 @@ use self::{move_to_dir::MoveToDir, run_cmd::RunCmd};
 use crate::workflow_execution_context::WorkflowExecutionContext;
 
 pub trait WorkflowAction {
-    fn run(&self, context: &mut WorkflowExecutionContext);
+    // Execute action. Returns if action deemed successful.
+    fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -31,11 +32,11 @@ impl WorkflowActions {
 }
 
 impl WorkflowAction for WorkflowActions {
-    fn run(&self, context: &mut WorkflowExecutionContext) {
+    fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
         match self {
             WorkflowActions::MoveToDir(action) => action.run(context),
             WorkflowActions::RunCmd(action) => action.run(context),
-            WorkflowActions::None => {}
+            WorkflowActions::None => false
         }
     }
 }

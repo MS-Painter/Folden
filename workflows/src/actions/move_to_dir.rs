@@ -23,12 +23,13 @@ impl Default for MoveToDir {
 }
 
 impl WorkflowAction for MoveToDir {
-    fn run(&self, context: &mut WorkflowExecutionContext) {
+    fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
         match context.event_file_path.file_name() {
             Some(event_file_name) => {
                 if !self.directory_name.is_dir() {
                     if self.requires_directory_exists {
-                        return context.handle_error("Directory required to exist");
+                        context.handle_error("Directory required to exist");
+                        return false;
                     }
                     else {
                         fs::create_dir(&self.directory_name).unwrap();
@@ -37,21 +38,31 @@ impl WorkflowAction for MoveToDir {
                 let mut new_file_path = PathBuf::from(&self.directory_name);
                 new_file_path.push(event_file_name);
                 if new_file_path.is_file() && !self.replace_older_files {
-                    return context.handle_error("Can't replace older file");
+                    context.handle_error("Can't replace older file");
+                    return false;
                 }
                 else {
                     match fs::copy(&context.event_file_path, &new_file_path) {
                         Ok(_) => {
                             match fs::remove_file(event_file_name) {
-                                Ok(_) => {},
-                                Err(err) => context.handle_error(format!("{}", err))
+                                Ok(_) => true,
+                                Err(err) => {
+                                    context.handle_error(format!("{}", err));
+                                    return false;
+                                }
                             }
                         },
-                        Err(err) => context.handle_error(format!("{}", err))
+                        Err(err) => {
+                            context.handle_error(format!("{}", err));
+                            return false;
+                        }
                     }
                 }
             }
-            None => context.handle_error("Path can't be parsed as file")
+            None => {
+                context.handle_error("Path can't be parsed as file");
+                return false;
+            }
         }
     }
 }
