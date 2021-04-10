@@ -16,7 +16,6 @@ impl WorkflowHandler {
     fn handle_event(&self, event: Event) {
         let mut context = WorkflowExecutionContext::new(event.paths.first().unwrap());
         for action in &self.config.actions {
-            println!("{:?}", action);
             action.run(&mut context);
         }
     }
@@ -36,7 +35,7 @@ impl WorkflowHandler {
             match result {
                 Ok(event) => {
                     if self.config.event.is_handled_event(&event.kind) {
-                        println!("Event to handle!");
+                        println!("Event to handle - {:?}", &event.kind);
                         self.handle_event(event);
                     }
                 }
