@@ -36,17 +36,22 @@ impl WorkflowAction for MoveToDir {
                 }
                 let mut new_file_path = PathBuf::from(&self.directory_name);
                 new_file_path.push(event_file_name);
-                match fs::copy(&context.event_file_path, &new_file_path) {
-                    Ok(_) => {
-                        match fs::remove_file(event_file_name) {
-                            Ok(_) => {}
-                            Err(err) => {
-                                println!("{}", err);
+                if new_file_path.is_file() && !self.replace_older_files {
+                    println!("Can't replace older file");
+                }
+                else {
+                    match fs::copy(&context.event_file_path, &new_file_path) {
+                        Ok(_) => {
+                            match fs::remove_file(event_file_name) {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    println!("{}", err);
+                                }
                             }
                         }
-                    }
-                    Err(err) => {
-                        println!("{}", err);
+                        Err(err) => {
+                            println!("{}", err);
+                        }
                     }
                 }
             }
