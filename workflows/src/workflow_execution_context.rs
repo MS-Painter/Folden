@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use crate::workflow_context_input::WorkflowContextInput;
+
 pub struct WorkflowExecutionContext {
     pub panic_handler_on_error: bool,
     pub event_file_path: PathBuf,
@@ -15,6 +17,13 @@ impl WorkflowExecutionContext {
             event_file_path: event_file_path.as_ref().to_path_buf(),
             action_file_path: Option::None,
         } 
+    }
+
+    pub fn get_input(&self, input: WorkflowContextInput) -> Option<PathBuf> {
+        match input {
+            WorkflowContextInput::EventFilePath => Some(self.event_file_path.clone()),
+            WorkflowContextInput::ActionFilePath => self.action_file_path.clone()
+        }
     }
 
     pub fn handle_error<T>(&self, msg: T) -> bool
