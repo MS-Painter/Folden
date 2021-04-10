@@ -4,7 +4,6 @@ pub struct WorkflowExecutionContext {
     pub panic_handler_on_error: bool,
     pub event_file_path: PathBuf,
     pub action_file_path: Option<PathBuf>,
-    pub action_file_data: Option<Vec<u8>>,
 }
 
 impl WorkflowExecutionContext {
@@ -15,7 +14,6 @@ impl WorkflowExecutionContext {
             panic_handler_on_error,
             event_file_path: event_file_path.as_ref().to_path_buf(),
             action_file_path: Option::None,
-            action_file_data: Option::None,
         } 
     }
 
