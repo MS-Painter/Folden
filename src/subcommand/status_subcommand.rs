@@ -13,6 +13,8 @@ pub struct StatusSubCommand {}
 impl SubCommandUtil for StatusSubCommand {
     fn name(&self) -> &str { "status" }
 
+    fn alias(&self) -> &str { "stat" }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Fun folder usage in current working directory")

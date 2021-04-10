@@ -7,19 +7,24 @@ use dyn_clone::DynClone;
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-extern crate folder_handler;
-use folder_handler::handlers_json::HandlersJson;
 use generated_types::inter_process_client::InterProcessClient;
 
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
+
+    fn alias(&self) -> &str;
     
     fn construct_subcommand(&self) -> App;
     
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>);
     
     fn create_instance(&self) -> App {
-        SubCommand::with_name(self.name())
+        if self.alias().is_empty() {
+            SubCommand::with_name(self.name())
+        }
+        else {
+            SubCommand::with_name(self.name()).visible_alias(self.alias())
+        }
     }
 
     fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {
@@ -78,14 +83,6 @@ pub fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_nam
             env::current_dir().unwrap().canonicalize()
         }
     }
-}
-
-pub fn construct_handler_arg<'a, 'b>(name: &'a str, handlers_json: &'b HandlersJson) -> Arg<'a, 'b> {
-    Arg::with_name(name)
-        .required(true)
-        .empty_values(false)
-        .case_insensitive(true)
-        .possible_values(&handlers_json.get_handler_types().as_slice())
 }
 
 pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {

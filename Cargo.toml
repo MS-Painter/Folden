@@ -9,13 +9,13 @@ edition = "2018"
 [workspace]
 members = [
     "generated_types",
-    "folder_handler",
+    "workflows",
     "server"
 ]
 
 [dependencies]
 generated_types = {path = "generated_types"}
-folder_handler = {path = "folder_handler"}
+workflows = {path = "workflows"}
 server = {path = "server"}
 
 tonic = "0.3.1"

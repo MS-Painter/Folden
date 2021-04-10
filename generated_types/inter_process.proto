@@ -17,8 +17,7 @@ enum HandlerStatus {
 
 message HandlerSummary {
   HandlerStatus state = 1;
-  string type_name = 2;
-  string config_path = 3;
+  string config_path = 2;
 }
 
 message HandlerStateResponse {
@@ -32,8 +31,7 @@ message HandlerStatesMapResponse {
 
 message RegisterToDirectoryRequest {
   string directory_path = 1;
-  string handler_type_name = 2;
-  string handler_config_path = 3;
+  string handler_config_path = 2;
 }
 
 message GetDirectoryStatusRequest {

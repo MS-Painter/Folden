@@ -15,6 +15,8 @@ pub struct StartSubCommand  {}
 impl SubCommandUtil for StartSubCommand {
     fn name(&self) -> &str { "start" }
 
+    fn alias(&self) -> &str { "" }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Start handler on directory")
