@@ -29,7 +29,7 @@ impl WorkflowAction for MoveToDir {
         match context.get_input(self.input) {
             Some(input_path) => {
                 match input_path.file_name() {
-                    Some(event_file_name) => {
+                    Some(input_file_name) => {
                         if !self.directory_path.is_dir() {
                             if self.requires_directory_exists {
                                 return context.handle_error("Directory required to exist");
@@ -39,7 +39,7 @@ impl WorkflowAction for MoveToDir {
                             }
                         }
                         let mut new_file_path = PathBuf::from(&self.directory_path);
-                        new_file_path.push(event_file_name);
+                        new_file_path.push(input_file_name);
                         if new_file_path.is_file() && !self.replace_older_files {
                             return context.handle_error("Can't replace older file");
                         }
