@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use regex::Regex;
 use crossbeam::channel::Receiver;
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
 use crate::actions::WorkflowAction;
 use crate::workflow_config::WorkflowConfig;
@@ -77,11 +78,13 @@ impl WorkflowHandler {
         }
     }
 
-    pub fn watch(&mut self, path: &PathBuf, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
+    pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, rx: Receiver<Result<notify::Event, notify::Error>>) {
+        let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
+        let _ = watcher.watch(path.clone(), recursive_mode);
         if self.config.apply_on_startup {
             self.on_startup(path);
         }
-        self.on_watch(watcher_rx);
+        self.on_watch(rx);
         println!("Ending watch");
     }
 }

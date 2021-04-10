@@ -52,9 +52,8 @@ impl Mapping {
                 let thread_tx = tx.clone();
                 let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                 thread::spawn(move || {
-                    let _ = watcher.watch(path.clone(), notify::RecursiveMode::NonRecursive);
                     let mut handler = WorkflowHandler::new(config);
-                    handler.watch(&path, rx);
+                    handler.watch(&path, watcher, rx);
                 });            
                 // Insert or update the value of the current handled directory
                 self.directory_mapping.insert(directory_path, HandlerMapping {
