@@ -7,9 +7,8 @@ use crate::{actions::WorkflowActions, event::WorkflowEvent};
 pub struct WorkflowConfig {
     pub apply_on_startup: bool,
     pub panic_handler_on_error: bool,
-    pub allowed_file_extensions: Vec<String>,
     pub event: WorkflowEvent,
-    pub actions: Vec<WorkflowActions>,
+    pub actions: Vec<WorkflowActions>
 }
 
 impl WorkflowConfig {

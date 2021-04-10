@@ -34,7 +34,6 @@ impl GenerateSubCommand {
         let config = WorkflowConfig { 
             apply_on_startup: false,
             panic_handler_on_error: false,
-            allowed_file_extensions: vec![],
             event: WorkflowEvent::from(events),
             actions: WorkflowActions::defaults(actions),
         };
