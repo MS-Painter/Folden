@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkflowEvent {
     pub events: Vec<String>, // Can flag multiple events in the config to initiate the workflow against.
-    pub naming_regex_match: String,
+    pub naming_regex_match: Option<String>,
 }
 
 impl WorkflowEvent {
@@ -41,7 +41,7 @@ impl From<Values<'_>> for WorkflowEvent {
     fn from(events: Values) -> Self {
         Self {
             events: events.map(|event| event.to_string()).unique().collect(),
-            naming_regex_match: String::from(".*"),
+            naming_regex_match: Some(String::from(".*")),
         }
     }
 }
