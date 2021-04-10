@@ -1,6 +1,5 @@
 use serde::{Serialize, Deserialize};
 
-
 use super::WorkflowAction;
 use crate::workflow_execution_context::WorkflowExecutionContext;
 
@@ -18,7 +17,7 @@ impl Default for RunCmd {
 }
 
 impl WorkflowAction for RunCmd {
-    fn run(&self, mut context: &mut WorkflowExecutionContext) {
+    fn run(&self, context: &mut WorkflowExecutionContext) {
         todo!()
     }
 }

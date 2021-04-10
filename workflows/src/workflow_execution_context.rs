@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
 pub struct WorkflowExecutionContext {
-    event_file_path: PathBuf,
-    action_file_path: Option<PathBuf>,
-    action_file_data: Option<Vec<u8>>,
+    pub event_file_path: PathBuf,
+    pub action_file_path: Option<PathBuf>,
+    pub action_file_data: Option<Vec<u8>>,
 }
 
 impl WorkflowExecutionContext {
