@@ -41,7 +41,7 @@ impl From<Values<'_>> for WorkflowEvent {
     fn from(events: Values) -> Self {
         Self {
             events: events.map(|event| event.to_string()).unique().collect(),
-            naming_regex_match: String::from("*"),
+            naming_regex_match: String::from(".*"),
         }
     }
 }

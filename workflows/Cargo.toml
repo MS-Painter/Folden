@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33.3"
+regex = "1"
 itertools = "0.10.0"
 chrono = "0.4"
 crossbeam = "0.8.0"
