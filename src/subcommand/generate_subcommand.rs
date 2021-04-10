@@ -33,6 +33,7 @@ impl GenerateSubCommand {
     fn generate_config(path: PathBuf, events: Values, actions: Values) -> Result<(), std::io::Error> {
         let config = WorkflowConfig { 
             apply_on_startup: false,
+            panic_handler_on_error: false,
             event: WorkflowEvent::from(events),
             actions: WorkflowActions::defaults(actions),
         };

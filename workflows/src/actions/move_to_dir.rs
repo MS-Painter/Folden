@@ -28,7 +28,7 @@ impl WorkflowAction for MoveToDir {
             Some(event_file_name) => {
                 if !self.directory_name.is_dir() {
                     if self.requires_directory_exists {
-                        panic!();
+                        return context.handle_error("Directory required to exist");
                     }
                     else {
                         fs::create_dir(&self.directory_name).unwrap();
@@ -37,25 +37,21 @@ impl WorkflowAction for MoveToDir {
                 let mut new_file_path = PathBuf::from(&self.directory_name);
                 new_file_path.push(event_file_name);
                 if new_file_path.is_file() && !self.replace_older_files {
-                    println!("Can't replace older file");
+                    return context.handle_error("Can't replace older file");
                 }
                 else {
                     match fs::copy(&context.event_file_path, &new_file_path) {
                         Ok(_) => {
                             match fs::remove_file(event_file_name) {
-                                Ok(_) => {}
-                                Err(err) => {
-                                    println!("{}", err);
-                                }
+                                Ok(_) => {},
+                                Err(err) => context.handle_error(format!("{}", err))
                             }
-                        }
-                        Err(err) => {
-                            println!("{}", err);
-                        }
+                        },
+                        Err(err) => context.handle_error(format!("{}", err))
                     }
                 }
             }
-            None => {}
+            None => context.handle_error("Path can't be parsed as file")
         }
     }
 }

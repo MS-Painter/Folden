@@ -13,7 +13,7 @@ pub struct WorkflowHandler {
 
 impl WorkflowHandler {
     fn handle(&self, file_path: &PathBuf) {
-        let mut context = WorkflowExecutionContext::new(file_path);
+        let mut context = WorkflowExecutionContext::new(file_path, self.config.panic_handler_on_error);
         for action in &self.config.actions {
             action.run(&mut context);
         }
