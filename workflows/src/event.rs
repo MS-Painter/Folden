@@ -12,16 +12,6 @@ pub struct WorkflowEvent {
 }
 
 impl WorkflowEvent {
-    fn get_event_name(kind: EventKind) -> &'static str {
-        match kind {
-            EventKind::Access(_) => "access",
-            EventKind::Create(_) => "create",
-            EventKind::Modify(_) => "modify",
-            EventKind::Remove(_) => "remove",
-            _ => "",
-        }
-    }
-
     fn get_event_kind(name: &str) -> Result<EventKind, io::Error> {
         match name.to_lowercase().as_str() {
             "access" => Ok(EventKind::Access(notify::event::AccessKind::Any)),
