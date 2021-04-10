@@ -19,7 +19,7 @@ impl WorkflowExecutionContext {
         } 
     }
 
-    pub fn handle_error<T>(&self, msg: T)
+    pub fn handle_error<T>(&self, msg: T) -> bool
     where 
     T: AsRef<str> {
         if self.panic_handler_on_error {
@@ -27,6 +27,7 @@ impl WorkflowExecutionContext {
         }
         else {
             println!("{}", msg.as_ref());
+            return false;
         }
     }
 }
