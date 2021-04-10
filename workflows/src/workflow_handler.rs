@@ -23,9 +23,7 @@ impl WorkflowHandler {
     fn on_startup(&self, path: &PathBuf) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
-            if self.config.apply_on_startup {
-                println!("{:?}", entry.file_name());
-            }
+            println!("{:?}", entry.file_name());
         }
         println!("Ended startup phase");
     }
@@ -51,7 +49,9 @@ impl WorkflowHandler {
     }
 
     pub fn watch(&mut self, path: &PathBuf, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
-        self.on_startup(path);
+        if self.config.apply_on_startup {
+            self.on_startup(path);
+        }
         self.on_watch(watcher_rx);
         println!("Ending watch");
     }
