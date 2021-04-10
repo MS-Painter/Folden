@@ -46,7 +46,7 @@ impl WorkflowAction for MoveToDir {
                         else {
                             match fs::copy(&input_path, &new_file_path) {
                                 Ok(_) => {
-                                    match fs::remove_file(event_file_name) {
+                                    match fs::remove_file(input_path) {
                                         Ok(_) => {
                                             context.action_file_path = Some(new_file_path);
                                             true
