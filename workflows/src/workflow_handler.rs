@@ -13,11 +13,14 @@ pub struct WorkflowHandler {
 
 impl WorkflowHandler {
     fn handle(&self, file_path: &PathBuf) {
-        let mut context = WorkflowExecutionContext::new(file_path, self.config.panic_handler_on_error);
-        for action in &self.config.actions {
-            let action_succeeded = action.run(&mut context);
-            if !action_succeeded {
-                break;
+        if self.config.allowed_file_extensions.is_empty() 
+        || self.config.allowed_file_extensions.contains(&file_path.extension().unwrap().to_os_string().to_str().unwrap().to_string()) {
+            let mut context = WorkflowExecutionContext::new(file_path, self.config.panic_handler_on_error);
+            for action in &self.config.actions {
+                let action_succeeded = action.run(&mut context);
+                if !action_succeeded {
+                    break;
+                }
             }
         }
     }
