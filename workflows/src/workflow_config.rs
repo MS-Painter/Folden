@@ -1,5 +1,6 @@
-use serde::{Serialize, Deserialize};
 use std::{fs, io, path::{Path, PathBuf}};
+
+use serde::{Serialize, Deserialize};
 
 use crate::{actions::WorkflowActions, event::WorkflowEvent};
 
