@@ -49,6 +49,7 @@ impl WorkflowAction for MoveToDir {
                             match fs::copy(&input_path, &new_file_path) {
                                 Ok(_) => {
                                     if self.keep_input_file_intact {
+                                        context.action_file_path = Some(new_file_path);
                                         true
                                     }
                                     else {
