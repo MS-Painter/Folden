@@ -116,10 +116,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 std::io::ErrorKind::NotFound => {
                                     match fs::write(mapping_file_path,  b"") {
                                         Ok(_) => {}
-                                        Err(err) => panic!(err)
+                                        Err(err) => panic!("{}", err)
                                     }
                                 }
-                                err => panic!(err)
+                                err => panic!("{:?}", err)
                             }
                         }
                     }    
