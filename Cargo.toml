@@ -10,13 +10,13 @@ edition = "2018"
 members = [
     "generated_types",
     "workflows",
-    "server"
+    "foldend"
 ]
 
 [dependencies]
 generated_types = {path = "generated_types"}
 workflows = {path = "workflows"}
-server = {path = "server"}
+foldend = {path = "foldend"}
 
 tonic = "0.3.1"
 clap = "2.33.3"

@@ -12,12 +12,12 @@
 		},
 		{
 			"type": "cargo",
-			"command": "build --package server --bin server",
+			"command": "build --package foldend --bin foldend",
 			"problemMatcher": [
 				"$rustc"
 			],
 			"group": "build",
-			"label": "rust: cargo build server"
+			"label": "rust: cargo build foldend"
 		}
 	]
 }
