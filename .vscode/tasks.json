@@ -3,21 +3,21 @@
 	"tasks": [
 		{
 			"type": "cargo",
-			"command": "build",
+			"command": "build --workspace",
 			"problemMatcher": [
 				"$rustc"
 			],
 			"group": "build",
-			"label": "rust: cargo build"
+			"label": "rust Folden: cargo build"
 		},
 		{
 			"type": "cargo",
-			"command": "build --package foldend --bin foldend",
+			"command": "test --workspace",
 			"problemMatcher": [
 				"$rustc"
 			],
 			"group": "build",
-			"label": "rust: cargo build foldend"
+			"label": "rust Folden: cargo test"
 		}
 	]
 }
