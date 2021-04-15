@@ -35,16 +35,19 @@ impl SubCommandUtil for RegisterSubCommand {
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
         let handler_config_match = sub_matches.value_of("handler_config").unwrap();
         let handler_config_path = Path::new(handler_config_match);
-        if !handler_config_path.exists() {
-            CliError::with_description("Config file doesn't exist", ErrorKind::InvalidValue).exit();
+        match handler_config_path.canonicalize() {
+            Ok(handler_config_abs_path) => {
+                let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+                let response = client.register_to_directory(RegisterToDirectoryRequest {
+                    directory_path: String::from(path.as_os_str().to_str().unwrap()),
+                    handler_config_path: handler_config_abs_path.to_str().unwrap().to_string(),
+                });
+                let response = block_on(response).unwrap().into_inner();
+                println!("{:?}", response.message);
+            }
+            Err(_) => {
+                CliError::with_description("Config file doesn't exist", ErrorKind::InvalidValue).exit();
+            }
         }
-        let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
-        let response = client.register_to_directory(RegisterToDirectoryRequest {
-            directory_path: String::from(path.as_os_str().to_str().unwrap()),
-            handler_config_path: handler_config_path.to_str().unwrap().to_string(),
-        });
-
-        let response = block_on(response).unwrap().into_inner();
-        println!("{:?}", response.message);
     }
 }

@@ -1,0 +1,30 @@
+name: Testing & distribution
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, dev ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  deb-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build members
+      run: cargo build --workspace --verbose
+    - name: Run tests
+      run: cargo test --workspace --verbose
+    - name: Ensure cargo-deb crate
+      run: cargo install cargo-deb
+    - name: Generate package
+      run: cargo deb
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: folden_amd64.deb
+        path: target/debian
+        retention-days: 1
