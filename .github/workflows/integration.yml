@@ -26,6 +26,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
     - name: Ensure cargo-deb crate
       run: cargo install cargo-deb
     - name: Generate package
