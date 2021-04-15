@@ -29,7 +29,7 @@ serde = {version = "1.0.117", features = ["derive"] }
 
 [package.metadata.deb]
 section = "utility"
-maintainer-scripts = "debian/"
+maintainer-scripts = "debian/maintainer-scripts"
 systemd-units = { enable = false }
 assets = [
     ["debian/foldend_config.toml", "/etc/foldend/foldend_config.toml", "644"],
