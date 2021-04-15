@@ -51,3 +51,4 @@ jobs:
       with:
         name: windows
         path: ./*.msi
+        retention-days: 1
