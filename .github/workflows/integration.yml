@@ -10,14 +10,22 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  deb-build:
-    runs-on: ubuntu-latest
+  build:
+    name: 'build-${{matrix.os}}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
     - uses: actions/checkout@v2
     - name: Build members
       run: cargo build --workspace --verbose
     - name: Run tests
       run: cargo test --workspace --verbose
+  deb-build:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
     - name: Ensure cargo-deb crate
       run: cargo install cargo-deb
     - name: Generate package
