@@ -32,6 +32,7 @@ section = "utility"
 maintainer-scripts = "debian/"
 systemd-units = { enable = false }
 assets = [
+    ["debian/foldend_config.toml", "/etc/foldend/foldend_config.toml", "644"],
     ["debian/foldend.service", "/lib/systemd/system/foldend.service", "644"],
     ["target/release/folden", "/usr/bin/", "755"],
     ["target/release/foldend", "/usr/sbin/", "755"]
