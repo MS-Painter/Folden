@@ -22,3 +22,9 @@ jobs:
       run: cargo install cargo-deb
     - name: Generate package
       run: cargo deb
+     - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: folden_amd64.deb
+        path: target/debian
+        retention-days: 1
