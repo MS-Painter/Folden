@@ -6,17 +6,23 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "folden"
+path = "src/client/main.rs"
+
+[[bin]]
+name = "foldend"
+path = "src/foldend/main.rs"
+
 [workspace]
 members = [
     "generated_types",
-    "workflows",
-    "foldend"
+    "workflows"
 ]
 
 [dependencies]
 generated_types = {path = "generated_types"}
 workflows = {path = "workflows"}
-foldend = {path = "foldend"}
 
 tonic = "0.3.1"
 clap = "2.33.3"
@@ -26,6 +32,15 @@ toml = "0.5.7"
 futures = "0.3"
 tokio = { version = "0.2", features = ["full"]}
 serde = {version = "1.0.117", features = ["derive"] }
+
+# foldend dependencies
+serde_json = "1.0"
+crossbeam = "0.8.0"
+notify = "5.0.0-pre.7"
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.3"
+
 
 [package.metadata.deb]
 section = "utility"
