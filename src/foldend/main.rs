@@ -204,15 +204,15 @@ async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let app = construct_app();
     let matches = app.get_matches();
     if let Some(sub_matches) = matches.subcommand_matches("run") {
-        let config_file_path = sub_matches.value_of("config").unwrap();
-        match fs::read(config_file_path) {
+        let config_file_path = PathBuf::from(sub_matches.value_of("config").unwrap());
+        match fs::read(&config_file_path) {
             Ok(file_data) => {
                 let config_file_data = file_data;
                 let config = match Config::try_from(config_file_data) {
                     Ok(config) => config,
                     Err(_) => {
                         let config = Config::default();
-                        let _ = config.save(&PathBuf::from(config_file_path));
+                        let _ = config.save(&config_file_path);
                         config
                     }
                 };
@@ -221,9 +221,9 @@ async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(())
             }
             Err(err) => {
-                print!("Invalid config file:{path}\nError:{error}\nCreating default config", path=config_file_path, error=err);
+                println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=err);
                 let config = Config::default();
-                let _ = config.save(&PathBuf::from(config_file_path));
+                let _ = config.save(&config_file_path);
                 let mapping = get_mapping(&config);
                 startup_server(config, mapping).await?;
                 Ok(())
