@@ -108,7 +108,7 @@
                           Start="auto"
                           Type="ownProcess"
                           Vital="yes"
-                          Arguments="run --config &quot;[APPLICATIONFOLDER]foldend_config.toml&quot;"
+                          Arguments="run --config &quot;[APPLICATIONFOLDER]foldend_config.toml&quot; --mapping &quot;[APPLICATIONFOLDER]foldend_mapping.toml&quot;"
                       />
                       <ServiceControl Id="ServiceControl_Start"
                           Name="foldenService"

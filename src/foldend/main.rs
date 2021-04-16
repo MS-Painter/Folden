@@ -118,6 +118,11 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .help("Startup config file")
                 .required(true).
                 empty_values(false)
+                .takes_value(true))
+            .arg(Arg::with_name("mapping").short("m").long("mapping")
+                .help("Startup mapping file")
+                .required(false).
+                empty_values(false)
                 .takes_value(true)))
 }
 
@@ -187,6 +192,10 @@ fn get_mapping(config: &Config) -> Mapping {
                     println!("Mapping file not found. Creating file - {:?}", mapping_file_path);
                     match err.kind() {
                         std::io::ErrorKind::NotFound => {
+                            let mapping_file_parent_path = mapping_file_path.parent().unwrap();
+                            if !mapping_file_parent_path.exists() {
+                                fs::create_dir_all(mapping_file_parent_path).unwrap();
+                            }
                             match fs::write(mapping_file_path,  b"") {
                                 Ok(_) => mapping,
                                 Err(err) => panic!("{}", err)
@@ -211,8 +220,14 @@ async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                 let config = match Config::try_from(config_file_data) {
                     Ok(config) => config,
                     Err(_) => {
-                        let config = Config::default();
-                        let _ = config.save(&config_file_path);
+                        let mut config = Config::default();
+                        match sub_matches.value_of("mapping") {
+                            Some(mapping_file_path) => {
+                                config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
+                            }
+                            None => {}
+                        };
+                        config.save(&config_file_path).unwrap();
                         config
                     }
                 };
@@ -222,8 +237,14 @@ async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(err) => {
                 println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=err);
-                let config = Config::default();
-                let _ = config.save(&config_file_path);
+                let mut config = Config::default();
+                match sub_matches.value_of("mapping") {
+                    Some(mapping_file_path) => {
+                        config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
+                    }
+                    None => {}
+                }
+                config.save(&config_file_path).unwrap();
                 let mapping = get_mapping(&config);
                 startup_server(config, mapping).await?;
                 Ok(())
@@ -245,7 +266,7 @@ fn main() {
                 windows::Error::Winapi(winapi_err) => {
                     // If not being run inside windows service framework attempt commandline execution.
                     if winapi_err.raw_os_error().unwrap() == 1063 {
-                        let _ = windows::sync_main();
+                        windows::sync_main().unwrap();
                     }
                 }
                 _ => {}
