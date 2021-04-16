@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 use std::sync::Arc;
 use std::convert::TryFrom;
 use std::collections::HashMap;
@@ -165,6 +165,41 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     Ok(())
 }
 
+fn get_mapping(config: &Config) -> Mapping {
+    let mapping = Mapping {
+        directory_mapping: HashMap::new()
+    };
+    match config.mapping_status_strategy {
+        MappingStatusStrategy::None => mapping,
+        MappingStatusStrategy::Save | MappingStatusStrategy::Continue => {
+            let mapping_file_path = &config.mapping_state_path;
+            match fs::read(mapping_file_path) {
+                Ok(mapping_file_data) => {
+                    match Mapping::try_from(mapping_file_data) {
+                        Ok(read_mapping) => read_mapping,
+                        Err(_) => {
+                            println!("Mapping file invalid / empty");
+                            mapping
+                        }
+                    }
+                }
+                Err(err) => {
+                    println!("Mapping file not found. Creating file - {:?}", mapping_file_path);
+                    match err.kind() {
+                        std::io::ErrorKind::NotFound => {
+                            match fs::write(mapping_file_path,  b"") {
+                                Ok(_) => mapping,
+                                Err(err) => panic!("{}", err)
+                            }
+                        }
+                        err => panic!("{:?}", err)
+                    }
+                }
+            }
+        }
+    }
+}
+
 async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let app = construct_app();
     let matches = app.get_matches();
@@ -173,46 +208,25 @@ async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
         match fs::read(config_file_path) {
             Ok(file_data) => {
                 let config_file_data = file_data;
-                let config = Config::from(config_file_data);
-    
-                let mut mapping = Mapping {
-                    directory_mapping: HashMap::new()
-                };
-                match config.mapping_status_strategy {
-                    MappingStatusStrategy::None => {}
-                    MappingStatusStrategy::Save | MappingStatusStrategy::Continue => {
-                        let mapping_file_path = &config.mapping_state_path;
-                        match fs::read(mapping_file_path) {
-                            Ok(mapping_file_data) => {
-                                match Mapping::try_from(mapping_file_data) {
-                                    Ok(read_mapping) => {
-                                        mapping = read_mapping;
-                                    }
-                                    Err(_) => {
-                                        println!("Mapping file invalid / empty");
-                                    }
-                                }
-                            }
-                            Err(err) => {
-                                println!("Mapping file not found. Creating file - {:?}", mapping_file_path);
-                                match err.kind() {
-                                    std::io::ErrorKind::NotFound => {
-                                        match fs::write(mapping_file_path,  b"") {
-                                            Ok(_) => {}
-                                            Err(err) => panic!("{}", err)
-                                        }
-                                    }
-                                    err => panic!("{:?}", err)
-                                }
-                            }
-                        }
+                let config = match Config::try_from(config_file_data) {
+                    Ok(config) => config,
+                    Err(_) => {
+                        let config = Config::default();
+                        let _ = config.save(&PathBuf::from(config_file_path));
+                        config
                     }
-                }
+                };
+                let mapping = get_mapping(&config);
                 startup_server(config, mapping).await?;
                 Ok(())
             }
             Err(err) => {
-                panic!("Invalid config file: {path}\nError:{error}", path=config_file_path, error=err)
+                print!("Invalid config file:{path}\nError:{error}\nCreating default config", path=config_file_path, error=err);
+                let config = Config::default();
+                let _ = config.save(&PathBuf::from(config_file_path));
+                let mapping = get_mapping(&config);
+                startup_server(config, mapping).await?;
+                Ok(())
             }
         }
     }
