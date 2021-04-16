@@ -16,6 +16,98 @@ mod mapping;
 use mapping::Mapping;
 use generated_types::{StartHandlerRequest, inter_process_server::{InterProcess, InterProcessServer}};
 
+#[cfg(windows)]
+mod windows {
+    use std::{ffi::OsString, time::Duration};
+    
+    use tokio::runtime::Runtime;
+    pub use windows_service::Error;
+    use windows_service::{
+        define_windows_service, service_control_handler::{self, ServiceControlHandlerResult}, service_dispatcher,
+        service::{ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus, ServiceType},
+    };
+
+    const SERVICE_NAME: &str = "Folden Service";
+
+    define_windows_service!(ffi_service_main, service_main);
+    
+    fn service_main(arguments: Vec<OsString>) {
+        if let Err(_e) = run_service(arguments) {
+            // Handle errors in some way.
+        }
+    }
+
+    pub fn run() -> Result<(), windows_service::Error> {
+        // Register generated `ffi_service_main` with the system and start the service, blocking
+        // this thread until the service is stopped.
+        service_dispatcher::start(SERVICE_NAME, ffi_service_main)
+    }
+
+    pub fn sync_main() -> Result<(), Box<dyn std::error::Error>> {
+        let mut rt  = Runtime::new()?;
+        // Spawn the root task
+        rt.block_on(async {
+            match  crate::main_service_runtime().await {
+                Ok(res) => Ok(res),
+                Err(e) => Err(e),
+            }
+        })
+    }
+
+    fn run_service(_arguments: Vec<OsString>) -> Result<(), windows_service::Error> {
+        let event_handler = move |control_event| -> ServiceControlHandlerResult {
+            match control_event {
+                ServiceControl::Stop => {
+                    // Handle stop event and return control back to the system.
+                    ServiceControlHandlerResult::NoError
+                }
+                // All services must accept Interrogate even if it's a no-op.
+                ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
+                _ => ServiceControlHandlerResult::NotImplemented,
+            }
+        };
+    
+        // Register system service event handler
+        let status_handle = service_control_handler::register(SERVICE_NAME, event_handler)?;
+
+        // Tell the system that the service is running now
+        status_handle.set_service_status(ServiceStatus {
+            // Should match the one from system service registry
+            service_type: ServiceType::OWN_PROCESS,
+            current_state: ServiceState::Running,
+            // Accept stop events when running
+            controls_accepted: ServiceControlAccept::STOP,
+            // Used to report an error when starting or stopping only, otherwise must be zero
+            exit_code: ServiceExitCode::Win32(0),
+            // Only used for pending states, otherwise must be zero
+            checkpoint: 0,
+            // Only used for pending states, otherwise must be zero
+            wait_hint: Duration::default(),
+            process_id: None,
+        })?;
+    
+        // Do some work
+        let exit_code = match sync_main() {
+            Ok(_) => 0,
+            Err(_) => 1
+        };
+
+        // Tell the system that service has stopped.
+        status_handle.set_service_status(ServiceStatus {
+            service_type: ServiceType::OWN_PROCESS,
+            current_state: ServiceState::Stopped,
+            controls_accepted: ServiceControlAccept::empty(),
+            exit_code: ServiceExitCode::Win32(exit_code),
+            checkpoint: 0,
+            wait_hint: Duration::default(),
+            process_id: None,
+        })?;
+
+        Ok(())
+    }
+}
+
+
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
     App::new("Folden Service")
         .version("0.1")
@@ -74,9 +166,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     Ok(())
 }
 
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let app = construct_app();
     let matches = app.get_matches();
     if let Some(sub_matches) = matches.subcommand_matches("run") {
@@ -130,4 +220,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     else {
         Ok(())
     }
+}
+
+#[cfg(windows)]
+fn main() {
+    match windows::run() {
+        Ok(_) => {} // Service had run
+        Err(e) => {
+            println!("{:?}", e);
+            match e {
+                windows::Error::Winapi(winapi_err) => {
+                    // If not being run inside windows service framework attempt commandline execution.
+                    if winapi_err.raw_os_error().unwrap() == 1063 {
+                        let _ = windows::sync_main();
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+#[cfg(not(windows))]
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    main_service_runtime()
 }
