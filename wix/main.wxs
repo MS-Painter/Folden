@@ -53,7 +53,7 @@
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-                <Directory Id='APPLICATIONFOLDER' Name='Folden'>
+                <Directory Id='APPLICATIONFOLDER' Name='folden'>
                     
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
@@ -74,6 +74,37 @@
                         <File Id='LicenseFile' Name='ChangeMe' DiskId='1' Source='C:\Path\To\File' KeyPath='yes'/>
                     </Component>
                     -->
+
+                    <Component Id='FoldenService' Win64='$(var.Win64)'>
+                      <File Id='exe1'
+                          Name='foldend.exe'
+                          DiskId='1'
+                          Source='target\$(var.Profile)\foldend.exe'
+                          KeyPath='yes'
+                      />
+                      <ServiceInstall Id="ServiceInstaller"
+                          Account="LocalSystem"
+                          Name="foldenService2"
+                          DisplayName="Folden Service"
+                          Description="Folden background service process"
+                          ErrorControl="normal"
+                          Start="auto"
+                          Type="ownProcess"
+                          Vital="yes"
+                          Arguments="run --config foldend_config.toml"
+                      />
+                      <ServiceControl Id="ServiceControl_Start"
+                          Name="foldenService2"
+                          Start="install"
+                          Wait="no" 
+                      />
+                      <ServiceControl Id="ServiceControl_Stop"
+                          Name="foldenService2"
+                          Stop="both"
+                          Remove="uninstall"
+                          Wait="yes" 
+                      />
+                    </Component>
 
                     <Directory Id='Bin' Name='bin'>
                         <Component Id='Path' Guid='311A1BD4-EFE1-423C-BCD7-DEAB780A6E69' Win64='$(var.Win64)' KeyPath='yes'>
@@ -116,6 +147,7 @@
             <!--<ComponentRef Id='License'/>-->
 
             <ComponentRef Id='binary0'/>
+            <ComponentRef Id='FoldenService'/>
 
             <Feature
                 Id='Environment'
