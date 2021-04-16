@@ -86,13 +86,12 @@ mod windows {
             process_id: None,
         })?;
     
-        // Do some work
         let exit_code = match sync_main() {
             Ok(_) => 0,
             Err(_) => 1
         };
 
-        // Tell the system that service has stopped.
+        // Tell the system that service has stopped
         status_handle.set_service_status(ServiceStatus {
             service_type: ServiceType::OWN_PROCESS,
             current_state: ServiceState::Stopped,
@@ -244,5 +243,5 @@ fn main() {
 #[cfg(not(windows))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    main_service_runtime()
+    main_service_runtime().await
 }
