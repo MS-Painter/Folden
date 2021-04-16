@@ -54,7 +54,15 @@
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
                 <Directory Id='APPLICATIONFOLDER' Name='folden'>
-                    
+                    <Component Id='Path' Guid='311A1BD4-EFE1-423C-BCD7-DEAB780A6E69' Win64='$(var.Win64)' KeyPath='yes'>
+                        <Environment Id='PATH'
+                            Name='PATH'
+                            Value='[APPLICATIONFOLDER]'
+                            Permanent='no'
+                            Part='last'
+                            Action='set'
+                            System='yes'/>
+                    </Component>
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
 
@@ -74,6 +82,15 @@
                         <File Id='LicenseFile' Name='ChangeMe' DiskId='1' Source='C:\Path\To\File' KeyPath='yes'/>
                     </Component>
                     -->
+
+                    <Component Id='binary0' Win64='$(var.Win64)'>
+                        <File
+                            Id='exe0'
+                            Name='folden.exe'
+                            DiskId='1'
+                            Source='target\$(var.Profile)\folden.exe'
+                            KeyPath='yes'/>
+                    </Component>
 
                     <Component Id='FoldenService' Win64='$(var.Win64)'>
                       <File Id='exe1'
@@ -105,27 +122,6 @@
                           Wait="yes" 
                       />
                     </Component>
-
-                    <Directory Id='Bin' Name='bin'>
-                        <Component Id='Path' Guid='311A1BD4-EFE1-423C-BCD7-DEAB780A6E69' Win64='$(var.Win64)' KeyPath='yes'>
-                            <Environment
-                                Id='PATH'
-                                Name='PATH'
-                                Value='[Bin]'
-                                Permanent='no'
-                                Part='last'
-                                Action='set'
-                                System='yes'/>
-                        </Component>
-                        <Component Id='binary0' Guid='*' Win64='$(var.Win64)'>
-                            <File
-                                Id='exe0'
-                                Name='folden.exe'
-                                DiskId='1'
-                                Source='target\$(var.Profile)\folden.exe'
-                                KeyPath='yes'/>
-                        </Component>
-                    </Directory>
                 </Directory>
             </Directory>
         </Directory>
