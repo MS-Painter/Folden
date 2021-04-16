@@ -8,6 +8,15 @@ pub struct Config {
     pub mapping_status_strategy: MappingStatusStrategy,  
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            mapping_state_path: PathBuf::from("foldend_mapping.toml"),
+            mapping_status_strategy: MappingStatusStrategy::Continue,
+        }
+    }
+}
+
 impl From<Vec<u8>> for Config {
     fn from(bytes: Vec<u8>) -> Self {
         toml::from_slice(&bytes).unwrap()
