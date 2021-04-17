@@ -45,7 +45,9 @@ jobs:
     - name: Ensure cargo-wix crate
       run: cargo install cargo-wix
     - name: Generate installer
-      run: cargo wix -v --nocapture -o .
+      run: cargo wix -v --nocapture
+    - name: Sign installer
+      run: cargo wix sign -v --nocapture
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
