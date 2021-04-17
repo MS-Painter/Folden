@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use tokio::sync::RwLock;
+use futures::executor::block_on;
 use clap::{App, AppSettings, Arg, SubCommand};
 use tonic::{Request, transport::Server as TonicServer};
 
@@ -20,6 +21,8 @@ use generated_types::{StartHandlerRequest, inter_process_server::{InterProcess, 
 mod windows {
     use std::{ffi::OsString, time::Duration};
     
+    use futures::executor::block_on;
+    use tokio::sync::broadcast;
     use tokio::runtime::Runtime;
     pub use windows_service::Error;
     use windows_service::{
@@ -43,22 +46,37 @@ mod windows {
         service_dispatcher::start(SERVICE_NAME, ffi_service_main)
     }
 
-    pub fn sync_main() -> Result<(), Box<dyn std::error::Error>> {
-        let mut rt  = Runtime::new()?;
-        // Spawn the root task
-        rt.block_on(async {
-            match  crate::main_service_runtime().await {
-                Ok(res) => Ok(res),
-                Err(e) => Err(e),
+    pub async fn sync_main(shutdown_rx: Option<broadcast::Receiver<i32>>) -> Result<(), Box<dyn std::error::Error>> {
+        let rt  = Runtime::new()?;
+        match shutdown_rx {
+            Some(mut rx) => {
+                rt.block_on(async {
+                    tokio::select! {
+                        _ = crate::main_service_runtime() => {},
+                        _ = rx.recv() => {}
+                    }
+                });
+                Ok(())
             }
-        })
+            None => {
+                // Spawn the root task
+                rt.block_on(async {
+                    match  crate::main_service_runtime().await {
+                        Ok(res) => Ok(res),
+                        Err(e) => Err(e),
+                    }
+                })       
+            }
+        }
     }
 
     fn run_service(_arguments: Vec<OsString>) -> Result<(), windows_service::Error> {
+        let (shutdown_tx, shutdown_rx) = broadcast::channel(1);
         let event_handler = move |control_event| -> ServiceControlHandlerResult {
             match control_event {
                 ServiceControl::Stop => {
                     // Handle stop event and return control back to the system.
+                    shutdown_tx.send(1).unwrap();
                     ServiceControlHandlerResult::NoError
                 }
                 // All services must accept Interrogate even if it's a no-op.
@@ -86,7 +104,8 @@ mod windows {
             process_id: None,
         })?;
     
-        let exit_code = match sync_main() {
+        let sync_main_result = block_on(sync_main(Some(shutdown_rx)));
+        let exit_code = match sync_main_result {
             Ok(_) => 0,
             Err(_) => 1
         };
@@ -266,7 +285,7 @@ fn main() {
                 windows::Error::Winapi(winapi_err) => {
                     // If not being run inside windows service framework attempt commandline execution.
                     if winapi_err.raw_os_error().unwrap() == 1063 {
-                        windows::sync_main().unwrap();
+                        block_on(windows::sync_main(None)).unwrap();
                     }
                 }
                 _ => {}
