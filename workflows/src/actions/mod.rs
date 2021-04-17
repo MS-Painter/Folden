@@ -12,10 +12,10 @@ pub trait WorkflowAction {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
 }
 
-pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> Result<PathBuf, std::io::Error> {
+pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> PathBuf {
     let mut working_path = PathBuf::from(input_path.parent().unwrap());
     working_path.push(directory_path); // If directory_path is absolute will replace the entire path
-    working_path.canonicalize()
+    working_path
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
