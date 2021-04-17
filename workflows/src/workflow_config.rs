@@ -1,5 +1,6 @@
 use std::{fs, io, path::{Path, PathBuf}};
 
+use clap::Values;
 use serde::{Serialize, Deserialize};
 
 use crate::{actions::WorkflowActions, event::WorkflowEvent};
@@ -14,6 +15,16 @@ pub struct WorkflowConfig {
 }
 
 impl WorkflowConfig {
+    pub fn default_new(events: Values, actions: Values) -> Self {
+        Self {
+            watch_recursive: false,
+            apply_on_startup_on_existing_files: false,
+            panic_handler_on_error: false,
+            event: WorkflowEvent::from(events),
+            actions: WorkflowActions::defaults(actions),
+        }
+    }
+
     pub fn generate_config(&self, path: &Path) -> io::Result<()> {
         fs::write(path, toml::to_vec(*Box::new(self)).unwrap())
     }

@@ -2,8 +2,8 @@ use std::{env, ops::Deref, path::PathBuf};
 
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, Values};
-use workflows::{actions::WorkflowActions, event::WorkflowEvent, workflow_config::WorkflowConfig};
 
+use workflows::workflow_config::WorkflowConfig;
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::inter_process_client::InterProcessClient;
 
@@ -31,13 +31,7 @@ impl GenerateSubCommand {
     }
 
     fn generate_config(path: PathBuf, events: Values, actions: Values) -> Result<(), std::io::Error> {
-        let config = WorkflowConfig { 
-            watch_recursive: false,
-            apply_on_startup_on_existing_files: false,
-            panic_handler_on_error: false,
-            event: WorkflowEvent::from(events),
-            actions: WorkflowActions::defaults(actions),
-        };
+        let config = WorkflowConfig::default_new(events, actions);
         config.generate_config(path.deref())
     }
 }
