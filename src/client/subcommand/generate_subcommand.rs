@@ -58,7 +58,7 @@ impl SubCommandUtil for GenerateSubCommand {
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&["access", "create", "modify", "remove"]))
+                .possible_values(&["create", "modify"]))
             .arg(Arg::with_name("actions").long("actions")
                 .required(true)
                 .multiple(true)

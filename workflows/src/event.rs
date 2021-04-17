@@ -1,5 +1,3 @@
-use std::io;
-
 use clap::Values;
 use notify::EventKind;
 use itertools::Itertools;
@@ -12,25 +10,18 @@ pub struct WorkflowEvent {
 }
 
 impl WorkflowEvent {
-    fn get_event_kind(name: &str) -> Result<EventKind, io::Error> {
+    fn is_handled_event_kind(name: &str, kind: &EventKind) -> bool {
         match name.to_lowercase().as_str() {
-            "access" => Ok(EventKind::Access(notify::event::AccessKind::Any)),
-            "create" => Ok(EventKind::Create(notify::event::CreateKind::Any)),
-            "modify" => Ok(EventKind::Modify(notify::event::ModifyKind::Any)),
-            "remove" => Ok(EventKind::Remove(notify::event::RemoveKind::Any)),
-            _ => Err(io::Error::new(io::ErrorKind::Other, "oh no!")),
+            "create" => kind.is_create(),
+            "modify" => kind.is_modify(),
+            _ => false,
         }
     }
 
     pub fn is_handled_event(&self, kind: &EventKind) -> bool {
         for event_name in &self.events {
-            match WorkflowEvent::get_event_kind(event_name) {
-                Ok(handled_kind) => {
-                    if &handled_kind == kind {
-                        return true;
-                    }
-                }
-                Err(_) => {}
+            if WorkflowEvent::is_handled_event_kind(event_name, kind) {
+                return true;
             }
         }
         return false;
