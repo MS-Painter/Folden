@@ -49,7 +49,7 @@ impl WorkflowHandler {
         }
     }
 
-    fn on_startup(&self, path: &PathBuf) {
+    fn apply_on_existing_files(&self, path: &PathBuf) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
             self.handle(&entry.path());
@@ -81,8 +81,8 @@ impl WorkflowHandler {
     pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, rx: Receiver<Result<notify::Event, notify::Error>>) {
         let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
         watcher.watch(path.clone(), recursive_mode).unwrap();
-        if self.config.apply_on_startup {
-            self.on_startup(path);
+        if self.config.apply_on_startup_on_existing_files {
+            self.apply_on_existing_files(path);
         }
         self.on_watch(rx);
         println!("Ending watch");

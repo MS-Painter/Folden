@@ -7,7 +7,7 @@ use crate::{actions::WorkflowActions, event::WorkflowEvent};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkflowConfig {
     pub watch_recursive: bool,
-    pub apply_on_startup: bool,
+    pub apply_on_startup_on_existing_files: bool,
     pub panic_handler_on_error: bool,
     pub event: WorkflowEvent,
     pub actions: Vec<WorkflowActions>
