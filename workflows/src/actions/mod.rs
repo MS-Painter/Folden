@@ -10,7 +10,12 @@ use crate::workflow_execution_context::WorkflowExecutionContext;
 pub trait WorkflowAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
-    fn construct_working_dir(&self, input_path: &PathBuf) -> PathBuf;
+}
+
+pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> Result<PathBuf, std::io::Error> {
+    let mut working_path = PathBuf::from(input_path.parent().unwrap());
+    working_path.push(directory_path); // If directory_path is absolute will replace the entire path
+    working_path.canonicalize()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -40,14 +45,6 @@ impl WorkflowAction for WorkflowActions {
             WorkflowActions::MoveToDir(action) => action.run(context),
             WorkflowActions::RunCmd(action) => action.run(context),
             WorkflowActions::None => false
-        }
-    }
-
-    fn construct_working_dir(&self, input_path: &PathBuf) -> PathBuf {
-        match self {
-            WorkflowActions::MoveToDir(action) => action.construct_working_dir(input_path),
-            WorkflowActions::RunCmd(action) => action.construct_working_dir(input_path),
-            WorkflowActions::None => PathBuf::new()
         }
     }
 }

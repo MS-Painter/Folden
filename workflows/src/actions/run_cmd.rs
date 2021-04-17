@@ -20,8 +20,4 @@ impl WorkflowAction for RunCmd {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
         todo!()
     }
-
-    fn construct_working_dir(&self, input_path: &std::path::PathBuf) -> std::path::PathBuf {
-        todo!()
-    }
 }
