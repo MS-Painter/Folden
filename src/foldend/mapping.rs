@@ -1,12 +1,13 @@
-use std::{collections::HashMap, convert::TryFrom, fs, io::ErrorKind as IOErrorKind, path::PathBuf, thread};
+use std::io::ErrorKind as IOErrorKind;
+use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, thread};
 
 use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
 use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
-use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
 
 use crate::config::{Config, MappingStatusStrategy};
 use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary};
+use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
