@@ -10,14 +10,23 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  deb-build:
-    runs-on: ubuntu-latest
+  build:
+    name: 'build-${{matrix.os}}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
     - uses: actions/checkout@v2
     - name: Build members
       run: cargo build --workspace --verbose
     - name: Run tests
       run: cargo test --workspace --verbose
+  deb-build:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
     - name: Ensure cargo-deb crate
       run: cargo install cargo-deb
     - name: Generate package
@@ -27,4 +36,19 @@ jobs:
       with:
         name: folden_amd64.deb
         path: target/debian
+        retention-days: 1
+  windows-build:
+    needs: [build]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Ensure cargo-wix crate
+      run: cargo install cargo-wix
+    - name: Generate installer
+      run: cargo wix -v --nocapture -o .
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: folden.msi
+        path: ./*.msi
         retention-days: 1

@@ -49,15 +49,14 @@
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=server",
-                    "--package=server"
+                    "--bin=foldend"
                 ],
                 "filter": {
-                    "name": "server",
+                    "name": "foldend",
                     "kind": "bin"
                 }
             },
-            "args": ["run"],
+            "args": ["run", "--config", "foldend_config.toml"],
             "cwd": "${workspaceFolder}/Target/Debug"
         },
         {

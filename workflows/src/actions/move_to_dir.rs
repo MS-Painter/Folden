@@ -1,8 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{ffi::OsStr, fs, io::ErrorKind, path::PathBuf};
 
 use serde::{Serialize, Deserialize};
 
-use super::WorkflowAction;
+use super::{WorkflowAction, construct_working_dir};
 use crate::{workflow_context_input::WorkflowContextInput, workflow_execution_context::WorkflowExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -12,6 +12,52 @@ pub struct MoveToDir {
     pub requires_directory_exists: bool,
     pub replace_older_files: bool,
     pub keep_input_file_intact: bool,
+}
+
+impl MoveToDir {
+    fn ensure_dir_exists(&self, context: &mut WorkflowExecutionContext, working_dir_path: &PathBuf) -> bool {
+        if !working_dir_path.is_dir() {
+            if self.requires_directory_exists {
+                return context.handle_error("Directory required to exist");
+            }
+            else {
+                fs::create_dir_all(&working_dir_path).unwrap();
+                return true;
+            }
+        }
+        true
+    }
+
+    fn apply(&self, context: &mut WorkflowExecutionContext, working_dir_path: &PathBuf, input_path: &PathBuf, input_file_name: &OsStr) -> bool {
+        if !self.ensure_dir_exists(context, working_dir_path) {
+            return false;
+        }
+        let mut new_file_path = PathBuf::from(working_dir_path);
+        new_file_path.push(input_file_name);
+        if new_file_path.is_file() && !self.replace_older_files {
+            return context.handle_error("Can't replace older file");
+        }
+        else {
+            match fs::copy(&input_path, &new_file_path) {
+                Ok(_) => {
+                    if self.keep_input_file_intact {
+                        context.action_file_path = Some(new_file_path);
+                        true
+                    }
+                    else {
+                        match fs::remove_file(input_path) {
+                            Ok(_) => {
+                                context.action_file_path = Some(new_file_path);
+                                true
+                            },
+                            Err(err) => context.handle_error(format!("{}", err))
+                        }
+                    }
+                },
+                Err(err) => context.handle_error(format!("{:?}", err))
+            }
+        }
+    }
 }
 
 impl Default for MoveToDir {
@@ -32,37 +78,19 @@ impl WorkflowAction for MoveToDir {
             Some(input_path) => {
                 match input_path.file_name() {
                     Some(input_file_name) => {
-                        if !self.directory_path.is_dir() {
-                            if self.requires_directory_exists {
-                                return context.handle_error("Directory required to exist");
-                            }
-                            else {
-                                fs::create_dir(&self.directory_path).unwrap();
-                            }
-                        }
-                        let mut new_file_path = PathBuf::from(&self.directory_path);
-                        new_file_path.push(input_file_name);
-                        if new_file_path.is_file() && !self.replace_older_files {
-                            return context.handle_error("Can't replace older file");
-                        }
-                        else {
-                            match fs::copy(&input_path, &new_file_path) {
-                                Ok(_) => {
-                                    if self.keep_input_file_intact {
-                                        context.action_file_path = Some(new_file_path);
-                                        true
-                                    }
-                                    else {
-                                        match fs::remove_file(input_path) {
-                                            Ok(_) => {
-                                                context.action_file_path = Some(new_file_path);
-                                                true
-                                            },
-                                            Err(err) => context.handle_error(format!("{}", err))
+                        let working_dir_path = construct_working_dir(&input_path, &self.directory_path);
+                        match working_dir_path.canonicalize() {
+                            Ok(working_dir_path) => self.apply(context, &working_dir_path, &input_path, input_file_name),
+                            Err(err) => {
+                                match err.kind() {
+                                    ErrorKind::NotFound => {
+                                        if !self.ensure_dir_exists(context, &working_dir_path) {
+                                            return false;
                                         }
-                                    }
-                                },
-                                Err(err) => context.handle_error(format!("{}", err))
+                                        self.apply(context, &working_dir_path.canonicalize().unwrap(), &input_path, input_file_name)
+                                    },
+                                    _ => context.handle_error(format!("{:?}", err))
+                                }
                             }
                         }
                     }

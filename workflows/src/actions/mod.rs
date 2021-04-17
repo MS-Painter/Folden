@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Serialize, Deserialize};
 
 mod run_cmd;
@@ -8,6 +10,12 @@ use crate::workflow_execution_context::WorkflowExecutionContext;
 pub trait WorkflowAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
+}
+
+pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> PathBuf {
+    let mut working_path = PathBuf::from(input_path.parent().unwrap());
+    working_path.push(directory_path); // If directory_path is absolute will replace the entire path
+    working_path
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

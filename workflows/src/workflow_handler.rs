@@ -80,7 +80,7 @@ impl WorkflowHandler {
 
     pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, rx: Receiver<Result<notify::Event, notify::Error>>) {
         let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
-        let _ = watcher.watch(path.clone(), recursive_mode);
+        watcher.watch(path.clone(), recursive_mode).unwrap();
         if self.config.apply_on_startup {
             self.on_startup(path);
         }
