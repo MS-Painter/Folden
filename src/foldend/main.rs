@@ -50,16 +50,21 @@ mod windows {
         let rt  = Runtime::new()?;
         match shutdown_rx {
             Some(mut rx) => {
+                // Exit runtime at service execution termination or if recieved a termination message
                 rt.block_on(async {
                     tokio::select! {
-                        _ = crate::main_service_runtime() => {},
-                        _ = rx.recv() => {}
+                        result = crate::main_service_runtime() => {
+                            match result {
+                                Ok(res) => Ok(res),
+                                Err(e) => Err(e),
+                            }
+                        },
+                        _ = rx.recv() => Ok(())
                     }
-                });
-                Ok(())
+                })
             }
             None => {
-                // Spawn the root task
+                // Exit runtime at service execution termination
                 rt.block_on(async {
                     match  crate::main_service_runtime().await {
                         Ok(res) => Ok(res),
