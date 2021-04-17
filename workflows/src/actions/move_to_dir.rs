@@ -32,15 +32,16 @@ impl WorkflowAction for MoveToDir {
             Some(input_path) => {
                 match input_path.file_name() {
                     Some(input_file_name) => {
-                        if !self.directory_path.is_dir() {
+                        let working_dir_path = self.construct_working_dir(&input_path);
+                        if !working_dir_path.is_dir() {
                             if self.requires_directory_exists {
                                 return context.handle_error("Directory required to exist");
                             }
                             else {
-                                fs::create_dir(&self.directory_path).unwrap();
+                                fs::create_dir(&working_dir_path).unwrap();
                             }
                         }
-                        let mut new_file_path = PathBuf::from(&self.directory_path);
+                        let mut new_file_path = PathBuf::from(&working_dir_path);
                         new_file_path.push(input_file_name);
                         if new_file_path.is_file() && !self.replace_older_files {
                             return context.handle_error("Can't replace older file");
@@ -71,5 +72,11 @@ impl WorkflowAction for MoveToDir {
             }
             None => context.handle_error("Input doesn't contain value")
         }
+    }
+
+    fn construct_working_dir(&self, input_path: &PathBuf) -> PathBuf {
+        let mut working_path = PathBuf::from(input_path.parent().unwrap());
+        working_path.push(&self.directory_path); // If directory_path is absolute will replace the entire path
+        working_path
     }
 }
