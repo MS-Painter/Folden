@@ -12,15 +12,17 @@ fn main() {
     match startup::windows::run() {
         Ok(_) => {} // Service finished running
         Err(e) => {
-            println!("{:?}", e);
             match e {
                 startup::windows::Error::Winapi(winapi_err) => {
                     // If not being run inside windows service framework attempt commandline execution.
                     if winapi_err.raw_os_error().unwrap() == 1063 {
+                        println!("--- Attempting Foldend execution outside of Windows service framework ---");
                         block_on(startup::windows::sync_main(None)).unwrap();
                     }
                 }
-                _ => {}
+                _ => {
+                    println!("{:?}", e);
+                }
             }
         }
     }
