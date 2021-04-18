@@ -52,7 +52,10 @@ impl WorkflowHandler {
     fn apply_on_existing_files(&self, path: &PathBuf) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
-            self.handle(&entry.path());
+            let metadata = entry.metadata().unwrap();
+            if metadata.is_file(){
+                self.handle(&entry.path());
+            }
         }
         println!("Ended startup phase");
     }
