@@ -40,7 +40,7 @@ impl WorkflowHandler {
     }
 
     fn execute_workflow(&self, file_path: &PathBuf) {
-        let mut context = WorkflowExecutionContext::new(file_path, self.config.panic_handler_on_error);
+        let mut context = WorkflowExecutionContext::new(file_path, self.config.clone());
         for action in &self.config.actions {
             let action_succeeded = action.run(&mut context);
             if !action_succeeded {
