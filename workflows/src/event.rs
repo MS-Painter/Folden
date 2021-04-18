@@ -9,6 +9,8 @@ pub struct WorkflowEvent {
     pub naming_regex_match: Option<String>,
 }
 
+pub const EVENT_TYPES: [&str; 2] = ["create", "modify"];
+
 impl WorkflowEvent {
     fn is_handled_event_kind(name: &str, kind: &EventKind) -> bool {
         match name.to_lowercase().as_str() {

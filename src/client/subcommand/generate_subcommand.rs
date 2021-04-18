@@ -3,7 +3,7 @@ use std::{env, ops::Deref, path::PathBuf};
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, Values};
 
-use workflows::workflow_config::WorkflowConfig;
+use workflows::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::inter_process_client::InterProcessClient;
 
@@ -52,13 +52,13 @@ impl SubCommandUtil for GenerateSubCommand {
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&["create", "modify"]))
+                .possible_values(&EVENT_TYPES))
             .arg(Arg::with_name("actions").long("actions")
                 .required(true)
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&["movetodir", "runcmd"]))
+                .possible_values(&ACTION_TYPES))
             .arg(Arg::with_name("path")
                 .required(false))
     }
