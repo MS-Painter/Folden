@@ -47,20 +47,20 @@ impl Mapping {
     
     pub fn spawn_handler_thread(&mut self, directory_path: String, handler_config_path: String) {
         let path = PathBuf::from(directory_path.clone());
-                let config_path = PathBuf::from(handler_config_path.clone());
-                let config = WorkflowConfig::from_config(&config_path);
-                let (tx, rx) = crossbeam::channel::unbounded();
-                let thread_tx = tx.clone();
-                let watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
-                thread::spawn(move || {
-                    let mut handler = WorkflowHandler::new(config);
-                    handler.watch(&path, watcher, rx);
-                });            
-                // Insert or update the value of the current handled directory
-                self.directory_mapping.insert(directory_path, HandlerMapping {
-                    watcher_tx: Option::Some(tx),
-                    handler_config_path,
-                });
+        let config_path = PathBuf::from(handler_config_path.clone());
+        let config = WorkflowConfig::from_config(&config_path);
+        let (tx, rx) = crossbeam::channel::unbounded();
+        let thread_tx = tx.clone();
+        let watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
+        thread::spawn(move || {
+            let mut handler = WorkflowHandler::new(config);
+            handler.watch(&path, watcher, rx);
+        });            
+        // Insert or update the value of the current handled directory
+        self.directory_mapping.insert(directory_path, HandlerMapping {
+            watcher_tx: Option::Some(tx),
+            handler_config_path,
+        });
     }
 
     pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &HandlerMapping, remove: bool) -> HandlerStateResponse {
