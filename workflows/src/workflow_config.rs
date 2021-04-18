@@ -15,13 +15,19 @@ pub struct WorkflowConfig {
 }
 
 impl WorkflowConfig {
-    pub fn default_new(events: Values, actions: Values) -> Self {
+    pub fn default_new(events: Option<Values>, actions: Option<Values>) -> Self {
         Self {
             watch_recursive: false,
             apply_on_startup_on_existing_files: false,
             panic_handler_on_error: false,
-            event: WorkflowEvent::from(events),
-            actions: WorkflowActions::defaults(actions),
+            event: match events {
+                Some(events) => WorkflowEvent::from(events),
+                None => WorkflowEvent::default()
+            },
+            actions: match actions {
+                Some(actions) => WorkflowActions::defaults(actions),
+                None => vec![WorkflowActions::default()]
+            }
         }
     }
 

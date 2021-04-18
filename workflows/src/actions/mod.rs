@@ -50,3 +50,9 @@ impl WorkflowAction for WorkflowActions {
         }
     }
 }
+
+impl Default for WorkflowActions {
+    fn default() -> Self {
+        Self::RunCmd(RunCmd::default())
+    }
+}

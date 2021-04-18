@@ -38,3 +38,12 @@ impl From<Values<'_>> for WorkflowEvent {
         }
     }
 }
+
+impl Default for WorkflowEvent {
+    fn default() -> Self {
+        Self {
+            events: EVENT_TYPES.iter().map(|event| event.to_string()).collect(),
+            naming_regex_match: Some(String::from(".*")),
+        }
+    }
+}

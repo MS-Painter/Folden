@@ -1,11 +1,11 @@
 use std::{env, ops::Deref, path::PathBuf};
 
 use tonic::transport::Channel;
-use clap::{App, Arg, ArgMatches, Values};
+use clap::{App, Arg, ArgMatches};
 
-use workflows::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::inter_process_client::InterProcessClient;
+use workflows::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
 
 #[derive(Clone)]
 pub struct GenerateSubCommand {}
@@ -29,11 +29,6 @@ impl GenerateSubCommand {
             }
         }
     }
-
-    fn generate_config(path: PathBuf, events: Values, actions: Values) -> Result<(), std::io::Error> {
-        let config = WorkflowConfig::default_new(events, actions);
-        config.generate_config(path.deref())
-    }
 }
 
 impl SubCommandUtil for GenerateSubCommand {
@@ -48,13 +43,13 @@ impl SubCommandUtil for GenerateSubCommand {
                 .short("d")
                 .help("print debug information verbosely"))
             .arg(Arg::with_name("events").long("events")
-                .required(true)
+                .required(false)
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
                 .possible_values(&EVENT_TYPES))
             .arg(Arg::with_name("actions").long("actions")
-                .required(true)
+                .required(false)
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
@@ -64,9 +59,10 @@ impl SubCommandUtil for GenerateSubCommand {
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, _client: &mut InterProcessClient<Channel>) {
-        let events = sub_matches.values_of("events").unwrap();
-        let actions = sub_matches.values_of("actions").unwrap();
+        let events = sub_matches.values_of("events");
+        let actions = sub_matches.values_of("actions");
         let path = GenerateSubCommand::construct_config_path("folden_workflow",sub_matches.value_of("path"));
-        GenerateSubCommand::generate_config(path, events, actions).unwrap();
+        let config = WorkflowConfig::default_new(events, actions);
+        config.generate_config(path.deref()).unwrap();
     }
 }
