@@ -5,8 +5,8 @@ use tonic::{Request, Response};
 
 use super::Server;
 use generated_types::{
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest,  
-    HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerSummary, inter_process_server::InterProcess};
+    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerStartupType,
+    HandlerSummary, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, inter_process_server::InterProcess};
 
 #[tonic::async_trait]
 impl InterProcess for Server {
@@ -149,5 +149,17 @@ impl InterProcess for Server {
                 }))
             }
         }
+    }
+
+    async fn modify_handler(&self,request:Request<ModifyHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
+        let request = request.into_inner();
+        let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
+
+        if request.startup_type != HandlerStartupType::NotProvided as i32 {
+            let start_on_startup = if request.startup_type == HandlerStartupType::On as i32 {true} else {false};
+        }
+        Ok(Response::new(HandlerStatesMapResponse {
+            states_map,
+        }))
     }
 }

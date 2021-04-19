@@ -8,11 +8,18 @@ service InterProcess {
   rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
   rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
   rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
+  rpc ModifyHandler (ModifyHandlerRequest) returns (HandlerStatesMapResponse);
 }
 
 enum HandlerStatus {
   Dead = 0;
   Live = 1;
+}
+
+enum HandlerStartupType {
+  NotProvided = 0;
+  On = 1;
+  Off = 2;
 }
 
 message HandlerSummary {
@@ -49,4 +56,9 @@ message StartHandlerRequest {
 message StopHandlerRequest {
   string directory_path = 1;
   bool remove = 2;
+}
+
+message ModifyHandlerRequest {
+  string directory_path = 1;
+  HandlerStartupType startup_type = 2;
 }
