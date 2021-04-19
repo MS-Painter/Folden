@@ -69,6 +69,7 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
             .takes_value(true)
             .validator_os(is_existing_directory_validator),
         Arg::with_name("all").long("all")
+            .help("Apply on all registered directory handlers")
             .required(false)
             .takes_value(false)
             .conflicts_with("directory"))
