@@ -3,9 +3,8 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
+use generated_types::{GetDirectoryStatusRequest, handler_service_client::HandlerServiceClient};
 use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
-use generated_types::GetDirectoryStatusRequest;
-use generated_types::inter_process_client::InterProcessClient;
 
 #[derive(Clone)]
 pub struct StatusSubCommand {}
@@ -23,7 +22,7 @@ impl SubCommandUtil for StatusSubCommand {
             .args(construct_directory_or_all_args().as_slice())
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {  
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {  
         let mut directory_path = String::new();
         if !sub_matches.is_present("all") {
             let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();

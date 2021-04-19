@@ -3,7 +3,7 @@ use clap::{App, AppSettings};
 use futures::executor::block_on;
 
 use subcommand::subcommand::SubCommandCollection;
-use generated_types::inter_process_client::InterProcessClient;
+use generated_types::handler_service_client::HandlerServiceClient;
 
 mod subcommand;
 
@@ -29,7 +29,7 @@ async fn main() {
     let matches = app.get_matches();
     for subcommand in subcommands {
         if let Some(sub_matches) = subcommand.subcommand_matches(&matches) {
-            let client_connect_future = InterProcessClient::connect(GRPC_URL_BASE);
+            let client_connect_future = HandlerServiceClient::connect(GRPC_URL_BASE);
             let client = &mut block_on(client_connect_future).unwrap();
             subcommand.subcommand_runtime(sub_matches, client);
         }

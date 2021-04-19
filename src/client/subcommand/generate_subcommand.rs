@@ -4,7 +4,7 @@ use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use generated_types::inter_process_client::InterProcessClient;
+use generated_types::handler_service_client::HandlerServiceClient;
 use workflows::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
 
 #[derive(Clone)]
@@ -58,7 +58,7 @@ impl SubCommandUtil for GenerateSubCommand {
                 .required(false))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, _client: &mut InterProcessClient<Channel>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, _client: &mut HandlerServiceClient<Channel>) {
         let events = sub_matches.values_of("events");
         let actions = sub_matches.values_of("actions");
         let path = GenerateSubCommand::construct_config_path("folden_workflow",sub_matches.value_of("path"));

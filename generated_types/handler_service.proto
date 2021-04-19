@@ -1,33 +1,17 @@
 // Definition of gRPC communication between client and server instances exclusively.
 
 syntax = "proto3";
-package inter_process;
+package handler_service;
 
+import "handler_types.proto";
 import "google/protobuf/empty.proto";
 
-service InterProcess {
+service HandlerService {
   rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (HandlerStateResponse);
   rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
   rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
   rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
   rpc ModifyHandler (ModifyHandlerRequest) returns (google.protobuf.Empty);
-}
-
-enum HandlerStatus {
-  Dead = 0;
-  Live = 1;
-}
-
-enum HandlerStartupType {
-  NotProvided = 0;
-  Auto = 1;
-  Manual = 2;
-}
-
-message HandlerSummary {
-  HandlerStatus state = 1;
-  string config_path = 2;
-  HandlerStartupType startup_type = 3;
 }
 
 message HandlerStateResponse {

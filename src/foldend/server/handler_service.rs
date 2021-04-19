@@ -6,10 +6,10 @@ use tonic::{Request, Response};
 use super::Server;
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerStartupType,
-    HandlerSummary, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, inter_process_server::InterProcess};
+    HandlerSummary, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
-impl InterProcess for Server {
+impl HandlerService for Server {
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) ->
     Result<Response<HandlerStateResponse>,tonic::Status> {
         let request = request.into_inner();

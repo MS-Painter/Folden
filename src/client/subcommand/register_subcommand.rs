@@ -4,10 +4,9 @@ use tonic::transport::Channel;
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches, Error as CliError, ErrorKind};
 
-use generated_types::{RegisterToDirectoryRequest, inter_process_client::InterProcessClient};
-
 use crate::subcommand::subcommand::SubCommandUtil;
 use super::subcommand::{get_path_from_matches_or_current_path, is_existing_directory_validator};
+use generated_types::{RegisterToDirectoryRequest, handler_service_client::HandlerServiceClient};
 
 #[derive(Clone)]
 pub struct RegisterSubCommand {}
@@ -32,7 +31,7 @@ impl SubCommandUtil for RegisterSubCommand {
                 .validator_os(is_existing_directory_validator))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {
         let handler_config_match = sub_matches.value_of("handler_config").unwrap();
         let handler_config_path = Path::new(handler_config_match);
         match handler_config_path.canonicalize() {

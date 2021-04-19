@@ -5,7 +5,7 @@ use tokio::sync::RwLock;
 use crate::config::Config;
 use crate::mapping::Mapping;
 
-pub mod inter_process;
+pub mod handler_service;
 
 pub struct Server {
     pub config: Arc<Config>,

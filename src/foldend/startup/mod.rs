@@ -13,7 +13,7 @@ use tonic::{Request, transport::Server as TonicServer};
 use crate::config::Config;
 use crate::server::Server;
 use crate::mapping::Mapping;
-use generated_types::{StartHandlerRequest, inter_process_server::{InterProcess, InterProcessServer}};
+use generated_types::{StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
 
 
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
@@ -73,7 +73,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     startup_handlers(&server).await; // Handlers are raised before being able to accept client calls.
 
     TonicServer::builder()
-        .add_service(InterProcessServer::new(server))
+        .add_service(HandlerServiceServer::new(server))
         .serve(socket)
         .await?;
     Ok(())

@@ -4,8 +4,7 @@ use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
-use generated_types::{ModifyHandlerRequest, HandlerStartupType};
-use generated_types::inter_process_client::InterProcessClient;
+use generated_types::{HandlerStartupType, ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
 
 const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
 
@@ -31,7 +30,7 @@ impl SubCommandUtil for ModifySubCommand {
                 .possible_values(&STARTUP_TYPES))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {
         let startup_type = match sub_matches.value_of("startup") {
             Some(value) => {
                 if value.to_lowercase() == "auto" {HandlerStartupType::Auto as i32} else {HandlerStartupType::Manual as i32}
