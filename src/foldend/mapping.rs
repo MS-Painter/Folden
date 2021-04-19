@@ -22,11 +22,10 @@ impl Mapping {
         fs::write(mapping_state_path, mapping_data)
     }
 
-    pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
+    pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &mut HandlerMapping) -> HandlerStateResponse {
         match handler_mapping.status() {
             HandlerStatus::Dead => {
-                let handler_config_path = handler_mapping.handler_config_path.clone();
-                self.spawn_handler_thread(directory_path.to_string(), handler_config_path);
+                self.spawn_handler_thread(directory_path.to_string(), handler_mapping);
                 HandlerStateResponse {
                     state: HandlerStatus::Live as i32,
                     message: String::from("Handler started"),
@@ -39,9 +38,9 @@ impl Mapping {
         }
     }
     
-    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_config_path: String) {
+    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_mapping: &mut HandlerMapping) {
         let path = PathBuf::from(directory_path.clone());
-        let config_path = PathBuf::from(handler_config_path.clone());
+        let config_path = PathBuf::from(&handler_mapping.handler_config_path);
         let config = WorkflowConfig::from_config(&config_path);
         let (tx, rx) = crossbeam::channel::unbounded();
         let thread_tx = tx.clone();
@@ -51,11 +50,15 @@ impl Mapping {
             handler.watch(&path, watcher, rx);
         });            
         // Insert or update the value of the current handled directory
-        self.directory_mapping.insert(directory_path, HandlerMapping {
-            watcher_tx: Option::Some(tx),
-            handler_config_path,
-            start_on_startup: false,
-        });
+        match self.directory_mapping.get_mut(&directory_path) {
+            Some(handler_mapping) => {
+                handler_mapping.watcher_tx = Option::Some(tx);
+            }
+            None => {
+                handler_mapping.watcher_tx = Option::Some(tx);
+                self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
+            }
+        }
     }
 
     pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &HandlerMapping, remove: bool) -> HandlerStateResponse {

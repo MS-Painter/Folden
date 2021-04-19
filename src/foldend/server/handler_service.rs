@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use tonic::{Request, Response};
 
 use super::Server;
+use crate::mapping::HandlerMapping;
 use generated_types::{
     GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerStartupType,
     HandlerSummary, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
@@ -16,7 +17,7 @@ impl HandlerService for Server {
         let mut mapping = self.mapping.write().await;
         let request_directory_path = request.directory_path.as_str();
         match mapping.directory_mapping.get(request_directory_path) {
-            Some(handler_mapping) => {
+            Some(_handler_mapping) => {
                 Ok(Response::new(HandlerStateResponse {
                     message: String::from("Directory already handled by handler"),
                     state: HandlerStatus::Live as i32,
@@ -42,7 +43,11 @@ impl HandlerService for Server {
                         }))
                     }
                 }
-                mapping.spawn_handler_thread(request.directory_path, request.handler_config_path);
+                mapping.spawn_handler_thread(request.directory_path, &mut HandlerMapping {
+                    watcher_tx: None,
+                    handler_config_path: request.handler_config_path,
+                    start_on_startup: false,
+                });
                 let _result = mapping.save(&self.config.mapping_state_path);
                 Ok(Response::new(HandlerStateResponse {
                     message: "".to_string(),
@@ -89,7 +94,7 @@ impl HandlerService for Server {
         let directory_path = request.directory_path.as_str();
         let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
                                 
-        match mapping.clone().directory_mapping.get(directory_path) {
+        match mapping.clone().directory_mapping.get_mut(directory_path) {
             Some(handler_mapping) => {
                 let response = mapping.start_handler(directory_path, handler_mapping);
                 states_map.insert(directory_path.to_owned(), response);
@@ -99,7 +104,7 @@ impl HandlerService for Server {
             }
             None => {
                 if request.directory_path.is_empty() { // If empty - All directories are requested
-                    for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter() {
+                    for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter_mut() {
                         let response = mapping.start_handler(directory_path, handler_mapping);
                         states_map.insert(directory_path.to_owned(), response);
                     }
