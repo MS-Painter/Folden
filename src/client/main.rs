@@ -2,8 +2,8 @@ extern crate clap;
 use clap::{App, AppSettings};
 use futures::executor::block_on;
 
+use subcommand::subcommand::SubCommandCollection;
 use generated_types::inter_process_client::InterProcessClient;
-use subcommand::{generate_subcommand::GenerateSubCommand, modify_subcommand::ModifySubCommand, register_subcommand::RegisterSubCommand, start_subcommand::StartSubCommand, status_subcommand::StatusSubCommand, stop_subcommand::StopSubCommand, subcommand::SubCommandCollection};
 
 mod subcommand;
 
@@ -12,12 +12,12 @@ const GRPC_URL_BASE: &str = "http://localhost:8080/";
 #[tokio::main]
 async fn main() {
     let mut subcommands = SubCommandCollection::new();
-    subcommands.add(Box::new(RegisterSubCommand {}));
-    subcommands.add(Box::new(StatusSubCommand {}));
-    subcommands.add(Box::new(StartSubCommand {}));
-    subcommands.add(Box::new(StopSubCommand {}));
-    subcommands.add(Box::new(GenerateSubCommand {}));
-    subcommands.add(Box::new(ModifySubCommand {}));
+    subcommands.add(Box::new(subcommand::register_subcommand::RegisterSubCommand {}));
+    subcommands.add(Box::new(subcommand::status_subcommand::StatusSubCommand {}));
+    subcommands.add(Box::new(subcommand::start_subcommand::StartSubCommand {}));
+    subcommands.add(Box::new(subcommand::stop_subcommand::StopSubCommand {}));
+    subcommands.add(Box::new(subcommand::generate_subcommand::GenerateSubCommand {}));
+    subcommands.add(Box::new(subcommand::modify_subcommand::ModifySubCommand {}));
     let subcommands_clone = subcommands.clone();
 
     let app = App::new("Folden")
