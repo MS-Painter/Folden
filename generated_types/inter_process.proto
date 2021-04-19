@@ -3,12 +3,14 @@
 syntax = "proto3";
 package inter_process;
 
+import "google/protobuf/empty.proto";
+
 service InterProcess {
   rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (HandlerStateResponse);
   rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
   rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
   rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
-  rpc ModifyHandler (ModifyHandlerRequest) returns (HandlerStatesMapResponse);
+  rpc ModifyHandler (ModifyHandlerRequest) returns (google.protobuf.Empty);
 }
 
 enum HandlerStatus {

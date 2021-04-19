@@ -151,15 +151,33 @@ impl InterProcess for Server {
         }
     }
 
-    async fn modify_handler(&self,request:Request<ModifyHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
-        let request = request.into_inner();
-        let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
+    async fn modify_handler(&self,request:Request<ModifyHandlerRequest>,)->Result<Response<()>,tonic::Status> {
+        let inner_request = request.into_inner();
+        let mut mapping = self.mapping.write().await;
 
-        if request.startup_type != HandlerStartupType::NotProvided as i32 {
-            let start_on_startup = if request.startup_type == HandlerStartupType::On as i32 {true} else {false};
+        match mapping.directory_mapping.get_mut(&inner_request.directory_path) {
+            Some(handler_mapping) => {
+                if inner_request.startup_type != HandlerStartupType::NotProvided as i32 {
+                    handler_mapping.start_on_startup = if inner_request.startup_type == HandlerStartupType::On as i32 {true} else {false};
+                }
+            }
+            None => {
+                if inner_request.directory_path.is_empty() { // If empty - All directories are requested
+                    for handler_mapping in mapping.directory_mapping.values_mut() {
+                        if inner_request.startup_type != HandlerStartupType::NotProvided as i32 {
+                            handler_mapping.start_on_startup = if inner_request.startup_type == HandlerStartupType::On as i32 {true} else {false};
+                        }
+                    }
+                }
+                else {
+                    return Err(tonic::Status::not_found("Directory isn't registered to handle"));
+                }
+            }
         }
-        Ok(Response::new(HandlerStatesMapResponse {
-            states_map,
-        }))
+
+        match mapping.save(&self.config.mapping_state_path) {
+            Ok(result) => Ok(Response::new(result)),
+            Err(e) => Err(tonic::Status::unknown(format!("Failed to save modifications to mapping file.\nErr - {:?}", e)))
+        }
     }
 }

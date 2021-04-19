@@ -3,7 +3,7 @@ use clap::{App, AppSettings};
 use futures::executor::block_on;
 
 use generated_types::inter_process_client::InterProcessClient;
-use subcommand::{generate_subcommand::GenerateSubCommand, register_subcommand::RegisterSubCommand, start_subcommand::StartSubCommand, status_subcommand::StatusSubCommand, stop_subcommand::StopSubCommand, subcommand::SubCommandCollection};
+use subcommand::{generate_subcommand::GenerateSubCommand, modify_subcommand::ModifySubCommand, register_subcommand::RegisterSubCommand, start_subcommand::StartSubCommand, status_subcommand::StatusSubCommand, stop_subcommand::StopSubCommand, subcommand::SubCommandCollection};
 
 mod subcommand;
 
@@ -17,6 +17,7 @@ async fn main() {
     subcommands.add(Box::new(StartSubCommand {}));
     subcommands.add(Box::new(StopSubCommand {}));
     subcommands.add(Box::new(GenerateSubCommand {}));
+    subcommands.add(Box::new(ModifySubCommand {}));
     let subcommands_clone = subcommands.clone();
 
     let app = App::new("Folden")
