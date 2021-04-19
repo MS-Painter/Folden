@@ -7,6 +7,8 @@ use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_o
 use generated_types::{ModifyHandlerRequest, HandlerStartupType};
 use generated_types::inter_process_client::InterProcessClient;
 
+const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
+
 #[derive(Clone)]
 pub struct ModifySubCommand {}
 
@@ -21,14 +23,21 @@ impl SubCommandUtil for ModifySubCommand {
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
             .args(construct_directory_or_all_args().as_slice())
-            .arg(Arg::with_name("manual_startup").long("manual_startup")
-                .help("If present: Handler won't automatically start on service startup")
+            .arg(Arg::with_name("startup").long("startup")
+                .help("Set if handler automatically starts on service startup")
                 .required(false)
-                .takes_value(false))
+                .takes_value(true)
+                .case_insensitive(true)
+                .possible_values(&STARTUP_TYPES))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
-        let startup_type = if sub_matches.is_present("manual_startup") {HandlerStartupType::Off as i32} else {HandlerStartupType::On as i32};
+        let startup_type = match sub_matches.value_of("startup") {
+            Some(value) => {
+                if value.to_lowercase() == "auto" {HandlerStartupType::On as i32} else {HandlerStartupType::Off as i32}
+            }
+            None => HandlerStartupType::NotProvided as i32
+        };
         let mut directory_path = String::new();
         if !sub_matches.is_present("all") {
             let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
