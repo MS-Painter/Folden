@@ -34,7 +34,7 @@ impl SubCommandUtil for ModifySubCommand {
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
         let startup_type = match sub_matches.value_of("startup") {
             Some(value) => {
-                if value.to_lowercase() == "auto" {HandlerStartupType::On as i32} else {HandlerStartupType::Off as i32}
+                if value.to_lowercase() == "auto" {HandlerStartupType::Auto as i32} else {HandlerStartupType::Manual as i32}
             }
             None => HandlerStartupType::NotProvided as i32
         };

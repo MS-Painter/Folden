@@ -20,8 +20,8 @@ enum HandlerStatus {
 
 enum HandlerStartupType {
   NotProvided = 0;
-  On = 1;
-  Off = 2;
+  Auto = 1;
+  Manual = 2;
 }
 
 message HandlerSummary {
