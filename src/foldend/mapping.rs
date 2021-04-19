@@ -5,8 +5,8 @@ use serde::{Serialize, Deserialize};
 use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::Config;
-use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary};
 use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
+use generated_types::{HandlerStartupType, HandlerStateResponse, HandlerStatus, HandlerSummary};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -161,6 +161,7 @@ impl HandlerMapping {
         let state = HandlerSummary {
             state: self.status() as i32,
             config_path: self.handler_config_path.clone(),
+            startup_type: if self.start_on_startup {HandlerStartupType::Auto as i32} else {HandlerStartupType::Manual as i32},
         };
         state
     }
