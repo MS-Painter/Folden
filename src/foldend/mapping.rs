@@ -54,6 +54,7 @@ impl Mapping {
         self.directory_mapping.insert(directory_path, HandlerMapping {
             watcher_tx: Option::Some(tx),
             handler_config_path,
+            start_on_startup: false,
         });
     }
 
@@ -72,6 +73,7 @@ impl Mapping {
                     self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
                         watcher_tx: Option::None,
                         handler_config_path,
+                        start_on_startup: false,
                     });
                 }
                 HandlerStateResponse {
@@ -91,6 +93,7 @@ impl Mapping {
                             self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
                                 watcher_tx: Option::None,
                                 handler_config_path,
+                                start_on_startup: false,
                             });
                         }
                         HandlerStateResponse {
@@ -138,6 +141,7 @@ pub struct HandlerMapping {
     #[serde(skip)]
     pub watcher_tx: Option<Sender<Result<Event, Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
     pub handler_config_path: String,
+    pub start_on_startup: bool,
 }
 
 impl HandlerMapping {
