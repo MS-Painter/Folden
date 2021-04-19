@@ -43,7 +43,7 @@ impl InterProcess for Server {
                     }
                 }
                 mapping.spawn_handler_thread(request.directory_path, request.handler_config_path);
-                let _result = mapping.save(&self.config.mapping_status_strategy, &self.config.mapping_state_path);
+                let _result = mapping.save(&self.config.mapping_state_path);
                 Ok(Response::new(HandlerStateResponse {
                     message: "".to_string(),
                     state: HandlerStatus::Live as i32,

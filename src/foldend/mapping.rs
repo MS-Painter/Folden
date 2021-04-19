@@ -1,11 +1,10 @@
-use std::io::ErrorKind as IOErrorKind;
 use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, thread};
 
 use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
 use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
 
-use crate::config::{Config, MappingStatusStrategy};
+use crate::config::Config;
 use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary};
 use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
 
@@ -18,14 +17,9 @@ pub struct Mapping {
 }
 
 impl Mapping {
-    pub fn save(&self, mapping_status_strategy: &MappingStatusStrategy, mapping_state_path: &PathBuf) -> Result<(), std::io::Error> {
-        match mapping_status_strategy {
-            MappingStatusStrategy::None => Err(std::io::Error::new(IOErrorKind::Other, "Not allowed current in config state")),
-            _ => {
-                let mapping_data: Vec<u8> = self.into();
-                fs::write(mapping_state_path, mapping_data)
-            }
-        }
+    pub fn save(&self, mapping_state_path: &PathBuf) -> Result<(), std::io::Error> {
+        let mapping_data: Vec<u8> = self.into();
+        fs::write(mapping_state_path, mapping_data)
     }
 
     pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &HandlerMapping) -> HandlerStateResponse {
@@ -72,7 +66,7 @@ impl Mapping {
                 if remove {
                     self.directory_mapping.remove(directory_path);
                     message.push_str(" & removed");
-                    let _result = self.save(&config.mapping_status_strategy, &config.mapping_state_path);
+                    let _result = self.save(&config.mapping_state_path);
                 }
                 else {
                     self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
@@ -91,7 +85,7 @@ impl Mapping {
                         if remove {
                             self.directory_mapping.remove(directory_path);
                             message.push_str(" & removed");
-                            let _result = self.save(&config.mapping_status_strategy, &config.mapping_state_path);
+                            let _result = self.save(&config.mapping_state_path);
                         }
                         else {
                             self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
