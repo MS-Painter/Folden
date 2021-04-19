@@ -171,14 +171,8 @@ impl HandlerMapping {
 
     pub fn stop_handler_thread(&self) -> Result<String, String> {
         match self.watcher_tx.clone().unwrap().send(Err(Error::new(NotifyErrorKind::WatchNotFound))) {
-            Ok(_) => {
-                Ok(String::from("Handler stopped"))
-            }
-            Err(error) => {
-                let mut message = String::from("Failed to stop handler\nError: ");
-                message.push_str(error.to_string().as_str());
-                Err(message)
-            }
+            Ok(_) => Ok(String::from("Handler stopped")),
+            Err(error) => Err(format!("Failed to stop handler\nError: {:?}", error))
         }
     }
 }
