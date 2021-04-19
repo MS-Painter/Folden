@@ -61,9 +61,7 @@ impl Mapping {
         }
     }
 
-    pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &HandlerMapping, remove: bool) -> HandlerStateResponse {
-        let handler_config_path = handler_mapping.handler_config_path.clone();
-
+    pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &mut HandlerMapping, remove: bool) -> HandlerStateResponse {
         match handler_mapping.status() {
             HandlerStatus::Dead => {
                 let mut message = String::from("Handler already stopped");
@@ -73,11 +71,7 @@ impl Mapping {
                     let _result = self.save(&config.mapping_state_path);
                 }
                 else {
-                    self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
-                        watcher_tx: Option::None,
-                        handler_config_path,
-                        start_on_startup: false,
-                    });
+                    handler_mapping.watcher_tx = None;
                 }
                 HandlerStateResponse {
                     state: HandlerStatus::Dead as i32,
@@ -93,11 +87,7 @@ impl Mapping {
                             let _result = self.save(&config.mapping_state_path);
                         }
                         else {
-                            self.directory_mapping.insert(directory_path.to_owned(), HandlerMapping {
-                                watcher_tx: Option::None,
-                                handler_config_path,
-                                start_on_startup: false,
-                            });
+                            handler_mapping.watcher_tx = None;
                         }
                         HandlerStateResponse {
                             state: HandlerStatus::Dead as i32,
