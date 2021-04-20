@@ -6,7 +6,7 @@ use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedW
 
 use crate::config::Config;
 use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
-use generated_types::{HandlerStartupType, HandlerStateResponse, HandlerStatus, HandlerSummary, ModifyHandlerRequest};
+use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary, ModifyHandlerRequest};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -134,7 +134,7 @@ pub struct HandlerMapping {
     #[serde(skip)]
     pub watcher_tx: Option<Sender<Result<Event, Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
     pub handler_config_path: String,
-    pub start_on_startup: bool,
+    pub is_auto_startup: bool,
     pub description: String,
 }
 
@@ -155,7 +155,7 @@ impl HandlerMapping {
         let state = HandlerSummary {
             state: self.status() as i32,
             config_path: self.handler_config_path.clone(),
-            startup_type: if self.start_on_startup {HandlerStartupType::Auto as i32} else {HandlerStartupType::Manual as i32},
+            is_auto_startup: self.is_auto_startup,
             description: self.description.to_owned(),
         };
         state
@@ -169,8 +169,8 @@ impl HandlerMapping {
     }
 
     pub fn modify(&mut self, request: &ModifyHandlerRequest) {
-        if request.startup_type != HandlerStartupType::NotProvided as i32 {
-            self.start_on_startup = if request.startup_type == HandlerStartupType::Auto as i32 {true} else {false};
+        if let Some(is_auto_startup) = request.is_auto_startup {
+            self.is_auto_startup = is_auto_startup;
         }
         if let Some(ref description) = request.modify_description {
             self.description = description.to_string();

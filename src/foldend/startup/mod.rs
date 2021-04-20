@@ -39,7 +39,7 @@ async fn startup_handlers(server: &Server) -> () {
     let mapping = server.mapping.read().await;
     let handler_requests: Vec<StartHandlerRequest> = mapping.directory_mapping.iter()
     .filter_map(|(directory_path, handler_mapping)| {
-        if handler_mapping.start_on_startup {
+        if handler_mapping.is_auto_startup {
             Some(StartHandlerRequest {
                 directory_path: directory_path.to_string(),
             })

@@ -5,16 +5,10 @@ enum HandlerStatus {
     Dead = 0;
     Live = 1;
 }
-  
-enum HandlerStartupType {
-  NotProvided = 0;
-  Auto = 1;
-  Manual = 2;
-}
 
 message HandlerSummary {
   HandlerStatus state = 1;
   string config_path = 2;
-  HandlerStartupType startup_type = 3;
+  bool is_auto_startup = 3;
   string description = 4;
 }

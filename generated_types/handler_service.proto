@@ -48,6 +48,6 @@ message StopHandlerRequest {
 
 message ModifyHandlerRequest {
   string directory_path = 1;
-  HandlerStartupType startup_type = 2;
+  google.protobuf.BoolValue is_auto_startup = 2;
   google.protobuf.StringValue modify_description = 3;
 }

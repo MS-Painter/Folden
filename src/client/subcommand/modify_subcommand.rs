@@ -4,7 +4,7 @@ use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
-use generated_types::{HandlerStartupType, ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
+use generated_types::{ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
 
 const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
 
@@ -34,11 +34,9 @@ impl SubCommandUtil for ModifySubCommand {
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {
-        let startup_type = match sub_matches.value_of("startup") {
-            Some(value) => {
-                if value.to_lowercase() == "auto" {HandlerStartupType::Auto as i32} else {HandlerStartupType::Manual as i32}
-            }
-            None => HandlerStartupType::NotProvided as i32
+        let is_auto_startup = match sub_matches.value_of("startup") {
+            Some(value) => Some(if value.to_lowercase() == "auto" {true} else {false}),
+            None => None
         };
         let modify_description = match sub_matches.value_of("description") {
             Some(description) => Some(description.to_string()),
@@ -59,7 +57,7 @@ impl SubCommandUtil for ModifySubCommand {
         }
         let response = client.modify_handler(ModifyHandlerRequest {
             directory_path,
-            startup_type,
+            is_auto_startup,
             modify_description,
         });
         let response = block_on(response);
