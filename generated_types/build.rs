@@ -3,7 +3,8 @@ use std::path::PathBuf;
 fn main() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let proto_files = vec![
-        root.join("inter_process.proto"),
+        root.join("handler_types.proto"),
+        root.join("handler_service.proto"),
     ];
 
     // Tell cargo to recompile if any of these proto files are changed

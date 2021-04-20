@@ -10,10 +10,10 @@ use tokio::sync::RwLock;
 use clap::{App, AppSettings, Arg, SubCommand};
 use tonic::{Request, transport::Server as TonicServer};
 
+use crate::config::Config;
 use crate::server::Server;
 use crate::mapping::Mapping;
-use crate::config::{Config, MappingStatusStrategy};
-use generated_types::{StartHandlerRequest, inter_process_server::{InterProcess, InterProcessServer}};
+use generated_types::{StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
 
 
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
@@ -35,30 +35,30 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .takes_value(true)))
 }
 
-async fn handle_mapping_strategy(server: &Server) -> () {
-    match server.config.mapping_status_strategy {
-        MappingStatusStrategy::Continue => {
-            let mapping = server.mapping.read().await;
-            let mut handler_requests: Vec<StartHandlerRequest> = Vec::new();
-            for directory_path in mapping.directory_mapping.keys() {
-                handler_requests.push(StartHandlerRequest {
-                    directory_path: directory_path.clone(),
-                });
+async fn startup_handlers(server: &Server) -> () {
+    let mapping = server.mapping.read().await;
+    let handler_requests: Vec<StartHandlerRequest> = mapping.directory_mapping.iter()
+    .filter_map(|(directory_path, handler_mapping)| {
+        if handler_mapping.is_auto_startup {
+            Some(StartHandlerRequest {
+                directory_path: directory_path.to_string(),
+            })
+        }
+        else {
+            None
+        }
+    }).collect();
+    drop(mapping); // Free lock to complete server requests.
+    for request in handler_requests {
+        let response = server.start_handler(Request::new(request.clone())).await;
+        match response {
+            Ok(_) => {
+                println!("Handler [RUNNING] - {:?}", request.directory_path);
             }
-            drop(mapping); // Free lock to complete server requests.
-            for request in handler_requests {
-                let response = server.start_handler(Request::new(request.clone())).await;
-                match response {
-                    Ok(_) => {
-                        println!("Handler [RUNNING] - {:?}", request.directory_path);
-                    }
-                    Err(err) => {
-                        println!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);
-                    }
-                }
+            Err(err) => {
+                println!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);
             }
         }
-        _ => {}
     }
 }
 
@@ -70,10 +70,10 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
         mapping: Arc::new(RwLock::new(mapping)),
     };
 
-    handle_mapping_strategy(&server).await; // The handlers are raised before being able to accept client calls.
+    startup_handlers(&server).await; // Handlers are raised before being able to accept client calls.
 
     TonicServer::builder()
-        .add_service(InterProcessServer::new(server))
+        .add_service(HandlerServiceServer::new(server))
         .serve(socket)
         .await?;
     Ok(())
@@ -83,36 +83,31 @@ fn get_mapping(config: &Config) -> Mapping {
     let mapping = Mapping {
         directory_mapping: HashMap::new()
     };
-    match config.mapping_status_strategy {
-        MappingStatusStrategy::None => mapping,
-        MappingStatusStrategy::Save | MappingStatusStrategy::Continue => {
-            let mapping_file_path = &config.mapping_state_path;
-            match fs::read(mapping_file_path) {
-                Ok(mapping_file_data) => {
-                    match Mapping::try_from(mapping_file_data) {
-                        Ok(read_mapping) => read_mapping,
-                        Err(_) => {
-                            println!("Mapping file invalid / empty");
-                            mapping
-                        }
+    let mapping_file_path = &config.mapping_state_path;
+    match fs::read(mapping_file_path) {
+        Ok(mapping_file_data) => {
+            match Mapping::try_from(mapping_file_data) {
+                Ok(read_mapping) => read_mapping,
+                Err(_) => {
+                    println!("Mapping file invalid / empty");
+                    mapping
+                }
+            }
+        }
+        Err(err) => {
+            println!("Mapping file not found. Creating file - {:?}", mapping_file_path);
+            match err.kind() {
+                std::io::ErrorKind::NotFound => {
+                    let mapping_file_parent_path = mapping_file_path.parent().unwrap();
+                    if !mapping_file_parent_path.exists() {
+                        fs::create_dir_all(mapping_file_parent_path).unwrap();
+                    }
+                    match fs::write(mapping_file_path,  b"") {
+                        Ok(_) => mapping,
+                        Err(err) => panic!("{}", err)
                     }
                 }
-                Err(err) => {
-                    println!("Mapping file not found. Creating file - {:?}", mapping_file_path);
-                    match err.kind() {
-                        std::io::ErrorKind::NotFound => {
-                            let mapping_file_parent_path = mapping_file_path.parent().unwrap();
-                            if !mapping_file_parent_path.exists() {
-                                fs::create_dir_all(mapping_file_parent_path).unwrap();
-                            }
-                            match fs::write(mapping_file_path,  b"") {
-                                Ok(_) => mapping,
-                                Err(err) => panic!("{}", err)
-                            }
-                        }
-                        err => panic!("{:?}", err)
-                    }
-                }
+                err => panic!("{:?}", err)
             }
         }
     }

@@ -1,11 +1,11 @@
 use std::{env, ops::Deref, path::PathBuf};
 
 use tonic::transport::Channel;
-use clap::{App, Arg, ArgMatches, Values};
-use workflows::{actions::WorkflowActions, event::WorkflowEvent, workflow_config::WorkflowConfig};
+use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use generated_types::inter_process_client::InterProcessClient;
+use generated_types::handler_service_client::HandlerServiceClient;
+use workflows::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
 
 #[derive(Clone)]
 pub struct GenerateSubCommand {}
@@ -29,17 +29,6 @@ impl GenerateSubCommand {
             }
         }
     }
-
-    fn generate_config(path: PathBuf, events: Values, actions: Values) -> Result<(), std::io::Error> {
-        let config = WorkflowConfig { 
-            watch_recursive: false,
-            apply_on_startup: false,
-            panic_handler_on_error: false,
-            event: WorkflowEvent::from(events),
-            actions: WorkflowActions::defaults(actions),
-        };
-        config.generate_config(path.deref())
-    }
 }
 
 impl SubCommandUtil for GenerateSubCommand {
@@ -54,25 +43,26 @@ impl SubCommandUtil for GenerateSubCommand {
                 .short("d")
                 .help("print debug information verbosely"))
             .arg(Arg::with_name("events").long("events")
-                .required(true)
+                .required(false)
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&["create", "modify"]))
+                .possible_values(&EVENT_TYPES))
             .arg(Arg::with_name("actions").long("actions")
-                .required(true)
+                .required(false)
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&["movetodir", "runcmd"]))
+                .possible_values(&ACTION_TYPES))
             .arg(Arg::with_name("path")
                 .required(false))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, _client: &mut InterProcessClient<Channel>) {
-        let events = sub_matches.values_of("events").unwrap();
-        let actions = sub_matches.values_of("actions").unwrap();
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, _client: &mut HandlerServiceClient<Channel>) {
+        let events = sub_matches.values_of("events");
+        let actions = sub_matches.values_of("actions");
         let path = GenerateSubCommand::construct_config_path("folden_workflow",sub_matches.value_of("path"));
-        GenerateSubCommand::generate_config(path, events, actions).unwrap();
+        let config = WorkflowConfig::default_new(events, actions);
+        config.generate_config(path.deref()).unwrap();
     }
 }

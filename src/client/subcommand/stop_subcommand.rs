@@ -5,9 +5,8 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
+use generated_types::{StopHandlerRequest, handler_service_client::HandlerServiceClient};
 use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
-use generated_types::StopHandlerRequest;
-use generated_types::inter_process_client::InterProcessClient;
 
 #[derive(Clone)]
 pub struct StopSubCommand  {}
@@ -28,7 +27,7 @@ impl SubCommandUtil for StopSubCommand {
             .args(construct_directory_or_all_args().as_slice())
         }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {
         let is_handler_to_be_removed = sub_matches.is_present("remove");
         let mut path = PathBuf::new();
         if !sub_matches.is_present("all") {

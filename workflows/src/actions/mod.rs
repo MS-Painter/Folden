@@ -7,6 +7,8 @@ mod move_to_dir;
 use self::{move_to_dir::MoveToDir, run_cmd::RunCmd};
 use crate::workflow_execution_context::WorkflowExecutionContext;
 
+pub const ACTION_TYPES: [&str; 2] = ["runcmd", "movetodir"];
+
 pub trait WorkflowAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
@@ -46,5 +48,11 @@ impl WorkflowAction for WorkflowActions {
             WorkflowActions::RunCmd(action) => action.run(context),
             WorkflowActions::None => false
         }
+    }
+}
+
+impl Default for WorkflowActions {
+    fn default() -> Self {
+        Self::RunCmd(RunCmd::default())
     }
 }

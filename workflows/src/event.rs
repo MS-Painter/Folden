@@ -9,6 +9,8 @@ pub struct WorkflowEvent {
     pub naming_regex_match: Option<String>,
 }
 
+pub const EVENT_TYPES: [&str; 2] = ["create", "modify"];
+
 impl WorkflowEvent {
     fn is_handled_event_kind(name: &str, kind: &EventKind) -> bool {
         match name.to_lowercase().as_str() {
@@ -32,6 +34,15 @@ impl From<Values<'_>> for WorkflowEvent {
     fn from(events: Values) -> Self {
         Self {
             events: events.map(|event| event.to_string()).unique().collect(),
+            naming_regex_match: Some(String::from(".*")),
+        }
+    }
+}
+
+impl Default for WorkflowEvent {
+    fn default() -> Self {
+        Self {
+            events: EVENT_TYPES.iter().map(|event| event.to_string()).collect(),
             naming_regex_match: Some(String::from(".*")),
         }
     }

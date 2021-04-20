@@ -7,7 +7,7 @@ use dyn_clone::DynClone;
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use generated_types::inter_process_client::InterProcessClient;
+use generated_types::handler_service_client::HandlerServiceClient;
 
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
@@ -16,7 +16,7 @@ pub trait SubCommandUtil: DynClone {
     
     fn construct_subcommand(&self) -> App;
     
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut InterProcessClient<Channel>);
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>);
     
     fn create_instance(&self) -> App {
         if self.alias().is_empty() {
@@ -69,6 +69,7 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
             .takes_value(true)
             .validator_os(is_existing_directory_validator),
         Arg::with_name("all").long("all")
+            .help("Apply on all registered directory handlers")
             .required(false)
             .takes_value(false)
             .conflicts_with("directory"))

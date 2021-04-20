@@ -1,0 +1,18 @@
+syntax = "proto3";
+package handler_service;
+
+message HandlerSummary {
+  bool is_alive = 1;
+  string config_path = 2;
+  bool is_auto_startup = 3;
+  string description = 4;
+}
+
+message HandlerStateResponse {
+  bool is_alive = 1;
+  string message = 2;
+}
+
+message HandlerStatesMapResponse {
+  map<string, HandlerStateResponse> states_map = 1; // key is directory path
+}
