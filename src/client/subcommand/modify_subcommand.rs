@@ -28,6 +28,9 @@ impl SubCommandUtil for ModifySubCommand {
                 .takes_value(true)
                 .case_insensitive(true)
                 .possible_values(&STARTUP_TYPES))
+            .arg(Arg::with_name("description").long("description")
+                .required(false)
+                .takes_value(true))
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {
@@ -36,6 +39,10 @@ impl SubCommandUtil for ModifySubCommand {
                 if value.to_lowercase() == "auto" {HandlerStartupType::Auto as i32} else {HandlerStartupType::Manual as i32}
             }
             None => HandlerStartupType::NotProvided as i32
+        };
+        let modify_description = match sub_matches.value_of("description") {
+            Some(description) => Some(description.to_string()),
+            None => None
         };
         let mut directory_path = String::new();
         if !sub_matches.is_present("all") {
@@ -53,6 +60,7 @@ impl SubCommandUtil for ModifySubCommand {
         let response = client.modify_handler(ModifyHandlerRequest {
             directory_path,
             startup_type,
+            modify_description,
         });
         let response = block_on(response);
         println!("{:?}", response);

@@ -5,6 +5,7 @@ package handler_service;
 
 import "handler_types.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 
 service HandlerService {
   rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (HandlerStateResponse);
@@ -48,4 +49,5 @@ message StopHandlerRequest {
 message ModifyHandlerRequest {
   string directory_path = 1;
   HandlerStartupType startup_type = 2;
+  google.protobuf.StringValue modify_description = 3;
 }

@@ -6,7 +6,7 @@ use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedW
 
 use crate::config::Config;
 use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
-use generated_types::{HandlerStartupType, HandlerStateResponse, HandlerStatus, HandlerSummary};
+use generated_types::{HandlerStartupType, HandlerStateResponse, HandlerStatus, HandlerSummary, ModifyHandlerRequest};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -135,6 +135,7 @@ pub struct HandlerMapping {
     pub watcher_tx: Option<Sender<Result<Event, Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
     pub handler_config_path: String,
     pub start_on_startup: bool,
+    pub description: String,
 }
 
 impl HandlerMapping {
@@ -155,6 +156,7 @@ impl HandlerMapping {
             state: self.status() as i32,
             config_path: self.handler_config_path.clone(),
             startup_type: if self.start_on_startup {HandlerStartupType::Auto as i32} else {HandlerStartupType::Manual as i32},
+            description: self.description.to_owned(),
         };
         state
     }
@@ -163,6 +165,15 @@ impl HandlerMapping {
         match self.watcher_tx.clone().unwrap().send(Err(Error::new(NotifyErrorKind::WatchNotFound))) {
             Ok(_) => Ok(String::from("Handler stopped")),
             Err(error) => Err(format!("Failed to stop handler\nError: {:?}", error))
+        }
+    }
+
+    pub fn modify(&mut self, request: &ModifyHandlerRequest) {
+        if request.startup_type != HandlerStartupType::NotProvided as i32 {
+            self.start_on_startup = if request.startup_type == HandlerStartupType::Auto as i32 {true} else {false};
+        }
+        if let Some(ref description) = request.modify_description {
+            self.description = description.to_string();
         }
     }
 }

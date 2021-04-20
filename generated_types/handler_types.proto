@@ -16,4 +16,5 @@ message HandlerSummary {
   HandlerStatus state = 1;
   string config_path = 2;
   HandlerStartupType startup_type = 3;
+  string description = 4;
 }

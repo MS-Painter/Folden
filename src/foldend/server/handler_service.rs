@@ -6,7 +6,7 @@ use tonic::{Request, Response};
 use super::Server;
 use crate::mapping::HandlerMapping;
 use generated_types::{
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus, HandlerStartupType,
+    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus,
     HandlerSummary, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
@@ -47,6 +47,7 @@ impl HandlerService for Server {
                     watcher_tx: None,
                     handler_config_path: request.handler_config_path,
                     start_on_startup: false,
+                    description: String::new(),
                 });
                 let _result = mapping.save(&self.config.mapping_state_path);
                 Ok(Response::new(HandlerStateResponse {
@@ -161,17 +162,11 @@ impl HandlerService for Server {
         let mut mapping = self.mapping.write().await;
 
         match mapping.directory_mapping.get_mut(&request.directory_path) {
-            Some(handler_mapping) => {
-                if request.startup_type != HandlerStartupType::NotProvided as i32 {
-                    handler_mapping.start_on_startup = if request.startup_type == HandlerStartupType::Auto as i32 {true} else {false};
-                }
-            }
+            Some(handler_mapping) => handler_mapping.modify(&request),
             None => {
                 if request.directory_path.is_empty() { // If empty - All directories are requested
                     for handler_mapping in mapping.directory_mapping.values_mut() {
-                        if request.startup_type != HandlerStartupType::NotProvided as i32 {
-                            handler_mapping.start_on_startup = if request.startup_type == HandlerStartupType::Auto as i32 {true} else {false};
-                        }
+                        handler_mapping.modify(&request);
                     }
                 }
                 else {
