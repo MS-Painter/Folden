@@ -22,21 +22,37 @@ impl Default for RunCmd {
 
 impl WorkflowAction for RunCmd {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
-        let formatted_command = Self::format_input(&self.command, context.get_input(self.input)).unwrap_or(self.command.to_owned());
-        let mut command = Command::new(&formatted_command);
-        command.stdout(Stdio::piped());
-        command.current_dir(&context.event_file_path.parent().unwrap());
-        match command.spawn() {
+        let formatted_command = Self::format_input(&self.command, context.get_input(self.input)).unwrap_or(self.command.to_owned().into());
+        let command = Command::new("cmd.exe")
+            .arg(format!("/C {}", formatted_command))
+            .current_dir(&context.event_file_path.parent().unwrap())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn();
+        match command {
             Ok(process) => {
                 let output = process.wait_with_output();
-                match &output {
-                    Ok(out) => println!("RunCmd stdout - {:?}", out.stdout.as_slice()),
-                    Err(e) => println!("RunCmd stderr - {:?}", e)
+                return match output {
+                    Ok(out) => {
+                        if out.stdout.is_empty() {
+                            let stderr = String::from_utf8(out.stderr).unwrap();
+                            println!("RunCmd stderr - {:?}", stderr);
+                            false
+                        }
+                        else {
+                            let stdout = String::from_utf8(out.stdout).unwrap();
+                            println!("RunCmd stdout - {:?}", stdout);
+                            true
+                        }
+                    }
+                    Err(e) => {
+                        println!("RunCmd stderr - {:?}", e);
+                        false
+                    }
                 }
-                output.is_ok()
             }
             Err(e) => {
-                println!("RunCmd error - Command could not spawn.\nError: {:?}", e);
+                println!("RunCmd could not spawn command.\nCommand: {:?}\nError: {:?}", formatted_command, e);
                 false
             }
         }

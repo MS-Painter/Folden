@@ -1,7 +1,7 @@
-use std::path::PathBuf;
+use std::{borrow::Cow, path::PathBuf};
 
 use regex::Regex;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 mod run_cmd;
 mod move_to_dir;
@@ -14,10 +14,10 @@ pub trait WorkflowAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
 
-    fn format_input(text: &String, input: Option<PathBuf>) -> Result<String,()> {
+    fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
         if let Some(input) = input {
-            let re = Regex::new(r#"(\$input\$)"#).unwrap();
-            return Ok(re.replace(text, input.to_str().unwrap()).to_string());
+            let re = Regex::new(r"(\$input\$)").unwrap();
+            return Ok(re.replace(text, input.to_string_lossy()))
         }
         Err(())
     }
