@@ -36,7 +36,7 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
 }
 
 async fn startup_handlers(server: &Server) -> () {
-    let mapping = server.mapping.read().await;
+    let mapping = &*server.mapping.read().await;
     let handler_requests: Vec<StartHandlerRequest> = mapping.directory_mapping.iter()
     .filter_map(|(directory_path, handler_mapping)| {
         if handler_mapping.is_auto_startup {
@@ -48,7 +48,6 @@ async fn startup_handlers(server: &Server) -> () {
             None
         }
     }).collect();
-    drop(mapping); // Free lock to complete server requests.
     for request in handler_requests {
         let response = server.start_handler(Request::new(request.clone())).await;
         match response {

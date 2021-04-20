@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::collections::HashMap;
 
 use tonic::{Request, Response};
@@ -57,8 +56,7 @@ impl HandlerService for Server {
     async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) ->
     Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
         let request = request.into_inner();
-        let mapping = self.mapping.read().await;
-        let mapping = mapping.deref();
+        let mapping = &*self.mapping.read().await;
         let directory_path = request.directory_path.as_str();
         let mut directory_states_map: HashMap<String, HandlerSummary> = HashMap::new();
         
