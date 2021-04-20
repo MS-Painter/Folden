@@ -1,6 +1,7 @@
 use std::{borrow::Cow, path::PathBuf};
 
 use regex::Regex;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 mod run_cmd;
@@ -16,8 +17,10 @@ pub trait WorkflowAction {
 
     fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
         if let Some(input) = input {
-            let re = Regex::new(r"(\$input\$)").unwrap();
-            return Ok(re.replace_all(text, input.to_string_lossy()))
+            lazy_static! {
+                static ref RE: Regex = Regex::new(r"(\$input\$)").unwrap();
+            }
+            return Ok(RE.replace_all(text, input.to_string_lossy()))
         }
         Err(())
     }
