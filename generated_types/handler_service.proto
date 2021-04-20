@@ -1,5 +1,3 @@
-// Definition of gRPC communication between client and server instances exclusively.
-
 syntax = "proto3";
 package handler_service;
 
@@ -13,15 +11,6 @@ service HandlerService {
   rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
   rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
   rpc ModifyHandler (ModifyHandlerRequest) returns (google.protobuf.Empty);
-}
-
-message HandlerStateResponse {
-  bool is_alive = 1;
-  string message = 2;
-}
-
-message HandlerStatesMapResponse {
-  map<string, HandlerStateResponse> states_map = 1; // key is directory path
 }
 
 message RegisterToDirectoryRequest {
