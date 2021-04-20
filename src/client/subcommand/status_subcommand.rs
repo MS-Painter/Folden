@@ -24,17 +24,18 @@ impl SubCommandUtil for StatusSubCommand {
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {  
         let mut directory_path = String::new();
-        if !sub_matches.is_present("all") {
-            let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
-            directory_path = path.into_os_string().into_string().unwrap();
-        }
-        else {
+        let all_directories = sub_matches.is_present("all");
+        if all_directories {
             match sub_matches.value_of_os("directory") {
                 Some(path) => {
                     directory_path = path.to_os_string().into_string().unwrap();
                 }
                 None => {}
             }
+        }
+        else {
+            let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
+            directory_path = path.into_os_string().into_string().unwrap();
         }
         let response = client.get_directory_status(GetDirectoryStatusRequest {
             directory_path
