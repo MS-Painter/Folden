@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use regex::Regex;
 use serde::{Serialize, Deserialize};
 
 mod run_cmd;
@@ -12,6 +13,14 @@ pub const ACTION_TYPES: [&str; 2] = ["runcmd", "movetodir"];
 pub trait WorkflowAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
+
+    fn format_input(text: &String, input: Option<PathBuf>) -> Result<String,()> {
+        if let Some(input) = input {
+            let re = Regex::new(r#"(\$input\$)"#).unwrap();
+            return Ok(re.replace(text, input.to_str().unwrap()).to_string());
+        }
+        Err(())
+    }
 }
 
 pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> PathBuf {
