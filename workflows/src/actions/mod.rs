@@ -17,7 +17,7 @@ pub trait WorkflowAction {
     fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
         if let Some(input) = input {
             let re = Regex::new(r"(\$input\$)").unwrap();
-            return Ok(re.replace(text, input.to_string_lossy()))
+            return Ok(re.replace_all(text, input.to_string_lossy()))
         }
         Err(())
     }
