@@ -5,8 +5,8 @@ use serde::{Serialize, Deserialize};
 use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::Config;
+use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
 use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
-use generated_types::{HandlerStateResponse, HandlerStatus, HandlerSummary, ModifyHandlerRequest};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -23,18 +23,18 @@ impl Mapping {
     }
 
     pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &mut HandlerMapping) -> HandlerStateResponse {
-        match handler_mapping.status() {
-            HandlerStatus::Dead => {
-                self.spawn_handler_thread(directory_path.to_string(), handler_mapping);
-                HandlerStateResponse {
-                    state: HandlerStatus::Live as i32,
-                    message: String::from("Handler started"),
-                }
-            }
-            HandlerStatus::Live => HandlerStateResponse {
-                state: HandlerStatus::Live as i32,
+        if handler_mapping.is_alive() {
+            HandlerStateResponse {
+                is_alive: true,
                 message: String::from("Handler already up"),
-            },
+            }
+        }
+        else {
+            self.spawn_handler_thread(directory_path.to_string(), handler_mapping);
+            HandlerStateResponse {
+                is_alive: true,
+                message: String::from("Handler started"),
+            }
         }
     }
     
@@ -62,45 +62,41 @@ impl Mapping {
     }
 
     pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &mut HandlerMapping, remove: bool) -> HandlerStateResponse {
-        match handler_mapping.status() {
-            HandlerStatus::Dead => {
-                let mut message = String::from("Handler already stopped");
-                if remove {
-                    self.directory_mapping.remove(directory_path);
-                    message.push_str(" & removed");
-                    let _result = self.save(&config.mapping_state_path);
+        if handler_mapping.is_alive() {
+            match handler_mapping.stop_handler_thread() {
+                Ok(mut message) => {
+                    if remove {
+                        self.directory_mapping.remove(directory_path);
+                        message.push_str(" & removed");
+                        let _result = self.save(&config.mapping_state_path);
+                    }
+                    else {
+                        handler_mapping.watcher_tx = None;
+                    }
+                    HandlerStateResponse {
+                        is_alive: false,
+                        message,
+                    }
                 }
-                else {
-                    handler_mapping.watcher_tx = None;
-                }
-                HandlerStateResponse {
-                    state: HandlerStatus::Dead as i32,
+                Err(message) => HandlerStateResponse {
+                    is_alive: true,
                     message,
                 }
             }
-            HandlerStatus::Live => {
-                match handler_mapping.stop_handler_thread() {
-                    Ok(mut message) => {
-                        if remove {
-                            self.directory_mapping.remove(directory_path);
-                            message.push_str(" & removed");
-                            let _result = self.save(&config.mapping_state_path);
-                        }
-                        else {
-                            handler_mapping.watcher_tx = None;
-                        }
-                        HandlerStateResponse {
-                            state: HandlerStatus::Dead as i32,
-                            message,
-                        }
-                    }
-                    Err(message) => {
-                        HandlerStateResponse {
-                            state: HandlerStatus::Live as i32,
-                            message,
-                        }
-                    }
-                }
+        }
+        else {
+            let mut message = String::from("Handler already stopped");
+            if remove {
+                self.directory_mapping.remove(directory_path);
+                message.push_str(" & removed");
+                let _result = self.save(&config.mapping_state_path);
+            }
+            else {
+                handler_mapping.watcher_tx = None;
+            }
+            HandlerStateResponse {
+                is_alive: false,
+                message,
             }
         }
     }
@@ -139,21 +135,16 @@ pub struct HandlerMapping {
 }
 
 impl HandlerMapping {
-    pub fn status(&self) -> HandlerStatus {
+    pub fn is_alive(&self) -> bool {
         match self.watcher_tx.clone() {
-            Some(tx) => {
-                match tx.send(Ok(Event::new(EventKind::Other))) {
-                    Ok(_) => HandlerStatus::Live,
-                    Err(_) => HandlerStatus::Dead
-                }
-            }
-            None => HandlerStatus::Dead
+            Some(tx) => tx.send(Ok(Event::new(EventKind::Other))).is_ok(),
+            None => false
         }
     }
 
     pub fn summary(&self) -> HandlerSummary {
         let state = HandlerSummary {
-            state: self.status() as i32,
+            is_alive: self.is_alive(),
             config_path: self.handler_config_path.clone(),
             is_auto_startup: self.is_auto_startup,
             description: self.description.to_owned(),

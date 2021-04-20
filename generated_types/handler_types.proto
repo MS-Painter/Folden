@@ -1,13 +1,8 @@
 syntax = "proto3";
 package handler_service;
 
-enum HandlerStatus {
-    Dead = 0;
-    Live = 1;
-}
-
 message HandlerSummary {
-  HandlerStatus state = 1;
+  bool is_alive = 1;
   string config_path = 2;
   bool is_auto_startup = 3;
   string description = 4;

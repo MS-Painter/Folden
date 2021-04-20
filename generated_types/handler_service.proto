@@ -16,7 +16,7 @@ service HandlerService {
 }
 
 message HandlerStateResponse {
-  HandlerStatus state = 1;
+  bool is_alive = 1;
   string message = 2;
 }
 

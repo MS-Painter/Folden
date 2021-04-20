@@ -6,7 +6,7 @@ use tonic::{Request, Response};
 use super::Server;
 use crate::mapping::HandlerMapping;
 use generated_types::{
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerStatus,
+    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse,
     HandlerSummary, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
@@ -19,8 +19,8 @@ impl HandlerService for Server {
         match mapping.directory_mapping.get(request_directory_path) {
             Some(_handler_mapping) => {
                 Ok(Response::new(HandlerStateResponse {
+                    is_alive: true,
                     message: String::from("Directory already handled by handler"),
-                    state: HandlerStatus::Live as i32,
                 }))
             }
             None => {
@@ -31,15 +31,15 @@ impl HandlerService for Server {
                         message.push_str(directory_path); 
                         return Ok(Response::new(HandlerStateResponse {
                             message,
-                            state: HandlerStatus::Dead as i32,
+                            is_alive: false,
                         }))
                     }
                     else if directory_path.contains(request_directory_path) {
                         let mut message = "Couldn't register\nDirectory is a parent of requested directory - ".to_string();
                         message.push_str(directory_path); 
                         return Ok(Response::new(HandlerStateResponse {
+                            is_alive: false,
                             message,
-                            state: HandlerStatus::Dead as i32,
                         }))
                     }
                 }
@@ -51,8 +51,8 @@ impl HandlerService for Server {
                 });
                 let _result = mapping.save(&self.config.mapping_state_path);
                 Ok(Response::new(HandlerStateResponse {
+                    is_alive: true,
                     message: "".to_string(),
-                    state: HandlerStatus::Live as i32,
                 }))
             }
         }
@@ -112,7 +112,7 @@ impl HandlerService for Server {
                 }
                 else {
                     states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                        state: HandlerStatus::Dead as i32,
+                        is_alive: false,
                         message: String::from("Directory unhandled"),
                     });
                 }
@@ -146,7 +146,7 @@ impl HandlerService for Server {
                 }
                 else {
                     states_map.insert(directory_path.to_owned(), HandlerStateResponse {
-                        state: HandlerStatus::Dead as i32,
+                        is_alive: false,
                         message: String::from("Directory unhandled"),
                     });
                 }
