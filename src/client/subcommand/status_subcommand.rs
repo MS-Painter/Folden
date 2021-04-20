@@ -40,6 +40,11 @@ impl SubCommandUtil for StatusSubCommand {
             directory_path
         });
         let response = block_on(response).unwrap().into_inner();
-        println!("{:?}", response.directory_states_map);
+        if response.directory_states_map.is_empty() {
+            println!("No handler registered on directory");
+        }
+        else {
+            println!("{:?}", response.directory_states_map);
+        }
     }
 }
