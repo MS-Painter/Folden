@@ -1,4 +1,4 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, path::PathBuf, process::{Child, Command, Stdio}};
 
 use regex::Regex;
 use lazy_static::lazy_static;
@@ -23,6 +23,18 @@ pub trait WorkflowAction {
             return Ok(INPUT_RE.replace_all(text, input.to_string_lossy()))
         }
         Err(())
+    }
+    
+    fn spawn_command<S>(input: &S, context: &mut WorkflowExecutionContext) -> std::io::Result<Child>
+    where 
+    S: AsRef<str> {
+        let parent_dir_path = context.event_file_path.parent().unwrap();
+        Command::new("cmd.exe")
+                .arg(format!("/C {}", input.as_ref()))
+                .current_dir(parent_dir_path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
     }
 
     fn format_datetime(text: &String) {

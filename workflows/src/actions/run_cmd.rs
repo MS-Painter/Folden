@@ -1,5 +1,3 @@
-use std::process::{Command, Stdio};
-
 use serde::{Serialize, Deserialize};
 
 use super::WorkflowAction;
@@ -29,13 +27,7 @@ impl WorkflowAction for RunCmd {
         } else {
             self.command.to_owned().into()
         };
-        let command = Command::new("cmd.exe")
-            .arg(format!("/C {}", formatted_command))
-            .current_dir(&context.event_file_path.parent().unwrap())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn();
-        match command {
+        match Self::spawn_command(&formatted_command, context) {
             Ok(process) => {
                 let output = process.wait_with_output();
                 return match output {
