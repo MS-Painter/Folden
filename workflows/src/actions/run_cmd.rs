@@ -7,7 +7,8 @@ use crate::{workflow_context_input::WorkflowContextInput, workflow_execution_con
 pub struct RunCmd {
     pub input: WorkflowContextInput,
     pub command: String,
-    pub enable_formatting: bool,
+    pub input_formatting: bool,
+    pub datetime_formatting: bool,
 }
 
 impl Default for RunCmd {
@@ -15,17 +16,21 @@ impl Default for RunCmd {
         Self {
             input: WorkflowContextInput::EventFilePath,
             command: String::from("echo $input$"),
-            enable_formatting: true,
+            input_formatting: true,
+            datetime_formatting: true,
         }
     }
 }
 
 impl WorkflowAction for RunCmd {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
-        let formatted_command = if self.enable_formatting {
-            Self::format_input(&self.command, context.get_input(self.input)).unwrap_or(self.command.to_owned().into())
-        } else {
-            self.command.to_owned().into()
+        let mut formatted_command = self.command.to_owned().into();
+        if self.input_formatting {
+            formatted_command = Self::format_input(&self.command, context.get_input(self.input))
+            .unwrap_or(self.command.to_owned().into());
+        } 
+        if self.datetime_formatting {
+            formatted_command = Self::format_datetime(formatted_command).into();
         };
         match Self::spawn_command(&formatted_command, context) {
             Ok(process) => {

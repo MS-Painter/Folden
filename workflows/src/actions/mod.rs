@@ -1,5 +1,6 @@
 use std::{borrow::Cow, path::PathBuf, process::{Child, Command, Stdio}};
 
+use chrono;
 use regex::Regex;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -24,6 +25,10 @@ pub trait WorkflowAction {
         }
         Err(())
     }
+
+    fn format_datetime<S>(text: S) -> String where S: AsRef<str> {
+        chrono::Local::now().format(text.as_ref()).to_string()
+    }
     
     fn spawn_command<S>(input: &S, context: &mut WorkflowExecutionContext) -> std::io::Result<Child>
     where 
@@ -44,24 +49,6 @@ pub trait WorkflowAction {
                 .stderr(Stdio::piped())
                 .spawn()
         }
-    }
-
-    fn format_datetime(text: &String) {
-        lazy_static! {
-            static ref DATETIME_RE: Regex = Regex::new(r"\${1}(\%[^\$]*)\${1}").unwrap();
-        }
-        let capture_locations = &mut DATETIME_RE.capture_locations();
-        match DATETIME_RE.captures_read(capture_locations, text) {
-            Some(_) => {
-                for index in 0..capture_locations.len() {
-                    if let Some(capture_location) = capture_locations.get(index) {
-                        //capture_location.0
-                    }
-                }
-            }
-            None => {}
-        }
-        //Local::now().format(text).to_string()
     }
 }
 
