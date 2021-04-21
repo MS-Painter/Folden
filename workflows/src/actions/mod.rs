@@ -48,7 +48,7 @@ pub trait WorkflowAction {
 
     fn format_datetime(text: &String) {
         lazy_static! {
-            static ref DATETIME_RE: Regex = Regex::new(r"[^\$]*(\${1}(\%[^\$]*)\${1})[^\$]*").unwrap();
+            static ref DATETIME_RE: Regex = Regex::new(r"\${1}(\%[^\$]*)\${1}").unwrap();
         }
         let capture_locations = &mut DATETIME_RE.capture_locations();
         match DATETIME_RE.captures_read(capture_locations, text) {
