@@ -12,7 +12,7 @@ pub struct MoveToDir {
     pub requires_directory_exists: bool,
     pub replace_older_files: bool,
     pub keep_input_file_intact: bool,
-    pub enable_formatting: bool,
+    pub datetime_formatting: bool,
 }
 
 impl MoveToDir {
@@ -69,7 +69,7 @@ impl Default for MoveToDir {
             requires_directory_exists: false,
             replace_older_files: true,
             keep_input_file_intact: false,
-            enable_formatting: true,
+            datetime_formatting: true,
         }
     }
 }
@@ -80,7 +80,12 @@ impl WorkflowAction for MoveToDir {
             Some(input_path) => {
                 match input_path.file_name() {
                     Some(input_file_name) => {
-                        let working_dir_path = construct_working_dir(&input_path, &self.directory_path);
+                        let output_directory_path = if self.datetime_formatting {
+                            PathBuf::from(Self::format_datetime(&self.directory_path.to_string_lossy()))
+                        } else {
+                            self.directory_path.to_path_buf()
+                        };
+                        let working_dir_path = construct_working_dir(&input_path, &output_directory_path);
                         match working_dir_path.canonicalize() {
                             Ok(working_dir_path) => self.apply(context, &working_dir_path, &input_path, input_file_name),
                             Err(err) => {
