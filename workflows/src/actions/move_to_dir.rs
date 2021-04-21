@@ -12,6 +12,7 @@ pub struct MoveToDir {
     pub requires_directory_exists: bool,
     pub replace_older_files: bool,
     pub keep_input_file_intact: bool,
+    pub enable_formatting: bool,
 }
 
 impl MoveToDir {
@@ -68,6 +69,7 @@ impl Default for MoveToDir {
             requires_directory_exists: false,
             replace_older_files: true,
             keep_input_file_intact: false,
+            enable_formatting: true,
         }
     }
 }

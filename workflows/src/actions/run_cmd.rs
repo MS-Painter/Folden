@@ -9,6 +9,7 @@ use crate::{workflow_context_input::WorkflowContextInput, workflow_execution_con
 pub struct RunCmd {
     pub input: WorkflowContextInput,
     pub command: String,
+    pub enable_formatting: bool,
 }
 
 impl Default for RunCmd {
@@ -16,13 +17,18 @@ impl Default for RunCmd {
         Self {
             input: WorkflowContextInput::EventFilePath,
             command: String::from("echo $input$"),
+            enable_formatting: true,
         }
     }
 }
 
 impl WorkflowAction for RunCmd {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
-        let formatted_command = Self::format_input(&self.command, context.get_input(self.input)).unwrap_or(self.command.to_owned().into());
+        let formatted_command = if self.enable_formatting {
+            Self::format_input(&self.command, context.get_input(self.input)).unwrap_or(self.command.to_owned().into())
+        } else {
+            self.command.to_owned().into()
+        };
         let command = Command::new("cmd.exe")
             .arg(format!("/C {}", formatted_command))
             .current_dir(&context.event_file_path.parent().unwrap())
