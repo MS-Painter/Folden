@@ -11,6 +11,20 @@ pub struct RunCmd {
     pub datetime_formatting: bool,
 }
 
+impl RunCmd {
+    fn format_command(&self, context: &mut WorkflowExecutionContext) -> std::borrow::Cow<str> {
+        let mut formatted_command = self.command.to_owned().into();
+        if self.input_formatting {
+            formatted_command = Self::format_input(&self.command, context.get_input(self.input))
+            .unwrap_or(self.command.to_owned().into());
+        } 
+        if self.datetime_formatting {
+            formatted_command = Self::format_datetime(formatted_command).into();
+        };
+        formatted_command
+    }
+}
+
 impl Default for RunCmd {
     fn default() -> Self {
         Self {
@@ -24,14 +38,7 @@ impl Default for RunCmd {
 
 impl WorkflowAction for RunCmd {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
-        let mut formatted_command = self.command.to_owned().into();
-        if self.input_formatting {
-            formatted_command = Self::format_input(&self.command, context.get_input(self.input))
-            .unwrap_or(self.command.to_owned().into());
-        } 
-        if self.datetime_formatting {
-            formatted_command = Self::format_datetime(formatted_command).into();
-        };
+        let formatted_command = self.format_command(context);
         match Self::spawn_command(&formatted_command, context) {
             Ok(process) => {
                 let output = process.wait_with_output();
