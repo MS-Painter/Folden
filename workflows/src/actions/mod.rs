@@ -18,11 +18,29 @@ pub trait WorkflowAction {
     fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
         if let Some(input) = input {
             lazy_static! {
-                static ref RE: Regex = Regex::new(r"(\$input\$)").unwrap();
+                static ref INPUT_RE: Regex = Regex::new(r"(\$input\$)").unwrap();
             }
-            return Ok(RE.replace_all(text, input.to_string_lossy()))
+            return Ok(INPUT_RE.replace_all(text, input.to_string_lossy()))
         }
         Err(())
+    }
+
+    fn format_datetime(text: &String) {
+        lazy_static! {
+            static ref DATETIME_RE: Regex = Regex::new(r"[^\$]*(\${1}(\%[^\$]*)\${1})[^\$]*").unwrap();
+        }
+        let capture_locations = &mut DATETIME_RE.capture_locations();
+        match DATETIME_RE.captures_read(capture_locations, text) {
+            Some(_) => {
+                for index in 0..capture_locations.len() {
+                    if let Some(capture_location) = capture_locations.get(index) {
+                        //capture_location.0
+                    }
+                }
+            }
+            None => {}
+        }
+        //Local::now().format(text).to_string()
     }
 }
 
