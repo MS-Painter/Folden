@@ -29,12 +29,21 @@ pub trait WorkflowAction {
     where 
     S: AsRef<str> {
         let parent_dir_path = context.event_file_path.parent().unwrap();
-        Command::new("cmd.exe")
+        if cfg!(windows) {
+            Command::new("cmd.exe")
                 .arg(format!("/C {}", input.as_ref()))
                 .current_dir(parent_dir_path)
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
                 .spawn()
+        }
+        else {
+            Command::new(input.as_ref())
+                .current_dir(parent_dir_path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+        }
     }
 
     fn format_datetime(text: &String) {
