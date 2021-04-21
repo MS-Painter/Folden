@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, fs, io, path::{Path, PathBuf}};
+use std::{convert::TryFrom, fs, io, path::Path};
 
 use clap::Values;
 use serde::{Serialize, Deserialize};
@@ -33,11 +33,6 @@ impl WorkflowConfig {
 
     pub fn generate_config(&self, path: &Path) -> io::Result<()> {
         fs::write(path, toml::to_vec(*Box::new(self)).unwrap())
-    }
-    
-    pub fn from_config(path: &PathBuf) -> Result<WorkflowConfig, toml::de::Error> {
-        let data = fs::read(path).unwrap();
-        Self::try_from(data)
     }
 }
 

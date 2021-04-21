@@ -47,28 +47,35 @@ impl Mapping {
     pub fn spawn_handler_thread(&mut self, directory_path: String, handler_mapping: &mut HandlerMapping) -> Result<(), String> {
         let path = PathBuf::from(directory_path.clone());
         let config_path = PathBuf::from(&handler_mapping.handler_config_path);
-        match WorkflowConfig::from_config(&config_path) {
-            Ok(config) => {
-                let (tx, rx) = crossbeam::channel::unbounded();
-                let thread_tx = tx.clone();
-                let watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
-                thread::spawn(move || {
-                    let mut handler = WorkflowHandler::new(config);
-                    handler.watch(&path, watcher, rx);
-                });            
-                // Insert or update the value of the current handled directory
-                match self.directory_mapping.get_mut(&directory_path) {
-                    Some(handler_mapping) => {
-                        handler_mapping.watcher_tx = Option::Some(tx);
+        match fs::read(&config_path) {
+            Ok(data) => {
+                match WorkflowConfig::try_from(data) {
+                    Ok(config) => {
+                        let (tx, rx) = crossbeam::channel::unbounded();
+                        let thread_tx = tx.clone();
+                        let watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
+                        thread::spawn(move || {
+                            let mut handler = WorkflowHandler::new(config);
+                            handler.watch(&path, watcher, rx);
+                        });            
+                        // Insert or update the value of the current handled directory
+                        match self.directory_mapping.get_mut(&directory_path) {
+                            Some(handler_mapping) => {
+                                handler_mapping.watcher_tx = Option::Some(tx);
+                            }
+                            None => {
+                                handler_mapping.watcher_tx = Option::Some(tx);
+                                self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
+                            }
+                        }
+                        Ok(())
                     }
-                    None => {
-                        handler_mapping.watcher_tx = Option::Some(tx);
-                        self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
-                    }
+                    Err(err) => Err(format!("Workflow config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
                 }
-                Ok(())
             }
-            Err(err) => Err(format!("Workflow file parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
+            Err(err) => {
+                Err(format!("Workflow file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
+            }
         }
     }
 
