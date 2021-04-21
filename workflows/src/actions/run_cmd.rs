@@ -25,17 +25,6 @@ impl RunCmd {
     }
 }
 
-impl Default for RunCmd {
-    fn default() -> Self {
-        Self {
-            input: WorkflowContextInput::EventFilePath,
-            command: String::from("echo $input$"),
-            input_formatting: true,
-            datetime_formatting: true,
-        }
-    }
-}
-
 impl WorkflowAction for RunCmd {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
         let formatted_command = self.format_command(context);
@@ -65,6 +54,17 @@ impl WorkflowAction for RunCmd {
                 println!("RunCmd could not spawn command.\nCommand: {:?}\nError: {:?}", formatted_command, e);
                 false
             }
+        }
+    }
+}
+
+impl Default for RunCmd {
+    fn default() -> Self {
+        Self {
+            input: WorkflowContextInput::EventFilePath,
+            command: String::from("echo $input$"),
+            input_formatting: true,
+            datetime_formatting: true,
         }
     }
 }
