@@ -1,4 +1,4 @@
-use std::{fs, io, path::{Path, PathBuf}};
+use std::{convert::TryFrom, fs, io, path::{Path, PathBuf}};
 
 use clap::Values;
 use serde::{Serialize, Deserialize};
@@ -35,14 +35,16 @@ impl WorkflowConfig {
         fs::write(path, toml::to_vec(*Box::new(self)).unwrap())
     }
     
-    pub fn from_config(path: &PathBuf) -> Self {
+    pub fn from_config(path: &PathBuf) -> Result<WorkflowConfig, toml::de::Error> {
         let data = fs::read(path).unwrap();
-        Self::from(data)
+        Self::try_from(data)
     }
 }
 
-impl From<Vec<u8>> for WorkflowConfig {
-    fn from(bytes: Vec<u8>) -> Self {
-        toml::from_slice(&bytes).unwrap()
+impl TryFrom<Vec<u8>> for WorkflowConfig {
+    type Error = toml::de::Error;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        toml::from_slice(&bytes)
     }
 }
