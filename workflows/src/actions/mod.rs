@@ -1,6 +1,9 @@
-use std::path::PathBuf;
+use std::{borrow::Cow, path::PathBuf, process::{Child, Command, Stdio}};
 
-use serde::{Serialize, Deserialize};
+use chrono;
+use regex::Regex;
+use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 
 mod run_cmd;
 mod move_to_dir;
@@ -12,6 +15,41 @@ pub const ACTION_TYPES: [&str; 2] = ["runcmd", "movetodir"];
 pub trait WorkflowAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
+
+    fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
+        if let Some(input) = input {
+            lazy_static! {
+                static ref INPUT_RE: Regex = Regex::new(r"(\$input\$)").unwrap();
+            }
+            return Ok(INPUT_RE.replace_all(text, input.to_string_lossy()))
+        }
+        Err(())
+    }
+
+    fn format_datetime<S>(text: S) -> String where S: AsRef<str> {
+        chrono::Local::now().format(text.as_ref()).to_string()
+    }
+    
+    fn spawn_command<S>(input: &S, context: &mut WorkflowExecutionContext) -> std::io::Result<Child>
+    where 
+    S: AsRef<str> {
+        let parent_dir_path = context.event_file_path.parent().unwrap();
+        if cfg!(windows) {
+            Command::new("cmd.exe")
+                .arg(format!("/C {}", input.as_ref()))
+                .current_dir(parent_dir_path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+        }
+        else {
+            Command::new(input.as_ref())
+                .current_dir(parent_dir_path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+        }
+    }
 }
 
 pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> PathBuf {

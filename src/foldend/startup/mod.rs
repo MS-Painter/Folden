@@ -48,12 +48,11 @@ async fn startup_handlers(server: &Server) -> () {
             None
         }
     }).collect();
-    drop(mapping); // Free lock to complete server requests.
+    drop(mapping);
     for request in handler_requests {
-        let response = server.start_handler(Request::new(request.clone())).await;
-        match response {
-            Ok(_) => {
-                println!("Handler [RUNNING] - {:?}", request.directory_path);
+        match server.start_handler(Request::new(request.clone())).await {
+            Ok(response) => {
+                println!("{:?}", response.into_inner().states_map);
             }
             Err(err) => {
                 println!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);

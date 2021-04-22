@@ -2,7 +2,8 @@ use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, thread};
 
 use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
-use notify::{Error, ErrorKind as NotifyErrorKind, Event, EventKind, RecommendedWatcher, Watcher};
+use notify::ErrorKind as NotifyErrorKind;
+use notify::{Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::Config;
 use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
@@ -30,33 +31,50 @@ impl Mapping {
             }
         }
         else {
-            self.spawn_handler_thread(directory_path.to_string(), handler_mapping);
-            HandlerStateResponse {
-                is_alive: true,
-                message: String::from("Handler started"),
+            match self.spawn_handler_thread(directory_path.to_string(), handler_mapping) {
+                Ok(_) => HandlerStateResponse {
+                    is_alive: true,
+                    message: String::from("Started handler"),
+                },
+                Err(err) => HandlerStateResponse {
+                    is_alive: false,
+                    message: format!("Failed to start handler.\nError: {}", err),
+                }
             }
         }
     }
     
-    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_mapping: &mut HandlerMapping) {
+    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_mapping: &mut HandlerMapping) -> Result<(), String> {
         let path = PathBuf::from(directory_path.clone());
         let config_path = PathBuf::from(&handler_mapping.handler_config_path);
-        let config = WorkflowConfig::from_config(&config_path);
-        let (tx, rx) = crossbeam::channel::unbounded();
-        let thread_tx = tx.clone();
-        let watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
-        thread::spawn(move || {
-            let mut handler = WorkflowHandler::new(config);
-            handler.watch(&path, watcher, rx);
-        });            
-        // Insert or update the value of the current handled directory
-        match self.directory_mapping.get_mut(&directory_path) {
-            Some(handler_mapping) => {
-                handler_mapping.watcher_tx = Option::Some(tx);
+        match fs::read(&config_path) {
+            Ok(data) => {
+                match WorkflowConfig::try_from(data) {
+                    Ok(config) => {
+                        let (tx, rx) = crossbeam::channel::unbounded();
+                        let thread_tx = tx.clone();
+                        let watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
+                        thread::spawn(move || {
+                            let mut handler = WorkflowHandler::new(config);
+                            handler.watch(&path, watcher, rx);
+                        });            
+                        // Insert or update the value of the current handled directory
+                        match self.directory_mapping.get_mut(&directory_path) {
+                            Some(handler_mapping) => {
+                                handler_mapping.watcher_tx = Option::Some(tx);
+                            }
+                            None => {
+                                handler_mapping.watcher_tx = Option::Some(tx);
+                                self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
+                            }
+                        }
+                        Ok(())
+                    }
+                    Err(err) => Err(format!("Workflow config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
+                }
             }
-            None => {
-                handler_mapping.watcher_tx = Option::Some(tx);
-                self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
+            Err(err) => {
+                Err(format!("Workflow file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
             }
         }
     }
@@ -128,7 +146,7 @@ impl Into<Vec<u8>> for &Mapping {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HandlerMapping {
     #[serde(skip)]
-    pub watcher_tx: Option<Sender<Result<Event, Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
+    pub watcher_tx: Option<Sender<Result<Event, notify::Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
     pub handler_config_path: String,
     pub is_auto_startup: bool,
     pub description: String,
@@ -153,7 +171,7 @@ impl HandlerMapping {
     }
 
     pub fn stop_handler_thread(&self) -> Result<String, String> {
-        match self.watcher_tx.clone().unwrap().send(Err(Error::new(NotifyErrorKind::WatchNotFound))) {
+        match self.watcher_tx.clone().unwrap().send(Err(notify::Error::new(NotifyErrorKind::WatchNotFound))) {
             Ok(_) => Ok(String::from("Handler stopped")),
             Err(error) => Err(format!("Failed to stop handler\nError: {:?}", error))
         }

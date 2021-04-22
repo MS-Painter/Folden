@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::collections::HashMap;
 
 use tonic::{Request, Response};
@@ -39,17 +38,24 @@ impl HandlerService for Server {
                         }))
                     }
                 }
-                mapping.spawn_handler_thread(request.directory_path, &mut HandlerMapping {
+                match mapping.spawn_handler_thread(request.directory_path, &mut HandlerMapping {
                     watcher_tx: None,
                     handler_config_path: request.handler_config_path,
                     is_auto_startup: false,
                     description: String::new(),
-                });
-                let _result = mapping.save(&self.config.mapping_state_path);
-                Ok(Response::new(HandlerStateResponse {
-                    is_alive: true,
-                    message: String::from("Registered and started handler"),
-                }))
+                }) {
+                    Ok(_) => {
+                        let _result = mapping.save(&self.config.mapping_state_path);
+                        Ok(Response::new(HandlerStateResponse {
+                            is_alive: true,
+                            message: String::from("Registered and started handler"),
+                        }))
+                    }
+                    Err(err) => Ok(Response::new(HandlerStateResponse {
+                        is_alive: false,
+                        message: format!("Failed to register and start handler.\nError: {}", err),
+                    }))
+                }
             }
         }
     }
@@ -57,8 +63,7 @@ impl HandlerService for Server {
     async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) ->
     Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
         let request = request.into_inner();
-        let mapping = self.mapping.read().await;
-        let mapping = mapping.deref();
+        let mapping = &*self.mapping.read().await;
         let directory_path = request.directory_path.as_str();
         let mut directory_states_map: HashMap<String, HandlerSummary> = HashMap::new();
         
