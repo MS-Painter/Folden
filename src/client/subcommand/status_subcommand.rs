@@ -4,7 +4,7 @@ use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
+use super::subcommand::{construct_directory_or_all_args, construct_port_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct StatusSubCommand {}
@@ -20,6 +20,7 @@ impl SubCommandUtil for StatusSubCommand {
             .arg(Arg::with_name("debug").short("d")
                 .help("print debug information verbosely"))
             .args(construct_directory_or_all_args().as_slice())
+            .arg(construct_port_arg())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {  

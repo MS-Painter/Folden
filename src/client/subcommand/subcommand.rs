@@ -7,7 +7,7 @@ use dyn_clone::DynClone;
 use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use generated_types::handler_service_client::HandlerServiceClient;
+use generated_types::{DEFAULT_PORT_STR, handler_service_client::HandlerServiceClient};
 
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
@@ -60,6 +60,13 @@ impl IntoIterator for SubCommandCollection {
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
+}
+
+pub fn construct_port_arg<'a, 'b>() -> Arg<'a, 'b>{
+    Arg::with_name("port").short("p").long("port")
+        .default_value(DEFAULT_PORT_STR)
+        .empty_values(false)
+        .takes_value(true)
 }
 
 pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{

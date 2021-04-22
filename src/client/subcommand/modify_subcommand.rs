@@ -3,7 +3,7 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
+use super::subcommand::{construct_directory_or_all_args, construct_port_arg, get_path_from_matches_or_current_path};
 use generated_types::{ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
 
 const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
@@ -31,6 +31,7 @@ impl SubCommandUtil for ModifySubCommand {
             .arg(Arg::with_name("description").long("description")
                 .required(false)
                 .takes_value(true))
+            .arg(construct_port_arg())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {

@@ -5,7 +5,7 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches, Error as CliError, ErrorKind};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use super::subcommand::{get_path_from_matches_or_current_path, is_existing_directory_validator};
+use super::subcommand::{construct_port_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
 use generated_types::{RegisterToDirectoryRequest, handler_service_client::HandlerServiceClient};
 
 #[derive(Clone)]
@@ -29,6 +29,7 @@ impl SubCommandUtil for RegisterSubCommand {
                 .empty_values(false)
                 .takes_value(true)
                 .validator_os(is_existing_directory_validator))
+            .arg(construct_port_arg())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>) {
