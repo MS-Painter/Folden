@@ -17,22 +17,18 @@ use crate::server::Server;
 use crate::mapping::Mapping;
 use generated_types::{DEFAULT_PORT_STR, StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
 
-fn construct_config_arg<'a, 'b>() -> Arg<'a, 'b>{
-    Arg::with_name("config").short("c").long("config")
-        .help("Startup config file")
-        .required(true)
-        .empty_values(false)
-        .takes_value(true)
-}
-
-
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
     App::new("Folden Service")
         .version(crate_version!())
         .about("Folden background manager service")
         .setting(AppSettings::SubcommandRequiredElseHelp)
+        .arg(Arg::with_name("config").short("c").long("config")
+            .help("Startup config file")
+            .required(true)
+            .empty_values(false)
+            .takes_value(true))
         .subcommand(SubCommand::with_name("run").about("Startup Folden server")
-            .arg(construct_config_arg())
+            //.arg(construct_config_arg())
             .arg(Arg::with_name("mapping").short("m").long("mapping")
                 .required(false).
                 empty_values(false)
@@ -47,15 +43,15 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .empty_values(false)
                 .takes_value(true)))
         .subcommand(SubCommand::with_name("logs").about("Interact with local server side logs")
-            .arg(construct_config_arg())
+            //.arg(construct_config_arg())
             .arg(Arg::with_name("clear").long("clear")
-                .required(true)
                 .takes_value(false)
+                .required_unless("view")
                 .conflicts_with("view")
                 .help("Wipe saved logs"))
             .arg(Arg::with_name("view").long("view")
-                .required(true)
                 .takes_value(false)
+                .required_unless("clear")
                 .conflicts_with("clear")
                 .help("View saved logs")))
 }
@@ -157,37 +153,48 @@ fn modify_config(config: &mut Config, sub_matches: &ArgMatches) -> Result<(), Bo
 pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let app = construct_app();
     let matches = app.get_matches();
-    if let Some(sub_matches) = matches.subcommand_matches("run") {
-        match sub_matches.value_of("config") {
-            Some(path) => {
-                let config_file_path = PathBuf::from(path);
-                match get_config(&config_file_path) {
-                    Ok(mut config) => {
-                        modify_config(&mut config, sub_matches)?;
-                        config.save(&config_file_path).unwrap();
-                        let mapping = get_mapping(&config);
-                        startup_server(config, mapping).await?;
+    match matches.value_of("config") {
+        Some(config_str_path) => {
+            let config_file_path = PathBuf::from(config_str_path);
+            match get_config(&config_file_path) {
+                Ok(mut config) => {
+                    match matches.subcommand() {
+                        ("run", Some(sub_matches)) => {
+                            modify_config(&mut config, sub_matches)?;
+                            config.save(&config_file_path).unwrap();
+                            let mapping = get_mapping(&config);
+                            startup_server(config, mapping).await?;
+                        }
+                        ("logs", Some(sub_matches)) => {
+                            if sub_matches.value_of("view").is_some() {
+                
+                            }
+                            else if sub_matches.value_of("clear").is_some() {
+                    
+                            }
+                        }
+                        _ => {}   
                     }
-                    Err(err) => {
-                        println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=err);
-                        let mut config = Config::default();
-                        modify_config(&mut config, sub_matches)?;
-                        config.save(&config_file_path).unwrap();
-                        let mapping = get_mapping(&config);
-                        startup_server(config, mapping).await?;
+                }
+                Err(e) => {
+                    match matches.subcommand() {
+                        ("run", Some(sub_matches)) => {
+                            println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=e);
+                            let mut config = Config::default();
+                            modify_config(&mut config, sub_matches)?;
+                            config.save(&config_file_path).unwrap();
+                            let mapping = get_mapping(&config);
+                            startup_server(config, mapping).await?;
+                        }
+                        ("logs", Some(_sub_matches)) => {
+                            println!("Invalid config file:{path:?}\nError:{error}", path=&config_file_path, error=e);
+                        }
+                        _ => {}   
                     }
                 }
             }
-            None => Err("Config path not provided")?
         }
-    }
-    else if let Some(sub_matches) = matches.subcommand_matches("logs") {
-        if sub_matches.value_of("view").is_some() {
-
-        }
-        else if sub_matches.value_of("clear").is_some() {
-
-        }
+        None => Err("Config path not provided")?
     }
     Ok(())
 }
