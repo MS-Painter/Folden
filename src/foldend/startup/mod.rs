@@ -132,6 +132,23 @@ fn get_mapping(config: &Config) -> Mapping {
     }
 }
 
+fn get_config(file_path: &PathBuf) -> Result<Config, Box<dyn std::error::Error>> {
+    match fs::read(&file_path) {
+        Ok(data) => Ok(Config::try_from(data)?),
+        Err(e) => Err(e)?
+    }
+}
+
+fn modify_config(config: &mut Config, sub_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(mapping_file_path) = sub_matches.value_of("mapping") {
+        config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
+    }
+    if let Some(port) = sub_matches.value_of("port") {
+        config.port = port.parse()?;
+    }
+    Ok(())
+}
+
 pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let app = construct_app();
     let matches = app.get_matches();
@@ -166,23 +183,6 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
         else if sub_matches.value_of("clear").is_some() {
 
         }
-    }
-    Ok(())
-}
-
-fn get_config(file_path: &PathBuf) -> Result<Config, Box<dyn std::error::Error>> {
-    match fs::read(&file_path) {
-        Ok(data) => Ok(Config::try_from(data)?),
-        Err(e) => Err(e)?
-    }
-}
-
-fn modify_config(config: &mut Config, sub_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(mapping_file_path) = sub_matches.value_of("mapping") {
-        config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
-    }
-    if let Some(port) = sub_matches.value_of("port") {
-        config.port = port.parse()?;
     }
     Ok(())
 }
