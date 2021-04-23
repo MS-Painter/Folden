@@ -9,7 +9,8 @@ use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 use tonic::Request;
 use tokio::sync::RwLock;
 use tonic::transport::Server as TonicServer;
-use clap::{App, AppSettings, Arg, SubCommand, crate_version};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand, crate_version};
+use tracing_subscriber::fmt::format;
 
 use crate::config::Config;
 use crate::server::Server;
@@ -36,7 +37,22 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
             .arg(Arg::with_name("port").short("p").long("port")
                 .default_value(DEFAULT_PORT_STR)
                 .empty_values(false)
+                .takes_value(true))
+            .arg(Arg::with_name("log").short("l").long("log")
+                .default_value(DEFAULT_PORT_STR)
+                .empty_values(false)
                 .takes_value(true)))
+        .subcommand(SubCommand::with_name("logs").about("Interact with local server side logs")
+            .arg(Arg::with_name("clear").long("clear")
+                .required(true)
+                .takes_value(false)
+                .conflicts_with("view")
+                .help("Wipe saved logs"))
+            .arg(Arg::with_name("view").long("view")
+                .required(true)
+                .takes_value(false)
+                .conflicts_with("clear")
+                .help("View saved logs")))
 }
 
 async fn startup_handlers(server: &Server) -> () {
@@ -120,41 +136,53 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let app = construct_app();
     let matches = app.get_matches();
     if let Some(sub_matches) = matches.subcommand_matches("run") {
-        let config_file_path = PathBuf::from(sub_matches.value_of("config").unwrap());
-        match fs::read(&config_file_path) {
-            Ok(file_data) => {
-                let config_file_data = file_data;
-                let mut config = match Config::try_from(config_file_data) {
-                    Ok(config) => config,
-                    Err(_) => Config::default()
-                };
-                modify_config(&mut config, sub_matches)?;
-                config.save(&config_file_path).unwrap();
-                let mapping = get_mapping(&config);
-                startup_server(config, mapping).await?;
-                Ok(())
+        match sub_matches.value_of("config") {
+            Some(path) => {
+                let config_file_path = PathBuf::from(path);
+                match get_config(&config_file_path) {
+                    Ok(mut config) => {
+                        modify_config(&mut config, sub_matches)?;
+                        config.save(&config_file_path).unwrap();
+                        let mapping = get_mapping(&config);
+                        startup_server(config, mapping).await?;
+                    }
+                    Err(err) => {
+                        println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=err);
+                        let mut config = Config::default();
+                        modify_config(&mut config, sub_matches)?;
+                        config.save(&config_file_path).unwrap();
+                        let mapping = get_mapping(&config);
+                        startup_server(config, mapping).await?;
+                    }
+                }
             }
-            Err(err) => {
-                println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=err);
-                let mut config = Config::default();
-                modify_config(&mut config, sub_matches)?;
-                config.save(&config_file_path).unwrap();
-                let mapping = get_mapping(&config);
-                startup_server(config, mapping).await?;
-                Ok(())
-            }
+            None => Err("Config path not provided")?
         }
     }
-    else {
-        Ok(())
+    else if let Some(sub_matches) = matches.subcommand_matches("logs") {
+        if sub_matches.value_of("view").is_some() {
+
+        }
+        else if sub_matches.value_of("clear").is_some() {
+
+        }
+    }
+    Ok(())
+}
+
+fn get_config(file_path: &PathBuf) -> Result<Config, Box<dyn std::error::Error>> {
+    match fs::read(&file_path) {
+        Ok(data) => Ok(Config::try_from(data)?),
+        Err(e) => Err(e)?
     }
 }
 
-fn modify_config(config: &mut Config, sub_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+fn modify_config(config: &mut Config, sub_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(mapping_file_path) = sub_matches.value_of("mapping") {
         config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
     }
-    Ok(if let Some(port) = sub_matches.value_of("port") {
+    if let Some(port) = sub_matches.value_of("port") {
         config.port = port.parse()?;
-    })
+    }
+    Ok(())
 }
