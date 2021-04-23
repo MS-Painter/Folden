@@ -1,13 +1,9 @@
-use std::env;
-use std::path::Path;
-use std::option::Option;
-use std::ffi::{OsStr, OsString};
+use std::{env, ffi::{OsStr, OsString}, option::Option, path::Path};
 
 use dyn_clone::DynClone;
-use tonic::transport::Channel;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use generated_types::handler_service_client::HandlerServiceClient;
+use generated_types::{DEFAULT_PORT_STR, handler_service_client::HandlerServiceClient};
 
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
@@ -16,7 +12,7 @@ pub trait SubCommandUtil: DynClone {
     
     fn construct_subcommand(&self) -> App;
     
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, client: &mut HandlerServiceClient<Channel>);
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches);
     
     fn create_instance(&self) -> App {
         if self.alias().is_empty() {
@@ -62,6 +58,21 @@ impl IntoIterator for SubCommandCollection {
     }
 }
 
+pub fn connect_client<D>(dst: D)-> Result<HandlerServiceClient<tonic::transport::Channel>, tonic::transport::Error> 
+where
+    D: std::convert::TryInto<tonic::transport::Endpoint>,
+    D::Error: Into<tonic::codegen::StdError> {
+    let client_connect_future = HandlerServiceClient::connect(dst);
+    futures::executor::block_on(client_connect_future)
+}
+
+pub fn construct_port_arg<'a, 'b>() -> Arg<'a, 'b>{
+    Arg::with_name("port").short("p").long("port")
+        .default_value(DEFAULT_PORT_STR)
+        .empty_values(false)
+        .takes_value(true)
+}
+
 pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
     vec!(Arg::with_name("directory").long("directory")
             .required(false)
@@ -84,6 +95,13 @@ pub fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_nam
             env::current_dir().unwrap().canonicalize()
         }
     }
+}
+
+pub fn construct_server_url(sub_matches: &ArgMatches) -> Option<String> {
+    if let Some(value) = sub_matches.value_of("port") {
+        return Some(format!("http://localhost:{}/", value))
+    }
+    None
 }
 
 pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {

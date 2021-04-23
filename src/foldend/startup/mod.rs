@@ -13,7 +13,7 @@ use tonic::{Request, transport::Server as TonicServer};
 use crate::config::Config;
 use crate::server::Server;
 use crate::mapping::Mapping;
-use generated_types::{StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
+use generated_types::{DEFAULT_PORT_STR, StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
 
 
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
@@ -21,17 +21,20 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
         .version("0.1")
         .about("Folden background manager service")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommand(SubCommand::with_name("run")
-            .help("Startup Folden server")
+        .subcommand(SubCommand::with_name("run").about("Startup Folden server")
             .arg(Arg::with_name("config").short("c").long("config")
                 .help("Startup config file")
                 .required(true).
                 empty_values(false)
                 .takes_value(true))
             .arg(Arg::with_name("mapping").short("m").long("mapping")
-                .help("Startup mapping file")
                 .required(false).
                 empty_values(false)
+                .takes_value(true)
+                .help("Startup mapping file"))
+            .arg(Arg::with_name("port").short("p").long("port")
+                .default_value(DEFAULT_PORT_STR)
+                .empty_values(false)
                 .takes_value(true)))
 }
 
@@ -62,8 +65,7 @@ async fn startup_handlers(server: &Server) -> () {
 }
 
 async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn std::error::Error>> {
-    let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-    
+    let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
     let server = Server {
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
@@ -71,6 +73,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
 
     startup_handlers(&server).await; // Handlers are raised before being able to accept client calls.
 
+    println!("Server up on port {}", socket.port());
     TonicServer::builder()
         .add_service(HandlerServiceServer::new(server))
         .serve(socket)
@@ -120,20 +123,12 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
         match fs::read(&config_file_path) {
             Ok(file_data) => {
                 let config_file_data = file_data;
-                let config = match Config::try_from(config_file_data) {
+                let mut config = match Config::try_from(config_file_data) {
                     Ok(config) => config,
-                    Err(_) => {
-                        let mut config = Config::default();
-                        match sub_matches.value_of("mapping") {
-                            Some(mapping_file_path) => {
-                                config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
-                            }
-                            None => {}
-                        };
-                        config.save(&config_file_path).unwrap();
-                        config
-                    }
+                    Err(_) => Config::default()
                 };
+                modify_config(&mut config, sub_matches)?;
+                config.save(&config_file_path).unwrap();
                 let mapping = get_mapping(&config);
                 startup_server(config, mapping).await?;
                 Ok(())
@@ -141,12 +136,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
             Err(err) => {
                 println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=err);
                 let mut config = Config::default();
-                match sub_matches.value_of("mapping") {
-                    Some(mapping_file_path) => {
-                        config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
-                    }
-                    None => {}
-                }
+                modify_config(&mut config, sub_matches)?;
                 config.save(&config_file_path).unwrap();
                 let mapping = get_mapping(&config);
                 startup_server(config, mapping).await?;
@@ -157,4 +147,13 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     else {
         Ok(())
     }
+}
+
+fn modify_config(config: &mut Config, sub_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(mapping_file_path) = sub_matches.value_of("mapping") {
+        config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
+    }
+    Ok(if let Some(port) = sub_matches.value_of("port") {
+        config.port = port.parse()?;
+    })
 }

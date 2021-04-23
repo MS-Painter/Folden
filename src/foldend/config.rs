@@ -2,9 +2,13 @@ use std::{convert::TryFrom, fs, path::PathBuf};
 
 use serde::{Serialize, Deserialize};
 
+use generated_types::DEFAULT_PORT;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub mapping_state_path: PathBuf,
+    #[serde(skip)]
+    pub port: u16,
 }
 
 impl Config {
@@ -18,6 +22,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             mapping_state_path: PathBuf::from("foldend_mapping.toml"),
+            port: DEFAULT_PORT,
         }
     }
 }
