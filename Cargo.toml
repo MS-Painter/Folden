@@ -24,13 +24,12 @@ members = [
 generated_types = {path = "generated_types"}
 workflows = {path = "workflows"}
 
+toml = "0.5.7"
 tonic = "0.4.2"
 clap = "2.33.3"
 typetag = "0.1.6"
-dyn-clone = "1.0.4"
-toml = "0.5.7"
 futures = "0.3.14"
-lazy_static = "1.4.0"
+dyn-clone = "1.0.4"
 tokio = { version = "1.5.0", features = ["full"]}
 serde = {version = "1.0.117", features = ["derive"] }
 
