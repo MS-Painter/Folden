@@ -54,7 +54,7 @@ impl Mapping {
                         let (tx, rx) = crossbeam::channel::unbounded();
                         let thread_tx = tx.clone();
                         let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
-                        watcher.configure(notify::Config::PreciseEvents(true));
+                        let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
                             let mut handler = WorkflowHandler::new(config);
                             handler.watch(&path, watcher, rx);
