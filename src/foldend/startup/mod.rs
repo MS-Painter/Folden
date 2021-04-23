@@ -8,9 +8,9 @@ use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use tonic::Request;
 use tokio::sync::RwLock;
+use tracing::{self, error, info, warn};
 use tonic::transport::Server as TonicServer;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand, crate_version};
-use tracing_subscriber::fmt::format;
 
 use crate::config::Config;
 use crate::server::Server;
@@ -73,15 +73,17 @@ async fn startup_handlers(server: &Server) -> () {
     for request in handler_requests {
         match server.start_handler(Request::new(request.clone())).await {
             Ok(response) => {
-                println!("{:?}", response.into_inner().states_map);
+                let response = response.into_inner();
+                info!("{}", format!("{:?}", response.states_map));
             }
             Err(err) => {
-                println!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);
+                error!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);
             }
         }
     }
 }
 
+#[tracing::instrument]
 async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn std::error::Error>> {
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
     let server = Server {
@@ -91,7 +93,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
 
     startup_handlers(&server).await; // Handlers are raised before being able to accept client calls.
 
-    println!("Server up on port {}", socket.port());
+    info!("Server up on port {}", socket.port());
     TonicServer::builder()
         .add_service(HandlerServiceServer::new(server))
         .serve(socket)
@@ -99,6 +101,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     Ok(())
 }
 
+#[tracing::instrument]
 fn get_mapping(config: &Config) -> Mapping {
     let mapping = Mapping {
         directory_mapping: HashMap::new()
@@ -109,13 +112,13 @@ fn get_mapping(config: &Config) -> Mapping {
             match Mapping::try_from(mapping_file_data) {
                 Ok(read_mapping) => read_mapping,
                 Err(_) => {
-                    println!("Mapping file invalid / empty");
+                    error!("Mapping file invalid / empty");
                     mapping
                 }
             }
         }
         Err(err) => {
-            println!("Mapping file not found. Creating file - {:?}", mapping_file_path);
+            warn!("Mapping file not found. Creating file - {:?}", mapping_file_path);
             match err.kind() {
                 std::io::ErrorKind::NotFound => {
                     let mapping_file_parent_path = mapping_file_path.parent().unwrap();
@@ -150,6 +153,7 @@ fn modify_config(config: &mut Config, sub_matches: &ArgMatches) -> Result<(), Bo
     Ok(())
 }
 
+#[tracing::instrument]
 pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let app = construct_app();
     let matches = app.get_matches();
@@ -179,7 +183,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                 Err(e) => {
                     match matches.subcommand() {
                         ("run", Some(sub_matches)) => {
-                            println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=e);
+                            warn!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=e);
                             let mut config = Config::default();
                             modify_config(&mut config, sub_matches)?;
                             config.save(&config_file_path).unwrap();
@@ -187,7 +191,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                             startup_server(config, mapping).await?;
                         }
                         ("logs", Some(_sub_matches)) => {
-                            println!("Invalid config file:{path:?}\nError:{error}", path=&config_file_path, error=e);
+                            error!("Invalid config file:{path:?}\nError:{error}", path=&config_file_path, error=e);
                         }
                         _ => {}   
                     }
