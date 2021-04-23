@@ -127,12 +127,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                     Ok(config) => config,
                     Err(_) => Config::default()
                 };
-                if let Some(mapping_file_path) = sub_matches.value_of("mapping") {
-                    config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
-                }
-                if let Some(port) = sub_matches.value_of("port") {
-                    config.port = port.parse()?;
-                }
+                modify_config(&mut config, sub_matches)?;
                 config.save(&config_file_path).unwrap();
                 let mapping = get_mapping(&config);
                 startup_server(config, mapping).await?;
@@ -141,12 +136,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
             Err(err) => {
                 println!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=err);
                 let mut config = Config::default();
-                if let Some(mapping_file_path) = sub_matches.value_of("mapping") {
-                    config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
-                }
-                if let Some(port) = sub_matches.value_of("port") {
-                    config.port = port.parse()?;
-                }
+                modify_config(&mut config, sub_matches)?;
                 config.save(&config_file_path).unwrap();
                 let mapping = get_mapping(&config);
                 startup_server(config, mapping).await?;
@@ -157,4 +147,13 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
     else {
         Ok(())
     }
+}
+
+fn modify_config(config: &mut Config, sub_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(mapping_file_path) = sub_matches.value_of("mapping") {
+        config.mapping_state_path.clone_from(&PathBuf::from(mapping_file_path));
+    }
+    Ok(if let Some(port) = sub_matches.value_of("port") {
+        config.port = port.parse()?;
+    })
 }
