@@ -36,11 +36,11 @@ impl SubCommandUtil for RegisterSubCommand {
         if let Some(server_url) = construct_server_url(sub_matches) {
             match connect_client(server_url) {
                 Ok(client) => execute_register(sub_matches, client),
-                Err(_) => {}
+                Err(e) => println!("{}", e)
             }
         }
         else {
-
+            println!("Couldn't send request - No valid endpoint could be parsed");
         }
     }
 }

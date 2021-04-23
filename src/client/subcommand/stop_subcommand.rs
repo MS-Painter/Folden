@@ -31,9 +31,7 @@ impl SubCommandUtil for StopSubCommand {
         if let Some(server_url) = construct_server_url(sub_matches) {
             match connect_client(server_url) {
                 Ok(client) => execute_stop(sub_matches, client),
-                Err(_) => {
-    
-                }
+                Err(e) => println!("{}", e)
             }
         }
         else {

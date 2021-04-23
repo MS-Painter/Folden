@@ -37,8 +37,7 @@ impl SubCommandUtil for ModifySubCommand {
         if let Some(server_url) = construct_server_url(sub_matches) {
             match connect_client(server_url) {
                 Ok(client) => execute_modify(sub_matches, client),
-                Err(_) => {
-                }
+                Err(e) => println!("{}", e)
             }
         }
         else {
