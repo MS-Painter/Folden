@@ -4,27 +4,10 @@ mod server;
 mod mapping;
 mod startup;
 
-use tempdir;
-use tracing_appender;
-use tracing_subscriber;
 use futures::executor::block_on;
-
-fn setup_tracing() {
-    let dir = tempdir::TempDir::new("foldend_logs").expect("Failed to create tempdir");
-    let file_appender = tracing_appender::rolling::daily(dir, "foldend.log");
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_writer(non_blocking)
-        .with_writer(std::io::stdout)
-        .init();
-}
-
 
 #[cfg(windows)]
 fn main() {
-    setup_tracing();
     match startup::windows::run() {
         Ok(_) => {} // Service finished running
         Err(e) => {
@@ -48,6 +31,5 @@ fn main() {
 #[cfg(not(windows))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    setup_tracing();
     startup::main_service_runtime().await
 }

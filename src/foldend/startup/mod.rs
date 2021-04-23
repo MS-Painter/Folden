@@ -1,14 +1,14 @@
 #[cfg(windows)]
 pub mod windows;
 
-use std::{fs, path::PathBuf};
+use std::{fs, path::{Path, PathBuf}};
 use std::collections::HashMap;
 use std::{convert::TryFrom, sync::Arc};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
+use tracing;
 use tonic::Request;
 use tokio::sync::RwLock;
-use tracing::{self, error, info, warn};
 use tonic::transport::Server as TonicServer;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand, crate_version};
 
@@ -56,6 +56,17 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .help("View saved logs")))
 }
 
+fn setup_tracing<T>(file_path: &T) where T: AsRef<Path> {
+    let file_appender = tracing_appender::rolling::daily(file_path.as_ref().parent().unwrap(), file_path.as_ref());
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_writer(non_blocking)
+        .with_writer(std::io::stdout)
+        .init();
+}
+
 async fn startup_handlers(server: &Server) -> () {
     let mapping = server.mapping.read().await;
     let handler_requests: Vec<StartHandlerRequest> = mapping.directory_mapping.iter()
@@ -74,10 +85,10 @@ async fn startup_handlers(server: &Server) -> () {
         match server.start_handler(Request::new(request.clone())).await {
             Ok(response) => {
                 let response = response.into_inner();
-                info!("{}", format!("{:?}", response.states_map));
+                tracing::info!("{}", format!("{:?}", response.states_map));
             }
             Err(err) => {
-                error!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);
+                tracing::error!("Handler [DOWN] - {:?}\n Error - {:?}", request.directory_path, err);
             }
         }
     }
@@ -85,6 +96,8 @@ async fn startup_handlers(server: &Server) -> () {
 
 #[tracing::instrument]
 async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn std::error::Error>> {
+    setup_tracing(&config.tracing_file_path);
+
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
     let server = Server {
         config: Arc::new(config),
@@ -93,7 +106,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
 
     startup_handlers(&server).await; // Handlers are raised before being able to accept client calls.
 
-    info!("Server up on port {}", socket.port());
+    tracing::info!("Server up on port {}", socket.port());
     TonicServer::builder()
         .add_service(HandlerServiceServer::new(server))
         .serve(socket)
@@ -112,13 +125,13 @@ fn get_mapping(config: &Config) -> Mapping {
             match Mapping::try_from(mapping_file_data) {
                 Ok(read_mapping) => read_mapping,
                 Err(_) => {
-                    error!("Mapping file invalid / empty");
+                    tracing::error!("Mapping file invalid / empty");
                     mapping
                 }
             }
         }
         Err(err) => {
-            warn!("Mapping file not found. Creating file - {:?}", mapping_file_path);
+            tracing::warn!("Mapping file not found. Creating file - {:?}", mapping_file_path);
             match err.kind() {
                 std::io::ErrorKind::NotFound => {
                     let mapping_file_parent_path = mapping_file_path.parent().unwrap();
@@ -183,7 +196,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                 Err(e) => {
                     match matches.subcommand() {
                         ("run", Some(sub_matches)) => {
-                            warn!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=e);
+                            tracing::warn!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=e);
                             let mut config = Config::default();
                             modify_config(&mut config, sub_matches)?;
                             config.save(&config_file_path).unwrap();
@@ -191,7 +204,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                             startup_server(config, mapping).await?;
                         }
                         ("logs", Some(_sub_matches)) => {
-                            error!("Invalid config file:{path:?}\nError:{error}", path=&config_file_path, error=e);
+                            tracing::error!("Invalid config file:{path:?}\nError:{error}", path=&config_file_path, error=e);
                         }
                         _ => {}   
                     }
