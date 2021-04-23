@@ -1,4 +1,4 @@
-use clap::{App, AppSettings};
+use clap::{App, AppSettings, crate_version};
 
 use subcommand::subcommand::SubCommandCollection;
 
@@ -16,7 +16,7 @@ async fn main() {
     let subcommands_clone = subcommands.clone();
 
     let app = App::new("Folden")
-        .version("0.1")
+        .version(crate_version!())
         .about("System-wide folder event handling")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommands(subcommands_clone.collect_as_apps());

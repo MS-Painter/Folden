@@ -6,9 +6,10 @@ use std::collections::HashMap;
 use std::{convert::TryFrom, sync::Arc};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
+use tonic::Request;
 use tokio::sync::RwLock;
-use clap::{App, AppSettings, Arg, SubCommand};
-use tonic::{Request, transport::Server as TonicServer};
+use tonic::transport::Server as TonicServer;
+use clap::{App, AppSettings, Arg, SubCommand, crate_version};
 
 use crate::config::Config;
 use crate::server::Server;
@@ -18,7 +19,7 @@ use generated_types::{DEFAULT_PORT_STR, StartHandlerRequest, handler_service_ser
 
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
     App::new("Folden Service")
-        .version("0.1")
+        .version(crate_version!())
         .about("Folden background manager service")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(SubCommand::with_name("run").about("Startup Folden server")
