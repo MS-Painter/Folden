@@ -17,6 +17,14 @@ use crate::server::Server;
 use crate::mapping::Mapping;
 use generated_types::{DEFAULT_PORT_STR, StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
 
+fn construct_config_arg<'a, 'b>() -> Arg<'a, 'b>{
+    Arg::with_name("config").short("c").long("config")
+        .help("Startup config file")
+        .required(true)
+        .empty_values(false)
+        .takes_value(true)
+}
+
 
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
     App::new("Folden Service")
@@ -24,11 +32,7 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
         .about("Folden background manager service")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .subcommand(SubCommand::with_name("run").about("Startup Folden server")
-            .arg(Arg::with_name("config").short("c").long("config")
-                .help("Startup config file")
-                .required(true).
-                empty_values(false)
-                .takes_value(true))
+            .arg(construct_config_arg())
             .arg(Arg::with_name("mapping").short("m").long("mapping")
                 .required(false).
                 empty_values(false)
@@ -43,6 +47,7 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .empty_values(false)
                 .takes_value(true)))
         .subcommand(SubCommand::with_name("logs").about("Interact with local server side logs")
+            .arg(construct_config_arg())
             .arg(Arg::with_name("clear").long("clear")
                 .required(true)
                 .takes_value(false)
