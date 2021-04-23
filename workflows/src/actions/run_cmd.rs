@@ -37,25 +37,18 @@ impl WorkflowAction for RunCmd {
                     Ok(out) => {
                         if out.stdout.is_empty() {
                             let stderr = String::from_utf8(out.stderr).unwrap();
-                            println!("RunCmd stderr - {:?}", stderr);
-                            false
+                            context.handle_error(format!("RunCmd stderr - {:?}", stderr))
                         }
                         else {
                             let stdout = String::from_utf8(out.stdout).unwrap();
-                            println!("RunCmd stdout - {:?}", stdout);
+                            tracing::debug!("RunCmd stdout - {:?}", stdout);
                             true
                         }
                     }
-                    Err(e) => {
-                        println!("RunCmd stderr - {:?}", e);
-                        false
-                    }
+                    Err(e) => context.handle_error(format!("RunCmd error - {:?}", e))
                 }
             }
-            Err(e) => {
-                println!("RunCmd could not spawn command.\nCommand: {:?}\nError: {:?}", formatted_command, e);
-                false
-            }
+            Err(e) => context.handle_error(format!("RunCmd could not spawn command.\nCommand: {:?}\nError: {:?}", formatted_command, e))
         }
     }
 }

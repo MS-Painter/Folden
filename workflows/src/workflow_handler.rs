@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
+use tracing;
 use regex::Regex;
 use crossbeam::channel::Receiver;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
@@ -57,7 +58,6 @@ impl WorkflowHandler {
                 self.handle(&entry.path());
             }
         }
-        println!("Ended startup phase");
     }
 
     fn on_watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
@@ -65,13 +65,13 @@ impl WorkflowHandler {
             match result {
                 Ok(event) => {
                     if self.config.event.is_handled_event(&event.kind) {
-                        println!("Event to handle - {:?}", &event.kind);
+                        tracing::debug!("Event to handle - {:?}", &event.kind);
                         let event_file_path = event.paths.first().unwrap();
                         self.handle(event_file_path);
                     }
                 }
                 Err(error) => {
-                    println!("error - {:?}", error);
+                    tracing::warn!("Watcher error - {:?}", error);
                     match error.kind {
                         notify::ErrorKind::WatchNotFound => break,
                         _ => {}
@@ -86,8 +86,9 @@ impl WorkflowHandler {
         watcher.watch(path.clone(), recursive_mode).unwrap();
         if self.config.apply_on_startup_on_existing_files {
             self.apply_on_existing_files(path);
+            tracing::info!("Ended startup phase");
         }
         self.on_watch(rx);
-        println!("Ending watch");
+        tracing::info!("Ending watch");
     }
 }
