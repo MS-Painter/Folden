@@ -1,4 +1,4 @@
-use std::{borrow::Cow, path::PathBuf, process::{Child, Command, Stdio}};
+use std::{borrow::Cow, path::PathBuf};
 
 use chrono;
 use regex::Regex;
@@ -28,27 +28,6 @@ pub trait WorkflowAction {
 
     fn format_datetime<S>(text: S) -> String where S: AsRef<str> {
         chrono::Local::now().format(text.as_ref()).to_string()
-    }
-    
-    fn spawn_command<S>(input: &S, context: &mut WorkflowExecutionContext) -> std::io::Result<Child>
-    where 
-    S: AsRef<str> {
-        let parent_dir_path = context.event_file_path.parent().unwrap();
-        if cfg!(windows) {
-            Command::new("cmd.exe")
-                .arg(format!("/C {}", input.as_ref()))
-                .current_dir(parent_dir_path)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-        }
-        else {
-            Command::new(input.as_ref())
-                .current_dir(parent_dir_path)
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-        }
     }
 }
 

@@ -1,3 +1,5 @@
+use std::process::{Child, Command, Stdio};
+
 use serde::{Serialize, Deserialize};
 
 use super::WorkflowAction;
@@ -28,7 +30,7 @@ impl RunCmd {
 impl WorkflowAction for RunCmd {
     fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
         let formatted_command = self.format_command(context);
-        match Self::spawn_command(&formatted_command, context) {
+        match spawn_command(&formatted_command, context) {
             Ok(process) => {
                 let output = process.wait_with_output();
                 return match output {
@@ -66,5 +68,26 @@ impl Default for RunCmd {
             input_formatting: true,
             datetime_formatting: true,
         }
+    }
+}
+
+fn spawn_command<S>(input: &S, context: &mut WorkflowExecutionContext) -> std::io::Result<Child>
+where 
+    S: AsRef<str> {
+    let parent_dir_path = context.event_file_path.parent().unwrap();
+    if cfg!(windows) {
+        Command::new("cmd.exe")
+            .arg(format!("/C {}", input.as_ref()))
+            .current_dir(parent_dir_path)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+    }
+    else {
+        Command::new(input.as_ref())
+            .current_dir(parent_dir_path)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
     }
 }
