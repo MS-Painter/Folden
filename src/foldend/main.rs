@@ -14,12 +14,11 @@ fn setup_tracing() {
     let file_appender = tracing_appender::rolling::daily(dir, "foldend.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
-    let collector = tracing_subscriber::fmt()
+    tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_writer(non_blocking)
         .with_writer(std::io::stdout)
-        .finish();
-    tracing::subscriber::set_global_default(collector).expect("Unable to set a global collector");
+        .init();
 }
 
 
