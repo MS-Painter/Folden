@@ -37,9 +37,6 @@ impl SubCommandUtil for GenerateSubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Generate default handler workflow config")
-            .arg(Arg::with_name("debug")
-                .short("d")
-                .help("print debug information verbosely"))
             .arg(Arg::with_name("events").long("events")
                 .required(false)
                 .multiple(true)

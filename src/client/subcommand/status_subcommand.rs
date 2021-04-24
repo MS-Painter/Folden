@@ -1,5 +1,5 @@
+use clap::{App, ArgMatches};
 use futures::executor::block_on;
-use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, handler_service_client::HandlerServiceClient};
@@ -15,9 +15,7 @@ impl SubCommandUtil for StatusSubCommand {
 
     fn construct_subcommand(&self) -> App {
         self.create_instance()
-            .about("Fun folder usage in current working directory")
-            .arg(Arg::with_name("debug").short("d")
-                .help("print debug information verbosely"))
+            .about("Status of a registered handler given a directory")
             .args(construct_directory_or_all_args().as_slice())
             .arg(construct_port_arg())
     }

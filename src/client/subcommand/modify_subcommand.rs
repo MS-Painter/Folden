@@ -18,8 +18,6 @@ impl SubCommandUtil for ModifySubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Modify directory handler")
-            .arg(Arg::with_name("debug").short("d")
-                .help("print debug information verbosely"))
             .args(construct_directory_or_all_args().as_slice())
             .arg(Arg::with_name("startup").long("startup")
                 .help("Set if handler automatically starts on service startup")
