@@ -2,13 +2,13 @@ use std::path::{Path, PathBuf};
 
 use crate::{pipeline_config::PipelineConfig, pipeline_context_input::PipelineContextInput};
 
-pub struct WorkflowExecutionContext {
+pub struct PipelineExecutionContext {
     pub config: PipelineConfig,
     pub event_file_path: PathBuf,
     pub action_file_path: Option<PathBuf>,
 }
 
-impl WorkflowExecutionContext {
+impl PipelineExecutionContext {
     pub fn new<T>(event_file_path: T, config: PipelineConfig) -> Self 
     where 
     T: AsRef<Path> { 

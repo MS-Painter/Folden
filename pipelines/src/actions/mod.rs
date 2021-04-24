@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 mod run_cmd;
 mod move_to_dir;
 use self::{move_to_dir::MoveToDir, run_cmd::RunCmd};
-use crate::workflow_execution_context::WorkflowExecutionContext;
+use crate::pipeline_execution_context::PipelineExecutionContext;
 
 pub const ACTION_TYPES: [&str; 2] = ["runcmd", "movetodir"];
 
 pub trait WorkflowAction {
     // Execute action. Returns if action deemed successful.
-    fn run(&self, context: &mut WorkflowExecutionContext) -> bool;
+    fn run(&self, context: &mut PipelineExecutionContext) -> bool;
 
     fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
         if let Some(input) = input {
@@ -59,7 +59,7 @@ impl WorkflowActions {
 }
 
 impl WorkflowAction for WorkflowActions {
-    fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
+    fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         match self {
             WorkflowActions::MoveToDir(action) => action.run(context),
             WorkflowActions::RunCmd(action) => action.run(context),

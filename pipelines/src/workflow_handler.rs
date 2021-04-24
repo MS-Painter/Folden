@@ -8,7 +8,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
 use crate::actions::WorkflowAction;
 use crate::pipeline_config::PipelineConfig;
-use crate::workflow_execution_context::WorkflowExecutionContext;
+use crate::pipeline_execution_context::PipelineExecutionContext;
 
 pub struct WorkflowHandler {
     pub config: PipelineConfig,
@@ -41,7 +41,7 @@ impl WorkflowHandler {
     }
 
     fn execute_workflow(&self, file_path: &PathBuf) {
-        let mut context = WorkflowExecutionContext::new(file_path, self.config.clone());
+        let mut context = PipelineExecutionContext::new(file_path, self.config.clone());
         for action in &self.config.actions {
             let action_succeeded = action.run(&mut context);
             if !action_succeeded {

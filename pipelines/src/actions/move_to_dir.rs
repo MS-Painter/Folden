@@ -3,7 +3,7 @@ use std::{ffi::OsStr, fs, io::ErrorKind, path::PathBuf};
 use serde::{Serialize, Deserialize};
 
 use super::{WorkflowAction, construct_working_dir};
-use crate::{pipeline_context_input::PipelineContextInput, workflow_execution_context::WorkflowExecutionContext};
+use crate::{pipeline_context_input::PipelineContextInput, pipeline_execution_context::PipelineExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MoveToDir {
@@ -16,7 +16,7 @@ pub struct MoveToDir {
 }
 
 impl MoveToDir {
-    fn ensure_dir_exists(&self, context: &mut WorkflowExecutionContext, working_dir_path: &PathBuf) -> bool {
+    fn ensure_dir_exists(&self, context: &mut PipelineExecutionContext, working_dir_path: &PathBuf) -> bool {
         if !working_dir_path.is_dir() {
             if self.requires_directory_exists {
                 return context.handle_error("Directory required to exist");
@@ -29,7 +29,7 @@ impl MoveToDir {
         true
     }
 
-    fn apply(&self, context: &mut WorkflowExecutionContext, working_dir_path: &PathBuf, input_path: &PathBuf, input_file_name: &OsStr) -> bool {
+    fn apply(&self, context: &mut PipelineExecutionContext, working_dir_path: &PathBuf, input_path: &PathBuf, input_file_name: &OsStr) -> bool {
         if !self.ensure_dir_exists(context, working_dir_path) {
             return false;
         }
@@ -75,7 +75,7 @@ impl Default for MoveToDir {
 }
 
 impl WorkflowAction for MoveToDir {
-    fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
+    fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         match context.get_input(self.input) {
             Some(input_path) => {
                 match input_path.file_name() {
