@@ -20,11 +20,11 @@ If you find any issues or have an idea in mind, open an issue :)
 
 # Differences to other rust crates
 
-- `notify`:
+- [notify](https://github.com/notify-rs/notify):
 
 Library used to create file watchers. Folden uses it behind the scenes.
 
-- `watchexec`:
+- [watchexec](https://github.com/watchexec/watchexec):
 
 CLI tool used to apply a command on a watched file / directory.
 
