@@ -2,7 +2,7 @@
 
 The project isn't yet at a stage to be officially regarded as stable (v1.0):
 
-- Missing vital QOL features & optimizations.
+- Missing vital QOL features & optimizations, including various common actions.
 - Missing installation for OS's planned to be supported.
 - Needs to be tested for a much longer period over all supported OS's.
 
