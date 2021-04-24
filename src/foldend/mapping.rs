@@ -7,7 +7,7 @@ use notify::{Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::Config;
 use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
-use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
+use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -49,14 +49,14 @@ impl Mapping {
         let config_path = PathBuf::from(&handler_mapping.handler_config_path);
         match fs::read(&config_path) {
             Ok(data) => {
-                match WorkflowConfig::try_from(data) {
+                match PipelineConfig::try_from(data) {
                     Ok(config) => {
                         let (tx, rx) = crossbeam::channel::unbounded();
                         let thread_tx = tx.clone();
                         let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
-                            let mut handler = WorkflowHandler::new(config);
+                            let mut handler = PipelineHandler::new(config);
                             handler.watch(&path, watcher, rx);
                         });            
                         // Insert or update the value of the current handled directory
@@ -71,11 +71,11 @@ impl Mapping {
                         }
                         Ok(())
                     }
-                    Err(err) => Err(format!("Workflow config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
+                    Err(err) => Err(format!("Pipeline config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
                 }
             }
             Err(err) => {
-                Err(format!("Workflow file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
+                Err(format!("Pipeline file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
             }
         }
     }

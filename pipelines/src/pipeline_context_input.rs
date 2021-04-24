@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub enum WorkflowContextInput {
+pub enum PipelineContextInput {
     EventFilePath,
     ActionFilePath,
 }

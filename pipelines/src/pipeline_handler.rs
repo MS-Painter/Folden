@@ -6,17 +6,17 @@ use regex::Regex;
 use crossbeam::channel::Receiver;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
-use crate::actions::WorkflowAction;
-use crate::workflow_config::WorkflowConfig;
-use crate::workflow_execution_context::WorkflowExecutionContext;
+use crate::actions::PipelineAction;
+use crate::pipeline_config::PipelineConfig;
+use crate::pipeline_execution_context::PipelineExecutionContext;
 
-pub struct WorkflowHandler {
-    pub config: WorkflowConfig,
+pub struct PipelineHandler {
+    pub config: PipelineConfig,
     pub naming_regex: Option<Regex>,
 }
 
-impl WorkflowHandler {
-    pub fn new(config: WorkflowConfig) -> Self {
+impl PipelineHandler {
+    pub fn new(config: PipelineConfig) -> Self {
         match config.event.naming_regex_match.to_owned() {
             Some(naming_regex_match) => Self { 
                 config,
@@ -33,15 +33,15 @@ impl WorkflowHandler {
         match &self.naming_regex {
             Some(naming_regex) => {
                 if naming_regex.is_match(file_path.to_str().unwrap()) {
-                    self.execute_workflow(file_path);
+                    self.execute_pipeline(file_path);
                 }
             }
-            None => self.execute_workflow(file_path)
+            None => self.execute_pipeline(file_path)
         }
     }
 
-    fn execute_workflow(&self, file_path: &PathBuf) {
-        let mut context = WorkflowExecutionContext::new(file_path, self.config.clone());
+    fn execute_pipeline(&self, file_path: &PathBuf) {
+        let mut context = PipelineExecutionContext::new(file_path, self.config.clone());
         for action in &self.config.actions {
             let action_succeeded = action.run(&mut context);
             if !action_succeeded {

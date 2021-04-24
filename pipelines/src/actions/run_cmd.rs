@@ -2,19 +2,19 @@ use std::process::{Child, Command, Stdio};
 
 use serde::{Serialize, Deserialize};
 
-use super::WorkflowAction;
-use crate::{workflow_context_input::WorkflowContextInput, workflow_execution_context::WorkflowExecutionContext};
+use super::PipelineAction;
+use crate::{pipeline_context_input::PipelineContextInput, pipeline_execution_context::PipelineExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunCmd {
-    pub input: WorkflowContextInput,
+    pub input: PipelineContextInput,
     pub command: String,
     pub input_formatting: bool,
     pub datetime_formatting: bool,
 }
 
 impl RunCmd {
-    fn format_command(&self, context: &mut WorkflowExecutionContext) -> std::borrow::Cow<str> {
+    fn format_command(&self, context: &mut PipelineExecutionContext) -> std::borrow::Cow<str> {
         let mut formatted_command = self.command.to_owned().into();
         if self.input_formatting {
             formatted_command = Self::format_input(&self.command, context.get_input(self.input))
@@ -27,8 +27,8 @@ impl RunCmd {
     }
 }
 
-impl WorkflowAction for RunCmd {
-    fn run(&self, context: &mut WorkflowExecutionContext) -> bool {
+impl PipelineAction for RunCmd {
+    fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         let formatted_command = self.format_command(context);
         match spawn_command(&formatted_command, context) {
             Ok(process) => {
@@ -56,7 +56,7 @@ impl WorkflowAction for RunCmd {
 impl Default for RunCmd {
     fn default() -> Self {
         Self {
-            input: WorkflowContextInput::EventFilePath,
+            input: PipelineContextInput::EventFilePath,
             command: String::from("echo $input$"),
             input_formatting: true,
             datetime_formatting: true,
@@ -64,7 +64,7 @@ impl Default for RunCmd {
     }
 }
 
-fn spawn_command<S>(input: &S, context: &mut WorkflowExecutionContext) -> std::io::Result<Child>
+fn spawn_command<S>(input: &S, context: &mut PipelineExecutionContext) -> std::io::Result<Child>
 where 
     S: AsRef<str> {
     let parent_dir_path = context.event_file_path.parent().unwrap();
