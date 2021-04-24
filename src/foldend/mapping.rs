@@ -7,7 +7,7 @@ use notify::{Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::Config;
 use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
-use workflows::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
+use pipelines::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request

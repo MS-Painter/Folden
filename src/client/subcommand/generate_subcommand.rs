@@ -3,7 +3,7 @@ use std::{env, ops::Deref, path::PathBuf};
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use workflows::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
+use pipelines::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
 
 #[derive(Clone)]
 pub struct GenerateSubCommand {}
