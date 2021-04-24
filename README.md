@@ -32,7 +32,7 @@ ARGS:
     <path>
 ```
 
-\* Alternatively check out the [example pipeline files](https://github.com/STRONG-MAD/Folden/blob/3b351818cdf5cb3db519e52732876d16455bccaa/example_pipelines/) for common use cases
+\* Alternatively check out the [example pipeline files](example_pipelines\execute_make.toml) for common use cases
 
 2. Register pipeline to directory:
 
