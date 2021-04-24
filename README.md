@@ -32,7 +32,7 @@ ARGS:
     <path>
 ```
 
-\* Alternatively check out the [example pipeline files](example_pipelines\execute_make.toml) for common use cases
+\* Alternatively check out the [example pipeline files](example_pipelines/execute_make.toml) for common use cases
 
 2. Register pipeline to directory:
 
