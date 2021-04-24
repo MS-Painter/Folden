@@ -8,6 +8,12 @@ The project isn't yet at a stage to be officially regarded as stable (v1.0):
 
 Do take this in mind if you're considering trying it out!
 
+Folden, if used haphazardly, can be very dangerous.
+
+Aside from planned restrictions to be added -
+
+Keep in mind this application is designed to allow such power.
+
 Check out the [roadmap](https://github.com/STRONG-MAD/Folden/projects/1) to see progress and what's planned.
 
 If you find any issues or have an idea in mind, open an issue :)
