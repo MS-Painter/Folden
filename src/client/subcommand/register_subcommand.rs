@@ -26,7 +26,8 @@ impl SubCommandUtil for RegisterSubCommand {
                 .required(false)
                 .empty_values(false)
                 .takes_value(true)
-                .validator_os(is_existing_directory_validator))
+                .validator_os(is_existing_directory_validator)
+                .help("Directory to register to. Leave empty to apply on current"))
             .arg(construct_port_arg())
     }
 

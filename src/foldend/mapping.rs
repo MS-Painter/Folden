@@ -71,11 +71,11 @@ impl Mapping {
                         }
                         Ok(())
                     }
-                    Err(err) => Err(format!("Workflow config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
+                    Err(err) => Err(format!("Pipeline config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
                 }
             }
             Err(err) => {
-                Err(format!("Workflow file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
+                Err(format!("Pipeline file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
             }
         }
     }
