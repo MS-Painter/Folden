@@ -3,11 +3,11 @@ use std::process::{Child, Command, Stdio};
 use serde::{Serialize, Deserialize};
 
 use super::WorkflowAction;
-use crate::{workflow_context_input::WorkflowContextInput, workflow_execution_context::WorkflowExecutionContext};
+use crate::{pipeline_context_input::PipelineContextInput, workflow_execution_context::WorkflowExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunCmd {
-    pub input: WorkflowContextInput,
+    pub input: PipelineContextInput,
     pub command: String,
     pub input_formatting: bool,
     pub datetime_formatting: bool,
@@ -56,7 +56,7 @@ impl WorkflowAction for RunCmd {
 impl Default for RunCmd {
     fn default() -> Self {
         Self {
-            input: WorkflowContextInput::EventFilePath,
+            input: PipelineContextInput::EventFilePath,
             command: String::from("echo $input$"),
             input_formatting: true,
             datetime_formatting: true,

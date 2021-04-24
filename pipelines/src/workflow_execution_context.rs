@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::{pipeline_config::PipelineConfig, workflow_context_input::WorkflowContextInput};
+use crate::{pipeline_config::PipelineConfig, pipeline_context_input::PipelineContextInput};
 
 pub struct WorkflowExecutionContext {
     pub config: PipelineConfig,
@@ -19,10 +19,10 @@ impl WorkflowExecutionContext {
         } 
     }
 
-    pub fn get_input(&self, input: WorkflowContextInput) -> Option<PathBuf> {
+    pub fn get_input(&self, input: PipelineContextInput) -> Option<PathBuf> {
         match input {
-            WorkflowContextInput::EventFilePath => Some(self.event_file_path.clone()),
-            WorkflowContextInput::ActionFilePath => self.action_file_path.clone()
+            PipelineContextInput::EventFilePath => Some(self.event_file_path.clone()),
+            PipelineContextInput::ActionFilePath => self.action_file_path.clone()
         }
     }
 

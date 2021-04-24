@@ -3,11 +3,11 @@ use std::{ffi::OsStr, fs, io::ErrorKind, path::PathBuf};
 use serde::{Serialize, Deserialize};
 
 use super::{WorkflowAction, construct_working_dir};
-use crate::{workflow_context_input::WorkflowContextInput, workflow_execution_context::WorkflowExecutionContext};
+use crate::{pipeline_context_input::PipelineContextInput, workflow_execution_context::WorkflowExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MoveToDir {
-    pub input: WorkflowContextInput,
+    pub input: PipelineContextInput,
     pub directory_path: PathBuf,
     pub requires_directory_exists: bool,
     pub replace_older_files: bool,
@@ -64,7 +64,7 @@ impl MoveToDir {
 impl Default for MoveToDir {
     fn default() -> Self {
         Self {
-            input: WorkflowContextInput::EventFilePath,
+            input: PipelineContextInput::EventFilePath,
             directory_path: PathBuf::from("output_dir_path"),
             requires_directory_exists: false,
             replace_older_files: true,
