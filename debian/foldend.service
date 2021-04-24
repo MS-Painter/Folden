@@ -2,7 +2,7 @@
 Description=Folden Service
 
 [Service]
-ExecStart=/usr/sbin/foldend run --config /etc/foldend/foldend_config.toml
+ExecStart=/usr/sbin/foldend --config /etc/foldend/foldend_config.toml run
 
 [Install]
 WantedBy=multi-user.target

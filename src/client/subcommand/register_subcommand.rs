@@ -18,12 +18,10 @@ impl SubCommandUtil for RegisterSubCommand {
  
     fn construct_subcommand(&self) -> App {
         self.create_instance()
-            .about("Register handler workflow to directory")
-            .arg(Arg::with_name("debug").short("d")
-                .help("print debug information verbosely"))
+            .about("Register handler pipeline to directory")
             .arg(Arg::with_name("handler_config").value_name("FILE")
                 .takes_value(true).required(true)
-                .help("Handler workflow configuration file"))
+                .help("Handler pipeline configuration file"))
             .arg(Arg::with_name("directory")
                 .required(false)
                 .empty_values(false)

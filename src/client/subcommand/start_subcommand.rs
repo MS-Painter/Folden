@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
+use clap::{App, ArgMatches};
 use futures::executor::block_on;
-use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{StartHandlerRequest, handler_service_client::HandlerServiceClient};
@@ -18,8 +18,6 @@ impl SubCommandUtil for StartSubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Start handler on directory")
-            .arg(Arg::with_name("debug").short("d")
-                .help("print debug information verbosely"))
             .args(construct_directory_or_all_args().as_slice())
             .arg(construct_port_arg())
     }

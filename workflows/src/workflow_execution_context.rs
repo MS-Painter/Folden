@@ -30,10 +30,11 @@ impl WorkflowExecutionContext {
     where 
     T: AsRef<str> {
         if self.config.panic_handler_on_error {
+            tracing::error!("{}", msg.as_ref());
             panic!("{}", msg.as_ref());
         }
         else {
-            println!("{}", msg.as_ref());
+            tracing::error!("{}", msg.as_ref());
             return false;
         }
     }

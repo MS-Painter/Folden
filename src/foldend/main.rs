@@ -6,7 +6,6 @@ mod startup;
 
 use futures::executor::block_on;
 
-
 #[cfg(windows)]
 fn main() {
     match startup::windows::run() {
@@ -16,12 +15,12 @@ fn main() {
                 startup::windows::Error::Winapi(winapi_err) => {
                     // If not being run inside windows service framework attempt commandline execution.
                     if winapi_err.raw_os_error().unwrap() == 1063 {
-                        println!("--- Attempting Foldend execution outside of Windows service framework ---");
+                        tracing::warn!("Attempting Foldend execution outside of Windows service framework");
                         block_on(startup::windows::sync_main(None)).unwrap();
                     }
                 }
                 _ => {
-                    println!("{:?}", e);
+                    tracing::error!("{}", e);
                 }
             }
         }

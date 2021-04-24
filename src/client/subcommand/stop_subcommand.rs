@@ -18,8 +18,6 @@ impl SubCommandUtil for StopSubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Stop handler on directory")
-            .arg(Arg::with_name("debug").short("d")
-                .help("print debug information verbosely"))
             .arg(Arg::with_name("remove").long("remove")
                 .required(false)
                 .takes_value(false))
