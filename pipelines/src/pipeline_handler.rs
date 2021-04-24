@@ -33,14 +33,14 @@ impl PipelineHandler {
         match &self.naming_regex {
             Some(naming_regex) => {
                 if naming_regex.is_match(file_path.to_str().unwrap()) {
-                    self.execute_workflow(file_path);
+                    self.execute_pipeline(file_path);
                 }
             }
-            None => self.execute_workflow(file_path)
+            None => self.execute_pipeline(file_path)
         }
     }
 
-    fn execute_workflow(&self, file_path: &PathBuf) {
+    fn execute_pipeline(&self, file_path: &PathBuf) {
         let mut context = PipelineExecutionContext::new(file_path, self.config.clone());
         for action in &self.config.actions {
             let action_succeeded = action.run(&mut context);
