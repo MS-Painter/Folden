@@ -3,7 +3,7 @@ use std::{convert::TryFrom, fs, io, path::Path};
 use clap::Values;
 use serde::{Serialize, Deserialize};
 
-use crate::{actions::WorkflowActions, event::PipelineEvent};
+use crate::{actions::PipelineActions, event::PipelineEvent};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PipelineConfig {
@@ -11,7 +11,7 @@ pub struct PipelineConfig {
     pub apply_on_startup_on_existing_files: bool,
     pub panic_handler_on_error: bool,
     pub event: PipelineEvent,
-    pub actions: Vec<WorkflowActions>
+    pub actions: Vec<PipelineActions>
 }
 
 impl PipelineConfig {
@@ -25,8 +25,8 @@ impl PipelineConfig {
                 None => PipelineEvent::default()
             },
             actions: match actions {
-                Some(actions) => WorkflowActions::defaults(actions),
-                None => vec![WorkflowActions::default()]
+                Some(actions) => PipelineActions::defaults(actions),
+                None => vec![PipelineActions::default()]
             }
         }
     }

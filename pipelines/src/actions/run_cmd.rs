@@ -2,7 +2,7 @@ use std::process::{Child, Command, Stdio};
 
 use serde::{Serialize, Deserialize};
 
-use super::WorkflowAction;
+use super::PipelineAction;
 use crate::{pipeline_context_input::PipelineContextInput, pipeline_execution_context::PipelineExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -27,7 +27,7 @@ impl RunCmd {
     }
 }
 
-impl WorkflowAction for RunCmd {
+impl PipelineAction for RunCmd {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         let formatted_command = self.format_command(context);
         match spawn_command(&formatted_command, context) {

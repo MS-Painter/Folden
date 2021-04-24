@@ -2,7 +2,7 @@ use std::{ffi::OsStr, fs, io::ErrorKind, path::PathBuf};
 
 use serde::{Serialize, Deserialize};
 
-use super::{WorkflowAction, construct_working_dir};
+use super::{PipelineAction, construct_working_dir};
 use crate::{pipeline_context_input::PipelineContextInput, pipeline_execution_context::PipelineExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -74,7 +74,7 @@ impl Default for MoveToDir {
     }
 }
 
-impl WorkflowAction for MoveToDir {
+impl PipelineAction for MoveToDir {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         match context.get_input(self.input) {
             Some(input_path) => {

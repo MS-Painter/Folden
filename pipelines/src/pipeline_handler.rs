@@ -6,7 +6,7 @@ use regex::Regex;
 use crossbeam::channel::Receiver;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
-use crate::actions::WorkflowAction;
+use crate::actions::PipelineAction;
 use crate::pipeline_config::PipelineConfig;
 use crate::pipeline_execution_context::PipelineExecutionContext;
 

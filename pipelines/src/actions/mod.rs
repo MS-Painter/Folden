@@ -12,7 +12,7 @@ use crate::pipeline_execution_context::PipelineExecutionContext;
 
 pub const ACTION_TYPES: [&str; 2] = ["runcmd", "movetodir"];
 
-pub trait WorkflowAction {
+pub trait PipelineAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut PipelineExecutionContext) -> bool;
 
@@ -39,14 +39,14 @@ pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum WorkflowActions {
+pub enum PipelineActions {
     MoveToDir(MoveToDir),
     RunCmd(RunCmd),
     None,
 }
 
-impl WorkflowActions {
-    pub fn defaults<'a, I>(actions: I) -> Vec<WorkflowActions> 
+impl PipelineActions {
+    pub fn defaults<'a, I>(actions: I) -> Vec<PipelineActions> 
     where I: Iterator<Item = &'a str> {
         actions.map(|action_name| {
             match action_name.to_lowercase().as_str() {
@@ -58,17 +58,17 @@ impl WorkflowActions {
     }
 }
 
-impl WorkflowAction for WorkflowActions {
+impl PipelineAction for PipelineActions {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         match self {
-            WorkflowActions::MoveToDir(action) => action.run(context),
-            WorkflowActions::RunCmd(action) => action.run(context),
-            WorkflowActions::None => false
+            PipelineActions::MoveToDir(action) => action.run(context),
+            PipelineActions::RunCmd(action) => action.run(context),
+            PipelineActions::None => false
         }
     }
 }
 
-impl Default for WorkflowActions {
+impl Default for PipelineActions {
     fn default() -> Self {
         Self::RunCmd(RunCmd::default())
     }
