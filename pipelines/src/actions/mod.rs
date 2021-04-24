@@ -15,20 +15,35 @@ pub const ACTION_TYPES: [&str; 2] = ["runcmd", "movetodir"];
 pub trait PipelineAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut PipelineExecutionContext) -> bool;
+}
 
-    fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
-        if let Some(input) = input {
-            lazy_static! {
-                static ref INPUT_RE: Regex = Regex::new(r"(\$input\$)").unwrap();
-            }
-            return Ok(INPUT_RE.replace_all(text, input.to_string_lossy()))
+pub fn format_windows_directory_space_seperation<T>(text: T) -> String
+where
+T: AsRef<str> {
+    lazy_static! {
+        static ref WINDOWS_SPACE_SEPERATED_DIRECTORIES_RE: Regex = Regex::new(r"(?P<dir>\w+ \w+)").unwrap();
+    }
+    WINDOWS_SPACE_SEPERATED_DIRECTORIES_RE.replace_all(text.as_ref(), "\"$dir\"").to_string()
+}
+
+pub fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
+    if let Some(input) = input {
+        lazy_static! {
+            static ref INPUT_RE: Regex = Regex::new(r"(\$input\$)").unwrap();
         }
-        Err(())
+        
+        let input_replaced_text: Cow<str> = INPUT_RE.replace_all(text, input.to_string_lossy());
+        if cfg!(windows) {
+            let dir_space_handled_text = format_windows_directory_space_seperation(&input_replaced_text);
+            return Ok(dir_space_handled_text.into())
+        }
+        return Ok(input_replaced_text.into())
     }
+    Err(())
+}
 
-    fn format_datetime<S>(text: S) -> String where S: AsRef<str> {
-        chrono::Local::now().format(text.as_ref()).to_string()
-    }
+pub fn format_datetime<S>(text: S) -> String where S: AsRef<str> {
+    chrono::Local::now().format(text.as_ref()).to_string()
 }
 
 pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> PathBuf {

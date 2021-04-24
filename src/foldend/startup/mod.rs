@@ -77,7 +77,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     let file_appender = tracing_appender::rolling::daily(&config.tracing_file_path.parent().unwrap(), &config.tracing_file_path);
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     let subscriber = tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::TRACE.into()))
         .with(fmt::Layer::new().with_writer(std::io::stdout))
         .with(fmt::Layer::new().with_writer(non_blocking));
     tracing::subscriber::set_global_default(subscriber).expect("Unable to set a global collector");

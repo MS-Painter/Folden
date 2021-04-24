@@ -1,8 +1,8 @@
-use std::process::{Child, Command, Stdio};
+use std::{path::PathBuf, process::{Child, Command, Stdio}};
 
 use serde::{Serialize, Deserialize};
 
-use super::PipelineAction;
+use super::{PipelineAction, format_datetime, format_input, format_windows_directory_space_seperation};
 use crate::{pipeline_context_input::PipelineContextInput, pipeline_execution_context::PipelineExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -17,11 +17,11 @@ impl RunCmd {
     fn format_command(&self, context: &mut PipelineExecutionContext) -> std::borrow::Cow<str> {
         let mut formatted_command = self.command.to_owned().into();
         if self.input_formatting {
-            formatted_command = Self::format_input(&self.command, context.get_input(self.input))
+            formatted_command = format_input(&self.command, context.get_input(self.input))
             .unwrap_or(self.command.to_owned().into());
         } 
         if self.datetime_formatting {
-            formatted_command = Self::format_datetime(formatted_command).into();
+            formatted_command = format_datetime(formatted_command).into();
         };
         formatted_command
     }
@@ -68,7 +68,11 @@ impl Default for RunCmd {
 fn spawn_command<S>(input: &S, context: &mut PipelineExecutionContext) -> std::io::Result<Child>
 where 
     S: AsRef<str> {
-    let parent_dir_path = context.event_file_path.parent().unwrap();
+    //let parent_dir_path = context.event_file_path.parent().unwrap().to_string_lossy();
+    let parent_dir_path = context.event_file_path.parent().unwrap().canonicalize().unwrap();
+    //let parent_dir_path = format_windows_directory_space_seperation(parent_dir_path);
+    //let parent_dir_path = PathBuf::from(parent_dir_path).canonicalize().unwrap();
+    tracing::trace!("Formatted RunCmd parent input path - {:?}", parent_dir_path);
     if cfg!(windows) {
         Command::new("cmd.exe")
             .arg(format!("/C {}", input.as_ref()))
@@ -84,4 +88,9 @@ where
             .stderr(Stdio::piped())
             .spawn()
     }
+}
+
+#[test]
+fn test_spawn_command() {
+    
 }

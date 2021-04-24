@@ -2,7 +2,7 @@ use std::{ffi::OsStr, fs, io::ErrorKind, path::PathBuf};
 
 use serde::{Serialize, Deserialize};
 
-use super::{PipelineAction, construct_working_dir};
+use super::{PipelineAction, construct_working_dir, format_datetime};
 use crate::{pipeline_context_input::PipelineContextInput, pipeline_execution_context::PipelineExecutionContext};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -81,7 +81,7 @@ impl PipelineAction for MoveToDir {
                 match input_path.file_name() {
                     Some(input_file_name) => {
                         let output_directory_path = if self.datetime_formatting {
-                            PathBuf::from(Self::format_datetime(&self.directory_path.to_string_lossy()))
+                            PathBuf::from(format_datetime(&self.directory_path.to_string_lossy()))
                         } else {
                             self.directory_path.to_path_buf()
                         };
