@@ -19,29 +19,29 @@ use crate::mapping::Mapping;
 use generated_types::{DEFAULT_PORT_STR, StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
 
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
-    App::new("Folden Service")
+    App::new("Foldend")
         .version(crate_version!())
         .about("Folden background manager service")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .arg(Arg::with_name("config").short("c").long("config")
-            .help("Startup config file")
             .required(true)
             .empty_values(false)
-            .takes_value(true))
-        .subcommand(SubCommand::with_name("run").about("Startup Folden server")
+            .takes_value(true)
+            .help("Startup config file"))
+        .subcommand(SubCommand::with_name("run").about("Startup server")
             .arg(Arg::with_name("mapping").short("m").long("mapping")
                 .required(false).
                 empty_values(false)
                 .takes_value(true)
-                .help("Startup mapping file"))
+                .help("Startup mapping file. Defaults to [foldend_mapping.toml]"))
             .arg(Arg::with_name("port").short("p").long("port")
                 .default_value(DEFAULT_PORT_STR)
                 .empty_values(false)
                 .takes_value(true))
             .arg(Arg::with_name("log").short("l").long("log")
                 .empty_values(false)
-                .takes_value(true))
-                .help("Override file path to store logs at. Defaults to [foldend.log]"))
+                .takes_value(true)
+                .help("Override file path to store logs at. Defaults to [foldend.log]")))
 }
 
 fn setup_tracing<T>(file_path: &T) where T: AsRef<Path> {
