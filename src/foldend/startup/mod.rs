@@ -28,7 +28,6 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
             .empty_values(false)
             .takes_value(true))
         .subcommand(SubCommand::with_name("run").about("Startup Folden server")
-            //.arg(construct_config_arg())
             .arg(Arg::with_name("mapping").short("m").long("mapping")
                 .required(false).
                 empty_values(false)
@@ -39,21 +38,9 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .empty_values(false)
                 .takes_value(true))
             .arg(Arg::with_name("log").short("l").long("log")
-                .default_value(DEFAULT_PORT_STR)
                 .empty_values(false)
-                .takes_value(true)))
-        .subcommand(SubCommand::with_name("logs").about("Interact with local server side logs")
-            //.arg(construct_config_arg())
-            .arg(Arg::with_name("clear").long("clear")
-                .takes_value(false)
-                .required_unless("view")
-                .conflicts_with("view")
-                .help("Wipe saved logs"))
-            .arg(Arg::with_name("view").long("view")
-                .takes_value(false)
-                .required_unless("clear")
-                .conflicts_with("clear")
-                .help("View saved logs")))
+                .takes_value(true))
+                .help("File path to store logs at. Defaults to [foldend.log]"))
 }
 
 fn setup_tracing<T>(file_path: &T) where T: AsRef<Path> {
@@ -162,6 +149,9 @@ fn modify_config(config: &mut Config, sub_matches: &ArgMatches) -> Result<(), Bo
     }
     if let Some(port) = sub_matches.value_of("port") {
         config.port = port.parse()?;
+    }
+    if let Some(log_file_path) = sub_matches.value_of("log") {
+        config.tracing_file_path = PathBuf::from(log_file_path);
     }
     Ok(())
 }
