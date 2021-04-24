@@ -32,7 +32,7 @@ ARGS:
     <path>         File path. Leave empty to generate default name.
 ```
 
-\* Alternatively check out the [example pipeline files](example_pipelines/execute_make.toml) for common use cases
+\* Alternatively check out the [example pipeline files](examples/example_pipelines/execute_make.toml) for common use cases
 
 2. Register pipeline to directory:
 
