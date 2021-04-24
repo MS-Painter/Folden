@@ -7,7 +7,7 @@ use notify::{Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::Config;
 use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
-use pipelines::{pipeline_config::PipelineConfig, workflow_handler::WorkflowHandler};
+use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -56,7 +56,7 @@ impl Mapping {
                         let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
-                            let mut handler = WorkflowHandler::new(config);
+                            let mut handler = PipelineHandler::new(config);
                             handler.watch(&path, watcher, rx);
                         });            
                         // Insert or update the value of the current handled directory

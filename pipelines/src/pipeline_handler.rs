@@ -10,12 +10,12 @@ use crate::actions::WorkflowAction;
 use crate::pipeline_config::PipelineConfig;
 use crate::pipeline_execution_context::PipelineExecutionContext;
 
-pub struct WorkflowHandler {
+pub struct PipelineHandler {
     pub config: PipelineConfig,
     pub naming_regex: Option<Regex>,
 }
 
-impl WorkflowHandler {
+impl PipelineHandler {
     pub fn new(config: PipelineConfig) -> Self {
         match config.event.naming_regex_match.to_owned() {
             Some(naming_regex_match) => Self { 
