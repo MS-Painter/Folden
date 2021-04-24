@@ -1,46 +1,65 @@
-# Folden
+# What is Folden?
 
-Full encompassing repository,
+Application to handle and modify files for common scenarios. System wide.
 
-for the client and server pattern elements,
+Using simple pipelines, designed to be easily created & monitored from your CLI.
 
-for the previously named "Fun folder" project
+# Motivation
 
-The project structures around 3 separate sub-crates:
+Folden is meant to allow anyone to easily apply common logic to specific directories.
 
-- Client
+Not recommended currently for production critical or overtly complex operation needs.
 
-Binary program crate.
-Also, root crate of repository.
+# How does it work?
 
-Responsible for contacting the server side with client requests.
+After [installing Folden](https://github.com/STRONG-MAD/Folden/releases), the application service runs in the background.
 
-- Server
+Use the `folden` command to apply and check directories being handled (as long as the service is up).
 
-Binary program crate.
+# Example usage
 
-Responsible for the lifetime executable,
+1. Create a *new pipeline file (Be sure to modify the file itself accordingly):
 
- of the server which runs in the background.
+```cmd
+USAGE:
+    folden generate [FLAGS] [OPTIONS] [--] [path]
 
-- Folder Handlers
+OPTIONS:
+        --actions <actions>...     [possible values: runcmd, movetodir]
+        --events <events>...       [possible values: create, modify]
 
-Library crate.
+ARGS:
+    <path>         File path. Leave empty to generate default name.
+```
 
-Responsible for handlers api shared between client and server.
+\* Alternatively check out the [example pipeline files](example_pipelines/execute_make.toml) for common use cases
 
-Also, contains common handlers which are available to utilize.
+2. Register pipeline to directory:
 
-# Differences to other crates
+```cmd
+USAGE:
+    folden register [FLAGS] [OPTIONS] <FILE> [directory]
 
-- `notify` - Library used to create cross-platform file watchers.
-- `watchexec` - Application used for single file watching cli needs.
-- `Folden` - System wide application for file watching needs.
+ARGS:
+    <FILE>         Handler pipeline configuration file
+    <directory>    Directory to register to. Leave empty to apply on current.
+```
 
-# Contributing
+3. That's it! Interact with registered handlers (be sure to check out all options using `--help`):
 
-### gRPC auto completed intelliSense
+```cmd
+folden status ...
+folden start ...
+folden stop ...
+folden modify ...
+```
 
-If you're interested in working in an easy to discern environment using VSCode IDE -
+# Learn more
 
-Enable in `rust-analyzer` extension the `Cargo: Load Out Dirs From Check` setting.
+<p align="center">
+  <strong>
+    <a href="ARCHITECTURE.md">Architecture<a/>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    <a href="FAQ.md">FAQ<a/>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    <a href="https://github.com/STRONG-MAD/Folden/releases">Download<a/>
+  </strong>
+</p>
