@@ -1,7 +1,7 @@
 #[cfg(windows)]
 pub mod windows;
 
-use std::{fs, path::{Path, PathBuf}};
+use std::{fs, path::PathBuf};
 use std::collections::HashMap;
 use std::{convert::TryFrom, sync::Arc};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
