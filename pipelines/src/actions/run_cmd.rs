@@ -30,6 +30,7 @@ impl RunCmd {
 impl PipelineAction for RunCmd {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         let formatted_command = self.format_command(context);
+        tracing::trace!("Formatted RunCmd command - {}", formatted_command);
         match spawn_command(&formatted_command, context) {
             Ok(process) => {
                 let output = process.wait_with_output();
