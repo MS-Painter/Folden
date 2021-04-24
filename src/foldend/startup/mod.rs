@@ -11,6 +11,7 @@ use tonic::Request;
 use tokio::sync::RwLock;
 use tonic::transport::Server as TonicServer;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand, crate_version};
+use tracing_subscriber::{EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt};
 
 use crate::config::Config;
 use crate::server::Server;
@@ -40,18 +41,17 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
             .arg(Arg::with_name("log").short("l").long("log")
                 .empty_values(false)
                 .takes_value(true))
-                .help("File path to store logs at. Defaults to [foldend.log]"))
+                .help("Override file path to store logs at. Defaults to [foldend.log]"))
 }
 
 fn setup_tracing<T>(file_path: &T) where T: AsRef<Path> {
     let file_appender = tracing_appender::rolling::daily(file_path.as_ref().parent().unwrap(), file_path.as_ref());
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_writer(non_blocking)
-        .with_writer(std::io::stdout)
-        .init();
+    let subscriber = tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
+        .with(fmt::Layer::new().with_writer(std::io::stdout))
+        .with(fmt::Layer::new().with_writer(non_blocking));
+    tracing::subscriber::set_global_default(subscriber).expect("Unable to set a global collector");
 }
 
 async fn startup_handlers(server: &Server) -> () {
