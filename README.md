@@ -58,8 +58,8 @@ folden modify ...
 
 <p align="center">
   <strong>
-    <a href="https://github.com/STRONG-MAD/Folden/blob/317df26966d29ba1a1686b4ac2040d2ebdac272d/ARCHITECTURE.md">Architecture<a/>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
-    <a href="https://github.com/STRONG-MAD/Folden/blob/a884734ef2b813b61567cedc1c9cc6c50379934d/FAQ.md">FAQ<a/>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    <a href="ARCHITECTURE.md">Architecture<a/>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    <a href="FAQ.md">FAQ<a/>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
     <a href="https://github.com/STRONG-MAD/Folden/releases">Download<a/>
   </strong>
 </p>
