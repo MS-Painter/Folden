@@ -29,7 +29,7 @@ OPTIONS:
         --events <events>...       [possible values: create, modify]
 
 ARGS:
-    <path>
+    <path>         File path. Leave empty to generate default name.
 ```
 
 \* Alternatively check out the [example pipeline files](example_pipelines/execute_make.toml) for common use cases
@@ -42,7 +42,7 @@ USAGE:
 
 ARGS:
     <FILE>         Handler pipeline configuration file
-    <directory>
+    <directory>    Directory to register to. Leave empty to apply on current.
 ```
 
 3. That's it! Interact with registered handlers (be sure to check out all options using `--help`):
