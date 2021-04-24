@@ -1,0 +1,16 @@
+# Pipeline to run `make` command when any change to a relevant file is noticed -
+# In the current directory or in any subdirectory.
+watch_recursive = true
+apply_on_startup_on_existing_files = false
+panic_handler_on_error = false
+
+[event]
+events = ["modify"]
+naming_regex_match = "\\.(js|css|html)$"
+
+[[actions]]
+type = "RunCmd"
+input = "EventFilePath"
+command = "make"
+input_formatting = true
+datetime_formatting = true

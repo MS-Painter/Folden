@@ -1,0 +1,19 @@
+# Pipeline to store files in a directory in an inner subdirectory.
+# Based on the date (ISO-8601 format) the handler noticed the files -
+# When the handler is started up, any files already in the dir will be moved based on the current date.
+watch_recursive = false
+apply_on_startup_on_existing_files = true
+panic_handler_on_error = false
+
+[event]
+events = ["create", "modify"]
+naming_regex_match = ".*"
+
+[[actions]]
+type = "MoveToDir"
+input = "EventFilePath"
+directory_path = "%Y-%m-%d" # Or "%F" for shorthand ISO-8601 format
+requires_directory_exists = false
+replace_older_files = true
+keep_input_file_intact = false
+datetime_formatting = true

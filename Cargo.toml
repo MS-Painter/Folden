@@ -1,0 +1,57 @@
+[package]
+name = "folden"
+version = "0.1.0"
+authors = ["STRONG-MAD <mayan.shoshani7@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "folden"
+path = "src/client/main.rs"
+
+[[bin]]
+name = "foldend"
+path = "src/foldend/main.rs"
+
+[workspace]
+members = [
+    "generated_types",
+    "pipelines"
+]
+
+[dependencies]
+generated_types = {path = "generated_types"}
+pipelines = {path = "pipelines"}
+
+toml = "0.5.7"
+tonic = "0.4.2"
+clap = "2.33.3"
+typetag = "0.1.6"
+futures = "0.3.14"
+dyn-clone = "1.0.4"
+tokio = { version = "1.5.0", features = ["full"]}
+serde = {version = "1.0.117", features = ["derive"] }
+
+# foldend dependencies
+serde_json = "1.0"
+crossbeam = "0.8.0"
+notify = "5.0.0-pre.7"
+tracing = "0.1"
+tracing-appender = "0.1.2"
+tracing-futures = "0.2.5"
+tracing-subscriber = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.3.1"
+
+[package.metadata.deb]
+section = "utility"
+maintainer-scripts = "debian/"
+systemd-units = { enable = false }
+assets = [
+    ["debian/foldend_config.toml", "/etc/foldend/foldend_config.toml", "644"],
+    ["debian/foldend.service", "/lib/systemd/system/foldend.service", "644"],
+    ["target/release/folden", "/usr/bin/", "755"],
+    ["target/release/foldend", "/usr/sbin/", "755"]
+]

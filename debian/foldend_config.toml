@@ -1,0 +1,2 @@
+mapping_state_path = "/etc/foldend/foldend_mapping.toml"
+tracing_file_path = "/etc/foldend/foldend_logs.log"
