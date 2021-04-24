@@ -3,14 +3,14 @@ use std::{convert::TryFrom, fs, io, path::Path};
 use clap::Values;
 use serde::{Serialize, Deserialize};
 
-use crate::{actions::WorkflowActions, event::WorkflowEvent};
+use crate::{actions::WorkflowActions, event::PipelineEvent};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkflowConfig {
     pub watch_recursive: bool,
     pub apply_on_startup_on_existing_files: bool,
     pub panic_handler_on_error: bool,
-    pub event: WorkflowEvent,
+    pub event: PipelineEvent,
     pub actions: Vec<WorkflowActions>
 }
 
@@ -21,8 +21,8 @@ impl WorkflowConfig {
             apply_on_startup_on_existing_files: false,
             panic_handler_on_error: false,
             event: match events {
-                Some(events) => WorkflowEvent::from(events),
-                None => WorkflowEvent::default()
+                Some(events) => PipelineEvent::from(events),
+                None => PipelineEvent::default()
             },
             actions: match actions {
                 Some(actions) => WorkflowActions::defaults(actions),
