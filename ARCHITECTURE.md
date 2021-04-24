@@ -36,16 +36,20 @@ File watching events are handled sequentially as well to not apply pipeline on s
 
 # Features & Core concepts
 
+- `Pipeline handler` - A thread designated to file watching a specific directory.
+
+Can also refer to the configuration of the handler.
+
 - `Event` - Ruleset on what file watching events to apply pipeline on.
 - `Action` - Common logic applied as a stage in a pipeline.
 - `Input` - References file paths relevant to a single pipeline:
   - `EventFilePath` - File path of the original file the event was referring to.
   - `ActionFilePath` - File path of the previous file that an action digested.
 
-    Some `actions` create / move the original file;
+    Some `actions` create / move the a file after working with the original file;
 
-    This fields value will change at the end of every `action` as part of the pipeline.
+    This field's value will change at the end of every `action` as part of the pipeline.
 
-    Can't be used as on the first action in a pipeline.
-- Input file path formatting on specific action fields.
+    Can't be used on the first action in a pipeline.
+- Input file path formatting on specific action fields using the keyword - `$input$`.
 - Datetime formatting on specific action fields using [strftime conventions](https://docs.rs/chrono/latest/chrono/format/strftime/).
