@@ -44,16 +44,6 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .help("Override file path to store logs at. Defaults to [foldend.log]")))
 }
 
-fn setup_tracing<T>(file_path: &T) where T: AsRef<Path> {
-    let file_appender = tracing_appender::rolling::daily(file_path.as_ref().parent().unwrap(), file_path.as_ref());
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-    let subscriber = tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
-        .with(fmt::Layer::new().with_writer(std::io::stdout))
-        .with(fmt::Layer::new().with_writer(non_blocking));
-    tracing::subscriber::set_global_default(subscriber).expect("Unable to set a global collector");
-}
-
 async fn startup_handlers(server: &Server) -> () {
     let mapping = server.mapping.read().await;
     let handler_requests: Vec<StartHandlerRequest> = mapping.directory_mapping.iter()
@@ -83,7 +73,14 @@ async fn startup_handlers(server: &Server) -> () {
 
 #[tracing::instrument]
 async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn std::error::Error>> {
-    setup_tracing(&config.tracing_file_path);
+    // Setup tracing
+    let file_appender = tracing_appender::rolling::daily(&config.tracing_file_path.parent().unwrap(), &config.tracing_file_path);
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    let subscriber = tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
+        .with(fmt::Layer::new().with_writer(std::io::stdout))
+        .with(fmt::Layer::new().with_writer(non_blocking));
+    tracing::subscriber::set_global_default(subscriber).expect("Unable to set a global collector");
 
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
     let server = Server {
