@@ -7,16 +7,16 @@ use crossbeam::channel::Receiver;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
 use crate::actions::WorkflowAction;
-use crate::workflow_config::WorkflowConfig;
+use crate::pipeline_config::PipelineConfig;
 use crate::workflow_execution_context::WorkflowExecutionContext;
 
 pub struct WorkflowHandler {
-    pub config: WorkflowConfig,
+    pub config: PipelineConfig,
     pub naming_regex: Option<Regex>,
 }
 
 impl WorkflowHandler {
-    pub fn new(config: WorkflowConfig) -> Self {
+    pub fn new(config: PipelineConfig) -> Self {
         match config.event.naming_regex_match.to_owned() {
             Some(naming_regex_match) => Self { 
                 config,

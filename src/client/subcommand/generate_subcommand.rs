@@ -3,7 +3,7 @@ use std::{env, ops::Deref, path::PathBuf};
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use pipelines::{actions::ACTION_TYPES, event::EVENT_TYPES, workflow_config::WorkflowConfig};
+use pipelines::{actions::ACTION_TYPES, event::EVENT_TYPES, pipeline_config::PipelineConfig};
 
 #[derive(Clone)]
 pub struct GenerateSubCommand {}
@@ -57,7 +57,7 @@ impl SubCommandUtil for GenerateSubCommand {
         let events = sub_matches.values_of("events");
         let actions = sub_matches.values_of("actions");
         let path = GenerateSubCommand::construct_config_path("folden_workflow",sub_matches.value_of("path"));
-        let config = WorkflowConfig::default_new(events, actions);
+        let config = PipelineConfig::default_new(events, actions);
         config.generate_config(path.deref()).unwrap();
     }
 }

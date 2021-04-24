@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use crate::{actions::WorkflowActions, event::PipelineEvent};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct WorkflowConfig {
+pub struct PipelineConfig {
     pub watch_recursive: bool,
     pub apply_on_startup_on_existing_files: bool,
     pub panic_handler_on_error: bool,
@@ -14,7 +14,7 @@ pub struct WorkflowConfig {
     pub actions: Vec<WorkflowActions>
 }
 
-impl WorkflowConfig {
+impl PipelineConfig {
     pub fn default_new(events: Option<Values>, actions: Option<Values>) -> Self {
         Self {
             watch_recursive: false,
@@ -36,7 +36,7 @@ impl WorkflowConfig {
     }
 }
 
-impl TryFrom<Vec<u8>> for WorkflowConfig {
+impl TryFrom<Vec<u8>> for PipelineConfig {
     type Error = toml::de::Error;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {

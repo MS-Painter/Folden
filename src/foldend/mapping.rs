@@ -7,7 +7,7 @@ use notify::{Event, EventKind, RecommendedWatcher, Watcher};
 
 use crate::config::Config;
 use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
-use pipelines::{workflow_config::WorkflowConfig, workflow_handler::WorkflowHandler};
+use pipelines::{pipeline_config::PipelineConfig, workflow_handler::WorkflowHandler};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -49,7 +49,7 @@ impl Mapping {
         let config_path = PathBuf::from(&handler_mapping.handler_config_path);
         match fs::read(&config_path) {
             Ok(data) => {
-                match WorkflowConfig::try_from(data) {
+                match PipelineConfig::try_from(data) {
                     Ok(config) => {
                         let (tx, rx) = crossbeam::channel::unbounded();
                         let thread_tx = tx.clone();
