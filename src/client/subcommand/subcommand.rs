@@ -87,9 +87,9 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
             .conflicts_with("directory"))
 }
 
-pub fn construct_output_as_table_arg<'a, 'b>() -> Arg<'a, 'b>{
-    Arg::with_name("table").long("table").visible_alias("tab")
-        .help("Output in table format")
+pub fn construct_simple_output_arg<'a, 'b>() -> Arg<'a, 'b>{
+    Arg::with_name("simple").long("simple").visible_alias("smpl")
+        .help("Output in simplified format")
         .takes_value(false)
 }
 
@@ -149,11 +149,7 @@ fn get_handler_summaries_table(summary_map_response: HandlerSummaryMapResponse) 
 }
 
 pub fn print_handler_states(states_map_response: HandlerStatesMapResponse, sub_matches: &ArgMatches) {
-    if sub_matches.is_present("table") {
-        let table = get_handler_states_table(states_map_response);
-        print_stdout(table).unwrap();
-    }
-    else {
+    if sub_matches.is_present("simple") {
         for (dir, state) in states_map_response.states_map {
             println!("
             {}
@@ -162,14 +158,14 @@ pub fn print_handler_states(states_map_response: HandlerStatesMapResponse, sub_m
             dir, state.is_alive, state.message);
         }
     }
+    else {
+        let table = get_handler_states_table(states_map_response);
+        print_stdout(table).unwrap();
+    }
 }
 
 pub fn print_handler_summaries(summary_map_response: HandlerSummaryMapResponse, sub_matches: &ArgMatches) {
-    if sub_matches.is_present("table") {
-        let table = get_handler_summaries_table(summary_map_response);
-        print_stdout(table).unwrap();
-    }
-    else {
+    if sub_matches.is_present("simple") {
         for (dir, summary) in summary_map_response.summary_map {
             println!("
             {}
@@ -178,5 +174,9 @@ pub fn print_handler_summaries(summary_map_response: HandlerSummaryMapResponse, 
             Startup: {}", 
             dir, summary.description, summary.is_alive, if summary.is_auto_startup {"auto"} else {"manual"});
         }
+    }
+    else {
+        let table = get_handler_summaries_table(summary_map_response);
+        print_stdout(table).unwrap();
     }
 }

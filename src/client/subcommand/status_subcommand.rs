@@ -3,7 +3,7 @@ use futures::executor::block_on;
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_output_as_table_arg, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path, print_handler_summaries};
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path, print_handler_summaries};
 
 #[derive(Clone)]
 pub struct StatusSubCommand {}
@@ -18,7 +18,7 @@ impl SubCommandUtil for StatusSubCommand {
             .about("Status of a registered handler given a directory")
             .args(construct_directory_or_all_args().as_slice())
             .arg(construct_port_arg())
-            .arg(construct_output_as_table_arg())
+            .arg(construct_simple_output_arg())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
