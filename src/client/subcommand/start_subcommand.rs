@@ -5,7 +5,7 @@ use futures::executor::block_on;
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{StartHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path, print_handler_states};
 
 #[derive(Clone)]
 pub struct StartSubCommand  {}
@@ -44,5 +44,5 @@ fn execute_start(sub_matches: &ArgMatches, mut client: HandlerServiceClient<toni
         directory_path: String::from(path.as_os_str().to_str().unwrap()),
     });
     let response = block_on(response).unwrap().into_inner();
-    println!("{:?}", response.states_map);
+    print_handler_states(response);
 }

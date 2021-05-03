@@ -3,7 +3,7 @@ use std::{env, ffi::{OsStr, OsString}, option::Option, path::Path};
 use dyn_clone::DynClone;
 use clap::{App, Arg, ArgMatches, SubCommand};
 
-use generated_types::{DEFAULT_PORT_STR, HandlerSummaryMapResponse, handler_service_client::HandlerServiceClient};
+use generated_types::{DEFAULT_PORT_STR, HandlerStatesMapResponse, HandlerSummaryMapResponse, handler_service_client::HandlerServiceClient};
 
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
@@ -111,6 +111,12 @@ pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {
     }
     else {
         Err(OsString::from("Input value isn't a directory"))
+    }
+}
+
+pub fn print_handler_states(states_map_response: HandlerStatesMapResponse) {
+    for (dir, state) in states_map_response.states_map {
+        println!("{} {} {}", dir, state.is_alive, state.message);
     }
 }
 
