@@ -19,13 +19,13 @@ impl SubCommandUtil for ModifySubCommand {
         self.create_instance()
             .about("Modify directory handler")
             .args(construct_directory_or_all_args().as_slice())
-            .arg(Arg::with_name("startup").long("startup")
-                .help("Set if handler automatically starts on service startup")
+            .arg(Arg::with_name("startup").long("startup").visible_alias("up")
+                .help("Set if handler starts on service startup")
                 .required(false)
                 .takes_value(true)
                 .case_insensitive(true)
                 .possible_values(&STARTUP_TYPES))
-            .arg(Arg::with_name("description").long("description")
+            .arg(Arg::with_name("description").long("description").visible_alias("desc")
                 .required(false)
                 .takes_value(true))
             .arg(construct_port_arg())
@@ -72,5 +72,8 @@ fn execute_modify(sub_matches: &ArgMatches, mut client: HandlerServiceClient<ton
         modify_description,
     });
     let response = block_on(response);
-    println!("{:?}", response);
+    match response {
+        Ok(_) => {}
+        Err(e) => println!("{}", e)
+    }
 }

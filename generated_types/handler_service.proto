@@ -7,7 +7,7 @@ import "google/protobuf/wrappers.proto";
 
 service HandlerService {
   rpc RegisterToDirectory (RegisterToDirectoryRequest) returns (HandlerStateResponse);
-  rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (GetDirectoryStatusResponse);
+  rpc GetDirectoryStatus (GetDirectoryStatusRequest) returns (HandlerSummaryMapResponse);
   rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
   rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
   rpc ModifyHandler (ModifyHandlerRequest) returns (google.protobuf.Empty);
@@ -20,10 +20,6 @@ message RegisterToDirectoryRequest {
 
 message GetDirectoryStatusRequest {
   string directory_path = 1;
-}
-
-message GetDirectoryStatusResponse {
-  map<string, HandlerSummary> directory_states_map = 1; // key is directory path
 }
 
 message StartHandlerRequest {

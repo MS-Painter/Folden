@@ -4,8 +4,8 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
 use generated_types::{StopHandlerRequest, handler_service_client::HandlerServiceClient};
-use crate::subcommand::subcommand::SubCommandUtil;
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
+use crate::subcommand::subcommand::{SubCommandUtil, print_handler_states};
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct StopSubCommand  {}
@@ -23,6 +23,7 @@ impl SubCommandUtil for StopSubCommand {
                 .takes_value(false))
             .args(construct_directory_or_all_args().as_slice())
             .arg(construct_port_arg())
+            .arg(construct_simple_output_arg())
         }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
@@ -49,5 +50,5 @@ fn execute_stop(sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic
         remove: is_handler_to_be_removed,
     });
     let response = block_on(response).unwrap().into_inner();
-    println!("{:?}", response.states_map);
+    print_handler_states(response, sub_matches);
 }
