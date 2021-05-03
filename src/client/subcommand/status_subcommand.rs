@@ -3,7 +3,7 @@ use futures::executor::block_on;
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path, print_handler_summaries};
 
 #[derive(Clone)]
 pub struct StatusSubCommand {}
@@ -52,10 +52,10 @@ fn execute_status(sub_matches: &ArgMatches, mut client: HandlerServiceClient<ton
         directory_path
     });
     let response = block_on(response).unwrap().into_inner();
-    if response.directory_states_map.is_empty() {
+    if response.summary_map.is_empty() {
         println!("No handler registered on {}", if all_directories {"file system"} else {"directory"});
     }
     else {
-        println!("{:?}", response.directory_states_map);
+        print_handler_summaries(response);
     }
 }

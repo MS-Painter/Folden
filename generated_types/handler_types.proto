@@ -16,3 +16,7 @@ message HandlerStateResponse {
 message HandlerStatesMapResponse {
   map<string, HandlerStateResponse> states_map = 1; // key is directory path
 }
+
+message HandlerSummaryMapResponse {
+  map<string, HandlerSummary> summary_map = 1; // key is directory path
+}

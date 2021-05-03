@@ -5,9 +5,7 @@ use tonic::{Request, Response};
 
 use super::Server;
 use crate::mapping::HandlerMapping;
-use generated_types::{
-    GetDirectoryStatusRequest, GetDirectoryStatusResponse, HandlerStateResponse, HandlerStatesMapResponse,
-    HandlerSummary, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
+use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
@@ -63,30 +61,30 @@ impl HandlerService for Server {
     }
 
     #[tracing::instrument]
-    async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) -> Result<Response<GetDirectoryStatusResponse>,tonic::Status> {
+    async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) -> Result<Response<HandlerSummaryMapResponse>,tonic::Status> {
         tracing::info!("Getting directory status");
         let request = request.into_inner();
         let mapping = &*self.mapping.read().await;
         let directory_path = request.directory_path.as_str();
-        let mut directory_states_map: HashMap<String, HandlerSummary> = HashMap::new();
+        let mut summary_map: HashMap<String, HandlerSummary> = HashMap::new();
         
         match mapping.directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
                 let state = handler_mapping.summary();
-                directory_states_map.insert(directory_path.to_string(), state);
-                Ok(Response::new(GetDirectoryStatusResponse {
-                    directory_states_map
+                summary_map.insert(directory_path.to_string(), state);
+                Ok(Response::new(HandlerSummaryMapResponse {
+                    summary_map
                 }))
             }
             None => {
                 // If empty - All directories are requested
                 if directory_path.is_empty() {
                     for (directory_path, handler_mapping) in mapping.directory_mapping.iter() {
-                        directory_states_map.insert(directory_path.to_owned(), handler_mapping.summary());
+                        summary_map.insert(directory_path.to_owned(), handler_mapping.summary());
                     }
                 }
-                Ok(Response::new(GetDirectoryStatusResponse {
-                    directory_states_map
+                Ok(Response::new(HandlerSummaryMapResponse {
+                    summary_map
                 }))
             }
         }
