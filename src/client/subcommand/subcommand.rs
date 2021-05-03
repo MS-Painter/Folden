@@ -74,7 +74,7 @@ pub fn construct_port_arg<'a, 'b>() -> Arg<'a, 'b>{
 }
 
 pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
-    vec!(Arg::with_name("directory").long("directory")
+    vec!(Arg::with_name("directory").long("directory").visible_alias("dir")
             .required(false)
             .empty_values(false)
             .takes_value(true)
