@@ -72,5 +72,8 @@ fn execute_modify(sub_matches: &ArgMatches, mut client: HandlerServiceClient<ton
         modify_description,
     });
     let response = block_on(response);
-    println!("{:?}", response);
+    match response {
+        Ok(_) => {}
+        Err(e) => println!("{}", e)
+    }
 }
