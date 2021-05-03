@@ -116,12 +116,21 @@ pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {
 
 pub fn print_handler_states(states_map_response: HandlerStatesMapResponse) {
     for (dir, state) in states_map_response.states_map {
-        println!("{} {} {}", dir, state.is_alive, state.message);
+        println!("
+        {}
+        Alive: {}
+        Message: {}", 
+        dir, state.is_alive, state.message);
     }
 }
 
 pub fn print_handler_summaries(summary_map_response: HandlerSummaryMapResponse) {
     for (dir, summary) in summary_map_response.summary_map {
-        println!("{} {} {} {}", dir, summary.description, summary.is_alive, summary.is_auto_startup);
+        println!("
+        {}
+        Description: {}
+        Alive: {}
+        Startup: {}", 
+        dir, summary.description, summary.is_alive, if summary.is_auto_startup {"auto"} else {"manual"});
     }
 }
