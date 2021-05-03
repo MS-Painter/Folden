@@ -2,6 +2,7 @@ use std::{env, ffi::{OsStr, OsString}, option::Option, path::Path};
 
 use dyn_clone::DynClone;
 use clap::{App, Arg, ArgMatches, SubCommand};
+use cli_table::{self, Cell, CellStruct, Table, TableStruct, print_stdout};
 
 use generated_types::{DEFAULT_PORT_STR, HandlerStatesMapResponse, HandlerSummaryMapResponse, handler_service_client::HandlerServiceClient};
 
@@ -86,6 +87,12 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
             .conflicts_with("directory"))
 }
 
+pub fn construct_output_as_table_arg<'a, 'b>() -> Arg<'a, 'b>{
+    Arg::with_name("table").long("table").visible_alias("tab")
+        .help("Output in table format")
+        .takes_value(false)
+}
+
 pub fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_name: &str) -> Result<std::path::PathBuf, std::io::Error> {
     match sub_matches.value_of(match_name) {
         Some(directory_match) => {
@@ -114,23 +121,62 @@ pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {
     }
 }
 
-pub fn print_handler_states(states_map_response: HandlerStatesMapResponse) {
-    for (dir, state) in states_map_response.states_map {
-        println!("
-        {}
-        Alive: {}
-        Message: {}", 
-        dir, state.is_alive, state.message);
+fn get_handler_states_table(states_map_response: HandlerStatesMapResponse) -> TableStruct {
+    states_map_response.states_map.into_iter()
+        .map(|(dir, state)| 
+        vec![dir.cell(), state.is_alive.cell(), state.message.cell()])
+        .collect::<Vec<Vec<CellStruct>>>()
+        .table()
+        .title(vec![
+            "Path".cell(),
+            "Alive".cell(),
+            "Message".cell(),
+        ])
+}
+
+fn get_handler_summaries_table(summary_map_response: HandlerSummaryMapResponse) -> TableStruct {
+    summary_map_response.summary_map.into_iter()
+        .map(|(dir, summary)| 
+        vec![dir.cell(), summary.description.cell(), summary.is_alive.cell(), (if summary.is_auto_startup {"auto"} else {"manual"}).cell()])
+        .collect::<Vec<Vec<CellStruct>>>()
+        .table()
+        .title(vec![
+            "Path".cell(),
+            "Description".cell(),
+            "Alive".cell(),
+            "Startup".cell(),
+        ])
+}
+
+pub fn print_handler_states(states_map_response: HandlerStatesMapResponse, sub_matches: &ArgMatches) {
+    if sub_matches.is_present("table") {
+        let table = get_handler_states_table(states_map_response);
+        print_stdout(table).unwrap();
+    }
+    else {
+        for (dir, state) in states_map_response.states_map {
+            println!("
+            {}
+            Alive: {}
+            Message: {}", 
+            dir, state.is_alive, state.message);
+        }
     }
 }
 
-pub fn print_handler_summaries(summary_map_response: HandlerSummaryMapResponse) {
-    for (dir, summary) in summary_map_response.summary_map {
-        println!("
-        {}
-        Description: {}
-        Alive: {}
-        Startup: {}", 
-        dir, summary.description, summary.is_alive, if summary.is_auto_startup {"auto"} else {"manual"});
+pub fn print_handler_summaries(summary_map_response: HandlerSummaryMapResponse, sub_matches: &ArgMatches) {
+    if sub_matches.is_present("table") {
+        let table = get_handler_summaries_table(summary_map_response);
+        print_stdout(table).unwrap();
+    }
+    else {
+        for (dir, summary) in summary_map_response.summary_map {
+            println!("
+            {}
+            Description: {}
+            Alive: {}
+            Startup: {}", 
+            dir, summary.description, summary.is_alive, if summary.is_auto_startup {"auto"} else {"manual"});
+        }
     }
 }
