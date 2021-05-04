@@ -17,6 +17,7 @@ message RegisterToDirectoryRequest {
   string directory_path = 1;
   string handler_config_path = 2;
   bool is_start_on_register = 3;
+  bool is_auto_startup = 4;
 }
 
 message GetDirectoryStatusRequest {

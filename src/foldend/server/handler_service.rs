@@ -22,7 +22,7 @@ impl HandlerService for Server {
             }))
         }
         else {
-            // Check if requested directory is a child of any handled directory
+            // Check if requested directory is a child / parent of any handled directory
             for directory_path in mapping.directory_mapping.keys() {
                 if request_directory_path.contains(directory_path) {
                     return Ok(Response::new(HandlerStateResponse {
@@ -40,7 +40,7 @@ impl HandlerService for Server {
             let mut handler_mapping = HandlerMapping {
                 watcher_tx: None,
                 handler_config_path: request.handler_config_path,
-                is_auto_startup: false,
+                is_auto_startup: request.is_auto_startup,
                 description: String::new(),
             };
             if request.is_start_on_register {
