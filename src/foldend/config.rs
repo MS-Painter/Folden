@@ -8,7 +8,7 @@ use generated_types::DEFAULT_PORT;
 pub struct Config {
     pub mapping_state_path: PathBuf,
     pub tracing_file_path: PathBuf,
-    pub handler_threads_threshold: u8, // 0 for infinite
+    pub concurrent_threads_limit: u8,
     #[serde(skip)]
     pub port: u16,
 }
@@ -25,7 +25,7 @@ impl Default for Config {
         Self {
             mapping_state_path: PathBuf::from("foldend_mapping.toml"),
             tracing_file_path: PathBuf::from("foldend.log"),
-            handler_threads_threshold: 10,
+            concurrent_threads_limit: 10,
             port: DEFAULT_PORT,
         }
     }
