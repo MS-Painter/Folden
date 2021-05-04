@@ -154,6 +154,15 @@ pub struct HandlerMapping {
 }
 
 impl HandlerMapping {
+    pub fn new(handler_config_path: String, is_auto_startup: bool, description: String) -> Self {
+        Self {
+            watcher_tx: None,
+            handler_config_path,
+            is_auto_startup,
+            description,
+        }
+    }
+    
     pub fn is_alive(&self) -> bool {
         match self.watcher_tx.clone() {
             Some(tx) => tx.send(Ok(Event::new(EventKind::Other))).is_ok(),

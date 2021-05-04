@@ -67,7 +67,7 @@ fn execute_register(sub_matches: &ArgMatches, mut client: HandlerServiceClient<t
                 is_auto_startup,
             });
             let response = block_on(response).unwrap().into_inner();
-            println!("{:?}", response.message);
+            println!("{}", response.message);
         }
         Err(_) => {
             CliError::with_description("Config file doesn't exist", ErrorKind::InvalidValue).exit();

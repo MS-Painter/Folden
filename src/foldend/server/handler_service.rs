@@ -37,12 +37,7 @@ impl HandlerService for Server {
                     }))
                 }
             }
-            let mut handler_mapping = HandlerMapping {
-                watcher_tx: None,
-                handler_config_path: request.handler_config_path,
-                is_auto_startup: request.is_auto_startup,
-                description: String::new(),
-            };
+            let mut handler_mapping = HandlerMapping::new(request.handler_config_path, request.is_auto_startup, String::new());
             if request.is_start_on_register {
                 match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping) {
                     Ok(_) => {
