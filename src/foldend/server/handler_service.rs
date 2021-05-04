@@ -4,7 +4,7 @@ use tracing;
 use tonic::{Request, Response};
 
 use super::Server;
-use crate::mapping::HandlerMapping;
+use crate::handler_mapping::HandlerMapping;
 use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
