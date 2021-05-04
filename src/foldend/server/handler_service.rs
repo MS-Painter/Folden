@@ -15,58 +15,56 @@ impl HandlerService for Server {
         let request = request.into_inner();
         let mut mapping = self.mapping.write().await;
         let request_directory_path = request.directory_path.as_str();
-        match mapping.directory_mapping.get(request_directory_path) {
-            Some(_) => {
-                Ok(Response::new(HandlerStateResponse {
-                    is_alive: true,
-                    message: String::from("Directory already handled by handler"),
-                }))
-            }
-            None => {
-                // Check if requested directory is a child of any handled directory
-                for directory_path in mapping.directory_mapping.keys() {
-                    if request_directory_path.contains(directory_path) {
-                        return Ok(Response::new(HandlerStateResponse {
-                            is_alive: false,
-                            message: format!("Couldn't register\nDirectory is a child of handled directory - {}", directory_path).to_string(),
-                        }))
-                    }
-                    else if directory_path.contains(request_directory_path) {
-                        return Ok(Response::new(HandlerStateResponse {
-                            is_alive: false,
-                            message: format!("Couldn't register\nDirectory is a parent of requested directory - {}", directory_path).to_string(),
-                        }))
-                    }
-                }
-                let mut handler_mapping = HandlerMapping {
-                    watcher_tx: None,
-                    handler_config_path: request.handler_config_path,
-                    is_auto_startup: false,
-                    description: String::new(),
-                };
-                if request.is_start_on_register {
-                    match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping) {
-                        Ok(_) => {
-                            let _result = mapping.save(&self.config.mapping_state_path);
-                            Ok(Response::new(HandlerStateResponse {
-                                is_alive: true,
-                                message: String::from("Registered and started handler"),
-                            }))
-                        }
-                        Err(err) => Ok(Response::new(HandlerStateResponse {
-                            is_alive: false,
-                            message: format!("Failed to register and start handler.\nError: {}", err),
-                        }))
-                    }
-                }
-                else {
-                    mapping.directory_mapping.insert(request.directory_path, handler_mapping);
-                    let _result = mapping.save(&self.config.mapping_state_path);
-                    Ok(Response::new(HandlerStateResponse {
+        if mapping.directory_mapping.get(request_directory_path).is_some() {
+            Ok(Response::new(HandlerStateResponse {
+                is_alive: true,
+                message: String::from("Directory already handled by handler"),
+            }))
+        }
+        else {
+            // Check if requested directory is a child of any handled directory
+            for directory_path in mapping.directory_mapping.keys() {
+                if request_directory_path.contains(directory_path) {
+                    return Ok(Response::new(HandlerStateResponse {
                         is_alive: false,
-                        message: String::from("Registered handler"),
+                        message: format!("Couldn't register\nDirectory is a child of handled directory - {}", directory_path).to_string(),
                     }))
                 }
+                else if directory_path.contains(request_directory_path) {
+                    return Ok(Response::new(HandlerStateResponse {
+                        is_alive: false,
+                        message: format!("Couldn't register\nDirectory is a parent of requested directory - {}", directory_path).to_string(),
+                    }))
+                }
+            }
+            let mut handler_mapping = HandlerMapping {
+                watcher_tx: None,
+                handler_config_path: request.handler_config_path,
+                is_auto_startup: false,
+                description: String::new(),
+            };
+            if request.is_start_on_register {
+                match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping) {
+                    Ok(_) => {
+                        let _result = mapping.save(&self.config.mapping_state_path);
+                        Ok(Response::new(HandlerStateResponse {
+                            is_alive: true,
+                            message: String::from("Registered and started handler"),
+                        }))
+                    }
+                    Err(err) => Ok(Response::new(HandlerStateResponse {
+                        is_alive: false,
+                        message: format!("Failed to register and start handler.\nError: {}", err),
+                    }))
+                }
+            }
+            else {
+                mapping.directory_mapping.insert(request.directory_path, handler_mapping);
+                let _result = mapping.save(&self.config.mapping_state_path);
+                Ok(Response::new(HandlerStateResponse {
+                    is_alive: false,
+                    message: String::from("Registered handler"),
+                }))
             }
         }
     }
