@@ -16,7 +16,7 @@ impl HandlerService for Server {
         let mut mapping = self.mapping.write().await;
         let request_directory_path = request.directory_path.as_str();
         match mapping.directory_mapping.get(request_directory_path) {
-            Some(_handler_mapping) => {
+            Some(_) => {
                 Ok(Response::new(HandlerStateResponse {
                     is_alive: true,
                     message: String::from("Directory already handled by handler"),
@@ -38,22 +38,33 @@ impl HandlerService for Server {
                         }))
                     }
                 }
-                match mapping.spawn_handler_thread(request.directory_path, &mut HandlerMapping {
+                let mut handler_mapping = HandlerMapping {
                     watcher_tx: None,
                     handler_config_path: request.handler_config_path,
                     is_auto_startup: false,
                     description: String::new(),
-                }) {
-                    Ok(_) => {
-                        let _result = mapping.save(&self.config.mapping_state_path);
-                        Ok(Response::new(HandlerStateResponse {
-                            is_alive: true,
-                            message: String::from("Registered and started handler"),
+                };
+                if request.is_start_on_register {
+                    match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping) {
+                        Ok(_) => {
+                            let _result = mapping.save(&self.config.mapping_state_path);
+                            Ok(Response::new(HandlerStateResponse {
+                                is_alive: true,
+                                message: String::from("Registered and started handler"),
+                            }))
+                        }
+                        Err(err) => Ok(Response::new(HandlerStateResponse {
+                            is_alive: false,
+                            message: format!("Failed to register and start handler.\nError: {}", err),
                         }))
                     }
-                    Err(err) => Ok(Response::new(HandlerStateResponse {
+                }
+                else {
+                    mapping.directory_mapping.insert(request.directory_path, handler_mapping);
+                    let _result = mapping.save(&self.config.mapping_state_path);
+                    Ok(Response::new(HandlerStateResponse {
                         is_alive: false,
-                        message: format!("Failed to register and start handler.\nError: {}", err),
+                        message: String::from("Registered handler"),
                     }))
                 }
             }
