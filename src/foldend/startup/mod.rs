@@ -38,6 +38,10 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .default_value(DEFAULT_PORT_STR)
                 .empty_values(false)
                 .takes_value(true))
+            .arg(Arg::with_name("limit").long("limit")
+                .empty_values(false)
+                .takes_value(true)
+                .help("Concurrently running handler threads limit"))
             .arg(Arg::with_name("log").short("l").long("log")
                 .empty_values(false)
                 .takes_value(true)
@@ -146,6 +150,9 @@ fn modify_config(config: &mut Config, sub_matches: &ArgMatches) -> Result<(), Bo
     }
     if let Some(port) = sub_matches.value_of("port") {
         config.port = port.parse()?;
+    }
+    if let Some(limit) = sub_matches.value_of("limit") {
+        config.concurrent_threads_limit = limit.parse()?;
     }
     if let Some(log_file_path) = sub_matches.value_of("log") {
         config.tracing_file_path = PathBuf::from(log_file_path);

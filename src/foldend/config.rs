@@ -4,6 +4,8 @@ use serde::{Serialize, Deserialize};
 
 use generated_types::DEFAULT_PORT;
 
+pub const DEFAULT_CONCURRENT_THREADS_LIMIT: u8 = 10;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub mapping_state_path: PathBuf,
@@ -25,7 +27,7 @@ impl Default for Config {
         Self {
             mapping_state_path: PathBuf::from("foldend_mapping.toml"),
             tracing_file_path: PathBuf::from("foldend.log"),
-            concurrent_threads_limit: 10,
+            concurrent_threads_limit: DEFAULT_CONCURRENT_THREADS_LIMIT,
             port: DEFAULT_PORT,
         }
     }
