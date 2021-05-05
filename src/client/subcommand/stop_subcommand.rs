@@ -18,7 +18,7 @@ impl SubCommandUtil for StopSubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Stop handler on directory")
-            .arg(Arg::with_name("remove").long("remove")
+            .arg(Arg::with_name("remove").long("remove").visible_alias("rm")
                 .required(false)
                 .takes_value(false))
             .args(construct_directory_or_all_args().as_slice())
