@@ -49,6 +49,8 @@ fn execute_stop(sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic
         directory_path: String::from(path.as_os_str().to_str().unwrap()),
         remove: is_handler_to_be_removed,
     });
-    let response = block_on(response).unwrap().into_inner();
-    print_handler_states(response, sub_matches);
+    match block_on(response) {
+        Ok(response) => print_handler_states(response.into_inner(), sub_matches),
+        Err(e) => println!("{}", e.message())
+    }
 }

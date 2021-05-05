@@ -44,6 +44,8 @@ fn execute_start(sub_matches: &ArgMatches, mut client: HandlerServiceClient<toni
     let response = client.start_handler(StartHandlerRequest {
         directory_path: String::from(path.as_os_str().to_str().unwrap()),
     });
-    let response = block_on(response).unwrap().into_inner();
-    print_handler_states(response, sub_matches);
+    match block_on(response) {
+        Ok(response) => print_handler_states(response.into_inner(), sub_matches),
+        Err(e) => println!("{}", e.message())
+    }
 }
