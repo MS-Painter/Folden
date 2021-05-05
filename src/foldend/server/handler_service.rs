@@ -112,6 +112,10 @@ impl HandlerService for Server {
                                 
         match mapping.clone().directory_mapping.get_mut(directory_path) {
             Some(handler_mapping) => {
+                if !handler_mapping.is_alive() && self.is_concurrent_handlers_limit_reached(&mapping) {
+                    return Err(tonic::Status::failed_precondition(
+                        format!("Aborted start handler - Reached concurrent live handler limit ({})", self.config.concurrent_threads_limit)));
+                }
                 let response = mapping.start_handler(directory_path, handler_mapping);
                 states_map.insert(directory_path.to_owned(), response);
                 Ok(Response::new(HandlerStatesMapResponse {
@@ -121,6 +125,11 @@ impl HandlerService for Server {
             None => {
                 // If empty - All directories are requested
                 if request.directory_path.is_empty() {
+                    if mapping.directory_mapping.len() >= self.config.concurrent_threads_limit.into() {
+                        return Err(tonic::Status::failed_precondition(
+                            format!("Aborted start handlers - Would reach concurrent live handler limit ({})\nCurrently live: {}", 
+                            self.config.concurrent_threads_limit, mapping.get_live_handlers().count())));
+                    }
                     for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter_mut() {
                         let response = mapping.start_handler(directory_path, handler_mapping);
                         states_map.insert(directory_path.to_owned(), response);

@@ -21,6 +21,10 @@ impl Mapping {
         fs::write(mapping_state_path, mapping_data)
     }
 
+    pub fn get_live_handlers<'a>(&'a self) -> impl Iterator<Item = (&'a String, &'a HandlerMapping)> {
+        self.directory_mapping.iter().filter(|(_dir, mapping)| mapping.is_alive())
+    }
+
     pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &mut HandlerMapping) -> HandlerStateResponse {
         if handler_mapping.is_alive() {
             HandlerStateResponse {
