@@ -52,11 +52,16 @@ fn execute_status(sub_matches: &ArgMatches, mut client: HandlerServiceClient<ton
     let response = client.get_directory_status(GetDirectoryStatusRequest {
         directory_path
     });
-    let response = block_on(response).unwrap().into_inner();
-    if response.summary_map.is_empty() {
-        println!("No handler registered on {}", if all_directories {"file system"} else {"directory"});
-    }
-    else {
-        print_handler_summaries(response, sub_matches);
+    match block_on(response) {
+        Ok(response) => {
+            let response = response.into_inner();
+            if response.summary_map.is_empty() {
+                println!("No handler registered on {}", if all_directories {"file system"} else {"directory"});
+            }
+            else {
+                print_handler_summaries(response, sub_matches);
+            }
+        }
+        Err(e) => println!("{}", e.message())
     }
 }
