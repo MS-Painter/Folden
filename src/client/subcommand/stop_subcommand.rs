@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
-use generated_types::{StopHandlerRequest, handler_service_client::HandlerServiceClient};
 use crate::subcommand::subcommand::{SubCommandUtil, print_handler_states};
+use generated_types::{StopHandlerRequest, handler_service_client::HandlerServiceClient};
 use super::subcommand::{connect_client, construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
@@ -21,9 +21,9 @@ impl SubCommandUtil for StopSubCommand {
             .arg(Arg::with_name("remove").long("remove").visible_alias("rm")
                 .required(false)
                 .takes_value(false))
-            .args(construct_directory_or_all_args().as_slice())
-            .arg(construct_port_arg())
-            .arg(construct_simple_output_arg())
+                .arg(construct_port_arg())
+                .arg(construct_simple_output_arg())
+                .args(construct_directory_or_all_args().as_slice())
         }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
