@@ -39,6 +39,14 @@ impl HandlerService for Server {
             }
             let mut handler_mapping = HandlerMapping::new(request.handler_config_path, request.is_auto_startup, String::new());
             if request.is_start_on_register {
+                if self.is_concurrent_handlers_limit_reached().await {
+                    mapping.directory_mapping.insert(request.directory_path, handler_mapping);
+                    let _result = mapping.save(&self.config.mapping_state_path);
+                    return Ok(Response::new(HandlerStateResponse {
+                        is_alive: false,
+                        message: format!("Registered handler without starting - Reached concurrent live handler limit ({})", self.config.concurrent_threads_limit),
+                    }));
+                }
                 match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping) {
                     Ok(_) => {
                         let _result = mapping.save(&self.config.mapping_state_path);
