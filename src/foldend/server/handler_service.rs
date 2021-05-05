@@ -39,7 +39,7 @@ impl HandlerService for Server {
             }
             let mut handler_mapping = HandlerMapping::new(request.handler_config_path, request.is_auto_startup, String::new());
             if request.is_start_on_register {
-                if self.is_concurrent_handlers_limit_reached().await {
+                if self.is_concurrent_handlers_limit_reached(&mapping) {
                     mapping.directory_mapping.insert(request.directory_path, handler_mapping);
                     let _result = mapping.save(&self.config.mapping_state_path);
                     return Ok(Response::new(HandlerStateResponse {
