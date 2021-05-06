@@ -2,8 +2,11 @@ use std::{env, ffi::{OsStr, OsString}, option::Option, path::Path};
 
 use dyn_clone::DynClone;
 use clap::{App, Arg, ArgMatches, SubCommand};
+use cli_table::{self, Cell, CellStruct, Table, TableStruct, print_stdout};
 
-use generated_types::{DEFAULT_PORT_STR, handler_service_client::HandlerServiceClient};
+use generated_types::{DEFAULT_PORT_STR, HandlerStatesMapResponse, HandlerSummaryMapResponse, handler_service_client::HandlerServiceClient};
+
+const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
 
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
@@ -74,7 +77,7 @@ pub fn construct_port_arg<'a, 'b>() -> Arg<'a, 'b>{
 }
 
 pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
-    vec!(Arg::with_name("directory").long("directory")
+    vec!(Arg::with_name("directory").long("directory").visible_alias("dir")
             .required(false)
             .empty_values(false)
             .takes_value(true)
@@ -84,6 +87,21 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
             .required(false)
             .takes_value(false)
             .conflicts_with("directory"))
+}
+
+pub fn construct_startup_type_arg<'a, 'b>() -> Arg<'a, 'b> {
+    Arg::with_name("startup").long("startup").visible_alias("up")
+        .help("Set if handler starts on service startup")
+        .required(false)
+        .takes_value(true)
+        .case_insensitive(true)
+        .possible_values(&STARTUP_TYPES)
+}
+
+pub fn construct_simple_output_arg<'a, 'b>() -> Arg<'a, 'b>{
+    Arg::with_name("simple").long("simple").visible_alias("smpl")
+        .help("Output in simplified format")
+        .takes_value(false)
 }
 
 pub fn get_path_from_matches_or_current_path(sub_matches: &ArgMatches, match_name: &str) -> Result<std::path::PathBuf, std::io::Error> {
@@ -111,5 +129,65 @@ pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {
     }
     else {
         Err(OsString::from("Input value isn't a directory"))
+    }
+}
+
+fn get_handler_states_table(states_map_response: HandlerStatesMapResponse) -> TableStruct {
+    states_map_response.states_map.into_iter()
+        .map(|(dir, state)| 
+        vec![dir.cell(), state.is_alive.cell(), state.message.cell()])
+        .collect::<Vec<Vec<CellStruct>>>()
+        .table()
+        .title(vec![
+            "Path".cell(),
+            "Alive".cell(),
+            "Message".cell(),
+        ])
+}
+
+fn get_handler_summaries_table(summary_map_response: HandlerSummaryMapResponse) -> TableStruct {
+    summary_map_response.summary_map.into_iter()
+        .map(|(dir, summary)| 
+        vec![dir.cell(), summary.description.cell(), summary.is_alive.cell(), (if summary.is_auto_startup {"auto"} else {"manual"}).cell()])
+        .collect::<Vec<Vec<CellStruct>>>()
+        .table()
+        .title(vec![
+            "Path".cell(),
+            "Description".cell(),
+            "Alive".cell(),
+            "Startup".cell(),
+        ])
+}
+
+pub fn print_handler_states(states_map_response: HandlerStatesMapResponse, sub_matches: &ArgMatches) {
+    if sub_matches.is_present("simple") {
+        for (dir, state) in states_map_response.states_map {
+            println!("
+            {}
+            Alive: {}
+            Message: {}", 
+            dir, state.is_alive, state.message);
+        }
+    }
+    else {
+        let table = get_handler_states_table(states_map_response);
+        print_stdout(table).unwrap();
+    }
+}
+
+pub fn print_handler_summaries(summary_map_response: HandlerSummaryMapResponse, sub_matches: &ArgMatches) {
+    if sub_matches.is_present("simple") {
+        for (dir, summary) in summary_map_response.summary_map {
+            println!("
+            {}
+            Description: {}
+            Alive: {}
+            Startup: {}", 
+            dir, summary.description, summary.is_alive, if summary.is_auto_startup {"auto"} else {"manual"});
+        }
+    }
+    else {
+        let table = get_handler_summaries_table(summary_map_response);
+        print_stdout(table).unwrap();
     }
 }

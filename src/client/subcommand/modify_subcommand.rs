@@ -3,9 +3,7 @@ use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
-
-const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, construct_startup_type_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct ModifySubCommand {}
@@ -18,17 +16,12 @@ impl SubCommandUtil for ModifySubCommand {
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Modify directory handler")
-            .args(construct_directory_or_all_args().as_slice())
-            .arg(Arg::with_name("startup").long("startup")
-                .help("Set if handler automatically starts on service startup")
-                .required(false)
-                .takes_value(true)
-                .case_insensitive(true)
-                .possible_values(&STARTUP_TYPES))
-            .arg(Arg::with_name("description").long("description")
+            .arg(Arg::with_name("description").long("description").visible_alias("desc")
                 .required(false)
                 .takes_value(true))
             .arg(construct_port_arg())
+            .arg(construct_startup_type_arg())
+            .args(construct_directory_or_all_args().as_slice())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
@@ -72,5 +65,8 @@ fn execute_modify(sub_matches: &ArgMatches, mut client: HandlerServiceClient<ton
         modify_description,
     });
     let response = block_on(response);
-    println!("{:?}", response);
+    match response {
+        Ok(_) => {}
+        Err(e) => println!("{}", e)
+    }
 }

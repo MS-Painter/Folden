@@ -45,13 +45,19 @@ ARGS:
     <directory>    Directory to register to. Leave empty to apply on current.
 ```
 
-3. That's it! Interact with registered handlers (be sure to check out all options using `--help`):
+3. That's it! You can interact with registered handlers (be sure to check out all options using `--help`):
 
 ```cmd
 folden status ...
 folden start ...
 folden stop ...
 folden modify ...
+```
+
+Example interaction - Setting handler to start with service startup:
+
+```cmd
+folden modify --startup auto
 ```
 
 # Learn more

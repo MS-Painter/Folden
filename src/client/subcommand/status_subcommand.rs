@@ -3,7 +3,7 @@ use futures::executor::block_on;
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path, print_handler_summaries};
 
 #[derive(Clone)]
 pub struct StatusSubCommand {}
@@ -18,6 +18,7 @@ impl SubCommandUtil for StatusSubCommand {
             .about("Status of a registered handler given a directory")
             .args(construct_directory_or_all_args().as_slice())
             .arg(construct_port_arg())
+            .arg(construct_simple_output_arg())
     }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
@@ -51,11 +52,16 @@ fn execute_status(sub_matches: &ArgMatches, mut client: HandlerServiceClient<ton
     let response = client.get_directory_status(GetDirectoryStatusRequest {
         directory_path
     });
-    let response = block_on(response).unwrap().into_inner();
-    if response.directory_states_map.is_empty() {
-        println!("No handler registered on {}", if all_directories {"file system"} else {"directory"});
-    }
-    else {
-        println!("{:?}", response.directory_states_map);
+    match block_on(response) {
+        Ok(response) => {
+            let response = response.into_inner();
+            if response.summary_map.is_empty() {
+                println!("No handler registered on {}", if all_directories {"file system"} else {"directory"});
+            }
+            else {
+                print_handler_summaries(response, sub_matches);
+            }
+        }
+        Err(e) => println!("{}", e.message())
     }
 }

@@ -46,7 +46,7 @@ Can also refer to the configuration of the handler.
   - `EventFilePath` - File path of the original file the event was referring to.
   - `ActionFilePath` - File path of the previous file that an action digested.
 
-    Some `actions` create / move the a file after working with the original file;
+    Some `actions` create / move the file after working with the original file;
 
     This field's value will change at the end of every `action` as part of the pipeline.
 
