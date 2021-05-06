@@ -20,10 +20,11 @@ impl SubCommandUtil for StopSubCommand {
             .about("Stop handler on directory")
             .arg(Arg::with_name("remove").long("remove").visible_alias("rm")
                 .required(false)
-                .takes_value(false))
-                .arg(construct_port_arg())
-                .arg(construct_simple_output_arg())
-                .args(construct_directory_or_all_args().as_slice())
+                .takes_value(false)
+                .help("Deregister handler from directory"))
+            .arg(construct_port_arg())
+            .arg(construct_simple_output_arg())
+            .args(construct_directory_or_all_args().as_slice())
         }
 
     fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
