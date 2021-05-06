@@ -20,8 +20,3 @@ message HandlerStatesMapResponse {
 message HandlerSummaryMapResponse {
   map<string, HandlerSummary> summary_map = 1; // key is directory path
 }
-
-message HandlerOutputTraceMapResponse
-{
-    map<string, string> output_map = 1;
-}

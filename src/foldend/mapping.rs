@@ -6,7 +6,7 @@ use notify::{Event, EventKind, RecommendedWatcher, Watcher};
 use tokio::sync::mpsc;
 
 use crate::config::Config;
-use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
+use generated_types::{HandlerStateResponse, HandlerSummary, TraceHandlerResponse, ModifyHandlerRequest};
 use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
@@ -144,7 +144,7 @@ pub struct HandlerMapping {
     #[serde(skip)]
     pub watcher_tx: Option<crossbeam::channel::Sender<Result<Event, notify::Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
     #[serde(skip)]
-    pub watcher_rx: Option<tokio::sync::mpsc::Receiver<Result<String, tonic::Status>>>,
+    pub watcher_rx: Option<tokio::sync::mpsc::Receiver<Result<TraceHandlerResponse, tonic::Status>>>,
     pub handler_config_path: String,
     pub is_auto_startup: bool,
     pub description: String,

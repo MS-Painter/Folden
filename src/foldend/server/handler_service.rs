@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 use tracing;
 use tonic::{Request, Response};
-use tokio_stream::{StreamExt, StreamMap, wrappers::ReceiverStream};
+use tokio_stream::wrappers::ReceiverStream;
 
 use super::Server;
 use crate::mapping::HandlerMapping;
-use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
+use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, TraceHandlerResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
-    type TraceHandlerStream = ReceiverStream<Result<String, tonic::Status>>;
+    type TraceHandlerStream = ReceiverStream<Result<TraceHandlerResponse, tonic::Status>>;
 
     #[tracing::instrument]
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) -> Result<Response<HandlerStateResponse>,tonic::Status> {
@@ -196,9 +196,9 @@ impl HandlerService for Server {
     async fn trace_handler(&self, request: Request<TraceHandlerRequest>,)->Result<Response<Self::TraceHandlerStream>, tonic::Status> {
         tracing::info!("Tracing directory handler");
         let request = request.into_inner();
-        let mapping = &*self.mapping.read().await;
-        match mapping.directory_mapping.get(request.directory_path.as_str()) {
-            Some(handler_mapping) => {
+        let mut mapping = self.mapping.read().await.clone();
+        match mapping.directory_mapping.remove_entry(request.directory_path.as_str()) {
+            Some((_dir, handler_mapping)) => {
                 match handler_mapping.watcher_rx {
                     Some(rx) => Ok(Response::new(ReceiverStream::new(rx))),
                     None => Err(tonic::Status::failed_precondition("Handler needs to be live to trace"))
@@ -206,13 +206,7 @@ impl HandlerService for Server {
             }
             None => {
                 if request.directory_path.is_empty() { // If empty - All directories are requested
-                    let mut stream_map = StreamMap::new();
-                    for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter_mut() {
-                        if let Some(rx) = handler_mapping.watcher_rx {
-                            stream_map.insert(request.directory_path, rx);
-                        }
-                    }
-                    return Ok(Response::new(ReceiverStream::new(stream_map)))
+                    todo!()
                 }
                 Err(tonic::Status::not_found("Handler not registered to directory"))
             }
