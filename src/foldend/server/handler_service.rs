@@ -6,7 +6,7 @@ use tokio_stream::wrappers::ReceiverStream;
 
 use super::Server;
 use crate::handler_mapping::HandlerMapping;
-use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerResponse, handler_service_server::HandlerService};
+use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, TraceHandlerResponse, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {

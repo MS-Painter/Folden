@@ -3,12 +3,14 @@ use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
 use notify::ErrorKind as NotifyErrorKind;
 
-use generated_types::{HandlerSummary, ModifyHandlerRequest};
+use generated_types::{HandlerSummary, ModifyHandlerRequest, TraceHandlerResponse};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HandlerMapping {
     #[serde(skip)]
     pub watcher_tx: Option<Sender<Result<Event, notify::Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
+    #[serde(skip)]
+    pub watcher_rx: Option<tokio::sync::mpsc::Receiver<Result<TraceHandlerResponse, tonic::Status>>>,
     pub handler_config_path: String,
     pub is_auto_startup: bool,
     pub description: String,
@@ -18,6 +20,7 @@ impl HandlerMapping {
     pub fn new(handler_config_path: String, is_auto_startup: bool, description: String) -> Self {
         Self {
             watcher_tx: None,
+            watcher_rx: None,
             handler_config_path,
             is_auto_startup,
             description,
