@@ -11,6 +11,7 @@ service HandlerService {
   rpc StartHandler (StartHandlerRequest) returns (HandlerStatesMapResponse);
   rpc StopHandler (StopHandlerRequest) returns (HandlerStatesMapResponse);
   rpc ModifyHandler (ModifyHandlerRequest) returns (google.protobuf.Empty);
+  rpc TraceHandler (TraceHandlerRequest) returns (stream google.protobuf.StringValue);
 }
 
 message RegisterToDirectoryRequest {
@@ -35,4 +36,8 @@ message ModifyHandlerRequest {
   string directory_path = 1;
   google.protobuf.BoolValue is_auto_startup = 2;
   google.protobuf.StringValue modify_description = 3;
+}
+
+message TraceHandlerRequest {
+  string directory_path = 1;
 }

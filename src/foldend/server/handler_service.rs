@@ -2,13 +2,16 @@ use std::collections::HashMap;
 
 use tracing;
 use tonic::{Request, Response};
+use tokio_stream::wrappers::ReceiverStream;
 
 use super::Server;
 use crate::mapping::HandlerMapping;
-use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, handler_service_server::HandlerService};
+use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
+    type TraceHandlerStream = ReceiverStream<Result<String, tonic::Status>>;
+
     #[tracing::instrument]
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) -> Result<Response<HandlerStateResponse>,tonic::Status> {
         tracing::info!("Registering handler to directory");
@@ -187,5 +190,9 @@ impl HandlerService for Server {
             Ok(result) => Ok(Response::new(result)),
             Err(e) => Err(tonic::Status::unknown(format!("Failed to save modifications to mapping file.\nErr - {:?}", e)))
         }
+    }
+
+    async fn trace_handler(&self, request: Request<TraceHandlerRequest>,)->Result<Response<Self::TraceHandlerStream>, tonic::Status> {
+        todo!()
     }
 }
