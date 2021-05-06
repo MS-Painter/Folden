@@ -5,3 +5,4 @@ pub mod stop_subcommand;
 pub mod generate_subcommand;
 pub mod register_subcommand;
 pub mod modify_subcommand;
+pub mod trace_subcommand;

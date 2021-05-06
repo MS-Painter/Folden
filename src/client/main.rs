@@ -13,6 +13,7 @@ async fn main() {
     subcommands.add(Box::new(subcommand::stop_subcommand::StopSubCommand {}));
     subcommands.add(Box::new(subcommand::generate_subcommand::GenerateSubCommand {}));
     subcommands.add(Box::new(subcommand::modify_subcommand::ModifySubCommand {}));
+    subcommands.add(Box::new(subcommand::trace_subcommand::TraceSubCommand {}));
     let subcommands_clone = subcommands.clone();
 
     let app = App::new("Folden")
