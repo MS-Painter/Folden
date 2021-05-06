@@ -6,6 +6,8 @@ use cli_table::{self, Cell, CellStruct, Table, TableStruct, print_stdout};
 
 use generated_types::{DEFAULT_PORT_STR, HandlerStatesMapResponse, HandlerSummaryMapResponse, handler_service_client::HandlerServiceClient};
 
+const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
+
 pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
 
@@ -85,6 +87,15 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{
             .required(false)
             .takes_value(false)
             .conflicts_with("directory"))
+}
+
+pub fn construct_startup_type_arg<'a, 'b>() -> Arg<'a, 'b> {
+    Arg::with_name("startup").long("startup").visible_alias("up")
+        .help("Set if handler starts on service startup")
+        .required(false)
+        .takes_value(true)
+        .case_insensitive(true)
+        .possible_values(&STARTUP_TYPES)
 }
 
 pub fn construct_simple_output_arg<'a, 'b>() -> Arg<'a, 'b>{

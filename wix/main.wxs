@@ -108,7 +108,7 @@
                           Start="auto"
                           Type="ownProcess"
                           Vital="yes"
-                          Arguments="--config &quot;[APPLICATIONFOLDER]foldend_config.toml&quot; run --mapping &quot;[APPLICATIONFOLDER]foldend_mapping.toml&quot; --log &quot;[APPLICATIONFOLDER]foldend_logs.log&quot;"
+                          Arguments="--config &quot;[APPLICATIONFOLDER]foldend_config.toml&quot; run --mapping &quot;[APPLICATIONFOLDER]foldend_mapping.toml&quot; --log &quot;[APPLICATIONFOLDER]foldend_logs.log&quot; --limit 10"
                       />
                       <ServiceControl Id="ServiceControl_Start"
                           Name="foldenService"
