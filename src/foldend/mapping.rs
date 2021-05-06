@@ -1,12 +1,10 @@
 use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, thread};
 
 use serde::{Serialize, Deserialize};
-use notify::ErrorKind as NotifyErrorKind;
-use notify::{Event, EventKind, RecommendedWatcher, Watcher};
-use tokio::sync::mpsc;
+use notify::{RecommendedWatcher, Watcher};
 
-use crate::config::Config;
-use generated_types::{HandlerStateResponse, HandlerSummary, TraceHandlerResponse, ModifyHandlerRequest};
+use generated_types::{HandlerStateResponse};
+use crate::{config::Config, handler_mapping::HandlerMapping};
 use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
@@ -21,6 +19,10 @@ impl Mapping {
     pub fn save(&self, mapping_state_path: &PathBuf) -> Result<(), std::io::Error> {
         let mapping_data: Vec<u8> = self.into();
         fs::write(mapping_state_path, mapping_data)
+    }
+
+    pub fn get_live_handlers<'a>(&'a self) -> impl Iterator<Item = (&'a String, &'a HandlerMapping)> {
+        self.directory_mapping.iter().filter(|(_dir, mapping)| mapping.is_alive())
     }
 
     pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &mut HandlerMapping) -> HandlerStateResponse {
@@ -136,57 +138,5 @@ impl Into<Vec<u8>> for Mapping {
 impl Into<Vec<u8>> for &Mapping {
     fn into(self) -> Vec<u8> {
         toml::to_vec(self).unwrap()
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HandlerMapping {
-    #[serde(skip)]
-    pub watcher_tx: Option<crossbeam::channel::Sender<Result<Event, notify::Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
-    #[serde(skip)]
-    pub watcher_rx: Option<tokio::sync::mpsc::Receiver<Result<TraceHandlerResponse, tonic::Status>>>,
-    pub handler_config_path: String,
-    pub is_auto_startup: bool,
-    pub description: String,
-}
-
-impl HandlerMapping {
-    pub fn is_alive(&self) -> bool {
-        match self.watcher_tx.clone() {
-            Some(tx) => tx.send(Ok(Event::new(EventKind::Other))).is_ok(),
-            None => false
-        }
-    }
-
-    pub fn summary(&self) -> HandlerSummary {
-        let state = HandlerSummary {
-            is_alive: self.is_alive(),
-            config_path: self.handler_config_path.clone(),
-            is_auto_startup: self.is_auto_startup,
-            description: self.description.to_owned(),
-        };
-        state
-    }
-
-    pub fn stop_handler_thread(&self) -> Result<String, String> {
-        match self.watcher_tx.clone().unwrap().send(Err(notify::Error::new(NotifyErrorKind::WatchNotFound))) {
-            Ok(_) => Ok(String::from("Handler stopped")),
-            Err(error) => Err(format!("Failed to stop handler\nError: {:?}", error))
-        }
-    }
-
-    pub fn modify(&mut self, request: &ModifyHandlerRequest) {
-        if let Some(is_auto_startup) = request.is_auto_startup {
-            self.is_auto_startup = is_auto_startup;
-        }
-        if let Some(ref description) = request.modify_description {
-            self.description = description.to_string();
-        }
-    }
-}
-
-impl Clone for HandlerMapping {
-    fn clone(&self) -> Self {
-        todo!()
     }
 }

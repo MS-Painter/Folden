@@ -5,8 +5,8 @@ use tonic::{Request, Response};
 use tokio_stream::wrappers::ReceiverStream;
 
 use super::Server;
-use crate::mapping::HandlerMapping;
-use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, TraceHandlerResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
+use crate::handler_mapping::HandlerMapping;
+use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerResponse, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
@@ -18,36 +18,39 @@ impl HandlerService for Server {
         let request = request.into_inner();
         let mut mapping = self.mapping.write().await;
         let request_directory_path = request.directory_path.as_str();
-        match mapping.directory_mapping.get(request_directory_path) {
-            Some(_handler_mapping) => {
-                Ok(Response::new(HandlerStateResponse {
-                    is_alive: true,
-                    message: String::from("Directory already handled by handler"),
-                }))
-            }
-            None => {
-                // Check if requested directory is a child of any handled directory
-                for directory_path in mapping.directory_mapping.keys() {
-                    if request_directory_path.contains(directory_path) {
-                        return Ok(Response::new(HandlerStateResponse {
-                            is_alive: false,
-                            message: format!("Couldn't register\nDirectory is a child of handled directory - {}", directory_path).to_string(),
-                        }))
-                    }
-                    else if directory_path.contains(request_directory_path) {
-                        return Ok(Response::new(HandlerStateResponse {
-                            is_alive: false,
-                            message: format!("Couldn't register\nDirectory is a parent of requested directory - {}", directory_path).to_string(),
-                        }))
-                    }
+        if mapping.directory_mapping.get(request_directory_path).is_some() {
+            Ok(Response::new(HandlerStateResponse {
+                is_alive: true,
+                message: String::from("Directory already handled by handler"),
+            }))
+        }
+        else {
+            // Check if requested directory is a child / parent of any handled directory
+            for directory_path in mapping.directory_mapping.keys() {
+                if request_directory_path.contains(directory_path) {
+                    return Ok(Response::new(HandlerStateResponse {
+                        is_alive: false,
+                        message: format!("Couldn't register\nDirectory is a child of handled directory - {}", directory_path).to_string(),
+                    }))
                 }
-                match mapping.spawn_handler_thread(request.directory_path, &mut HandlerMapping {
-                    watcher_tx: None,
-                    watcher_rx: None,
-                    handler_config_path: request.handler_config_path,
-                    is_auto_startup: false,
-                    description: String::new(),
-                }) {
+                else if directory_path.contains(request_directory_path) {
+                    return Ok(Response::new(HandlerStateResponse {
+                        is_alive: false,
+                        message: format!("Couldn't register\nDirectory is a parent of requested directory - {}", directory_path).to_string(),
+                    }))
+                }
+            }
+            let mut handler_mapping = HandlerMapping::new(request.handler_config_path, request.is_auto_startup, String::new());
+            if request.is_start_on_register {
+                if self.is_concurrent_handlers_limit_reached(&mapping) {
+                    mapping.directory_mapping.insert(request.directory_path, handler_mapping);
+                    let _result = mapping.save(&self.config.mapping_state_path);
+                    return Ok(Response::new(HandlerStateResponse {
+                        is_alive: false,
+                        message: format!("Registered handler without starting - Reached concurrent live handler limit ({})", self.config.concurrent_threads_limit),
+                    }));
+                }
+                match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping) {
                     Ok(_) => {
                         let _result = mapping.save(&self.config.mapping_state_path);
                         Ok(Response::new(HandlerStateResponse {
@@ -60,6 +63,14 @@ impl HandlerService for Server {
                         message: format!("Failed to register and start handler.\nError: {}", err),
                     }))
                 }
+            }
+            else {
+                mapping.directory_mapping.insert(request.directory_path, handler_mapping);
+                let _result = mapping.save(&self.config.mapping_state_path);
+                Ok(Response::new(HandlerStateResponse {
+                    is_alive: false,
+                    message: String::from("Registered handler"),
+                }))
             }
         }
     }
@@ -104,6 +115,10 @@ impl HandlerService for Server {
                                 
         match mapping.clone().directory_mapping.get_mut(directory_path) {
             Some(handler_mapping) => {
+                if !handler_mapping.is_alive() && self.is_concurrent_handlers_limit_reached(&mapping) {
+                    return Err(tonic::Status::failed_precondition(
+                        format!("Aborted start handler - Reached concurrent live handler limit ({})", self.config.concurrent_threads_limit)));
+                }
                 let response = mapping.start_handler(directory_path, handler_mapping);
                 states_map.insert(directory_path.to_owned(), response);
                 Ok(Response::new(HandlerStatesMapResponse {
@@ -113,6 +128,11 @@ impl HandlerService for Server {
             None => {
                 // If empty - All directories are requested
                 if request.directory_path.is_empty() {
+                    if mapping.directory_mapping.len() > self.config.concurrent_threads_limit.into() {
+                        return Err(tonic::Status::failed_precondition(
+                            format!("Aborted start handlers - Would pass concurrent live handler limit ({})\nCurrently live: {}", 
+                            self.config.concurrent_threads_limit, mapping.get_live_handlers().count())));
+                    }
                     for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter_mut() {
                         let response = mapping.start_handler(directory_path, handler_mapping);
                         states_map.insert(directory_path.to_owned(), response);

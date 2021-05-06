@@ -3,6 +3,7 @@ mod config;
 mod server;
 mod mapping;
 mod startup;
+mod handler_mapping;
 
 use futures::executor::block_on;
 
