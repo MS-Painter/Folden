@@ -125,9 +125,9 @@ impl HandlerService for Server {
             None => {
                 // If empty - All directories are requested
                 if request.directory_path.is_empty() {
-                    if mapping.directory_mapping.len() >= self.config.concurrent_threads_limit.into() {
+                    if mapping.directory_mapping.len() > self.config.concurrent_threads_limit.into() {
                         return Err(tonic::Status::failed_precondition(
-                            format!("Aborted start handlers - Would reach concurrent live handler limit ({})\nCurrently live: {}", 
+                            format!("Aborted start handlers - Would pass concurrent live handler limit ({})\nCurrently live: {}", 
                             self.config.concurrent_threads_limit, mapping.get_live_handlers().count())));
                     }
                     for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter_mut() {
