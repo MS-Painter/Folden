@@ -29,19 +29,19 @@ impl PipelineHandler {
         }
     }
 
-    fn handle(&self, file_path: &PathBuf) {
+    fn handle(&self, file_path: &PathBuf, trace_tx: &tokio::sync::mpsc::Sender<Result<String, tonic::Status>>) {
         match &self.naming_regex {
             Some(naming_regex) => {
                 if naming_regex.is_match(file_path.to_str().unwrap()) {
-                    self.execute_pipeline(file_path);
+                    self.execute_pipeline(file_path, trace_tx);
                 }
             }
-            None => self.execute_pipeline(file_path)
+            None => self.execute_pipeline(file_path, trace_tx)
         }
     }
 
-    fn execute_pipeline(&self, file_path: &PathBuf) {
-        let mut context = PipelineExecutionContext::new(file_path, self.config.clone());
+    fn execute_pipeline(&self, file_path: &PathBuf, trace_tx: &tokio::sync::mpsc::Sender<Result<String, tonic::Status>>) {
+        let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), trace_tx.clone());
         for action in &self.config.actions {
             let action_succeeded = action.run(&mut context);
             if !action_succeeded {
@@ -50,24 +50,25 @@ impl PipelineHandler {
         }
     }
 
-    fn apply_on_existing_files(&self, path: &PathBuf) {
+    fn apply_on_existing_files(&self, path: &PathBuf, trace_tx: &tokio::sync::mpsc::Sender<Result<String, tonic::Status>>) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
             let metadata = entry.metadata().unwrap();
             if metadata.is_file(){
-                self.handle(&entry.path());
+                self.handle(&entry.path(), trace_tx);
             }
         }
     }
 
-    fn on_watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>) {
+    fn on_watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>, 
+        trace_tx: &tokio::sync::mpsc::Sender<Result<String, tonic::Status>>) {
         for result in watcher_rx {
             match result {
                 Ok(event) => {
                     if self.config.event.is_handled_event(&event.kind) {
                         tracing::debug!("Event to handle - {:?}", &event.kind);
                         let event_file_path = event.paths.first().unwrap();
-                        self.handle(event_file_path);
+                        self.handle(event_file_path, trace_tx);
                     }
                 }
                 Err(error) => {
@@ -81,14 +82,15 @@ impl PipelineHandler {
         }
     }
 
-    pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, rx: Receiver<Result<notify::Event, notify::Error>>) {
+    pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, 
+        events_rx: Receiver<Result<notify::Event, notify::Error>>, trace_tx: tokio::sync::mpsc::Sender<Result<String, tonic::Status>>) {
         let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
         watcher.watch(path.clone(), recursive_mode).unwrap();
         if self.config.apply_on_startup_on_existing_files {
-            self.apply_on_existing_files(path);
+            self.apply_on_existing_files(path, &trace_tx);
             tracing::info!("Ended startup phase");
         }
-        self.on_watch(rx);
+        self.on_watch(events_rx, &trace_tx);
         tracing::info!("Ending watch");
     }
 }

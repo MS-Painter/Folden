@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use tracing;
 use tonic::{Request, Response};
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::{StreamExt, StreamMap, wrappers::ReceiverStream};
 
 use super::Server;
 use crate::mapping::HandlerMapping;
@@ -43,6 +43,7 @@ impl HandlerService for Server {
                 }
                 match mapping.spawn_handler_thread(request.directory_path, &mut HandlerMapping {
                     watcher_tx: None,
+                    watcher_rx: None,
                     handler_config_path: request.handler_config_path,
                     is_auto_startup: false,
                     description: String::new(),
@@ -193,6 +194,28 @@ impl HandlerService for Server {
     }
 
     async fn trace_handler(&self, request: Request<TraceHandlerRequest>,)->Result<Response<Self::TraceHandlerStream>, tonic::Status> {
-        todo!()
+        tracing::info!("Tracing directory handler");
+        let request = request.into_inner();
+        let mapping = &*self.mapping.read().await;
+        match mapping.directory_mapping.get(request.directory_path.as_str()) {
+            Some(handler_mapping) => {
+                match handler_mapping.watcher_rx {
+                    Some(rx) => Ok(Response::new(ReceiverStream::new(rx))),
+                    None => Err(tonic::Status::failed_precondition("Handler needs to be live to trace"))
+                }
+            }
+            None => {
+                if request.directory_path.is_empty() { // If empty - All directories are requested
+                    let mut stream_map = StreamMap::new();
+                    for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter_mut() {
+                        if let Some(rx) = handler_mapping.watcher_rx {
+                            stream_map.insert(request.directory_path, rx);
+                        }
+                    }
+                    return Ok(Response::new(ReceiverStream::new(stream_map)))
+                }
+                Err(tonic::Status::not_found("Handler not registered to directory"))
+            }
+        }
     }
 }

@@ -1,9 +1,9 @@
-use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, thread};
+use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, thread};
 
-use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
 use notify::ErrorKind as NotifyErrorKind;
 use notify::{Event, EventKind, RecommendedWatcher, Watcher};
+use tokio::sync::mpsc;
 
 use crate::config::Config;
 use generated_types::{HandlerStateResponse, HandlerSummary, ModifyHandlerRequest};
@@ -51,24 +51,19 @@ impl Mapping {
             Ok(data) => {
                 match PipelineConfig::try_from(data) {
                     Ok(config) => {
-                        let (tx, rx) = crossbeam::channel::unbounded();
-                        let thread_tx = tx.clone();
+                        let (events_tx, events_rx) = crossbeam::channel::unbounded();
+                        let (trace_tx, trace_rx) = mpsc::channel(3);
+                        let thread_tx = events_tx.clone();
                         let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
                             let mut handler = PipelineHandler::new(config);
-                            handler.watch(&path, watcher, rx);
+                            handler.watch(&path, watcher, events_rx, trace_tx);
                         });            
                         // Insert or update the value of the current handled directory
-                        match self.directory_mapping.get_mut(&directory_path) {
-                            Some(handler_mapping) => {
-                                handler_mapping.watcher_tx = Option::Some(tx);
-                            }
-                            None => {
-                                handler_mapping.watcher_tx = Option::Some(tx);
-                                self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
-                            }
-                        }
+                        handler_mapping.watcher_tx = Option::Some(events_tx);
+                        handler_mapping.watcher_rx = Option::Some(trace_rx);
+                        self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
                         Ok(())
                     }
                     Err(err) => Err(format!("Pipeline config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
@@ -144,10 +139,12 @@ impl Into<Vec<u8>> for &Mapping {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct HandlerMapping {
     #[serde(skip)]
-    pub watcher_tx: Option<Sender<Result<Event, notify::Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
+    pub watcher_tx: Option<crossbeam::channel::Sender<Result<Event, notify::Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
+    #[serde(skip)]
+    pub watcher_rx: Option<tokio::sync::mpsc::Receiver<Result<String, tonic::Status>>>,
     pub handler_config_path: String,
     pub is_auto_startup: bool,
     pub description: String,
@@ -185,5 +182,11 @@ impl HandlerMapping {
         if let Some(ref description) = request.modify_description {
             self.description = description.to_string();
         }
+    }
+}
+
+impl Clone for HandlerMapping {
+    fn clone(&self) -> Self {
+        todo!()
     }
 }

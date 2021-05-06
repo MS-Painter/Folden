@@ -6,16 +6,18 @@ pub struct PipelineExecutionContext {
     pub config: PipelineConfig,
     pub event_file_path: PathBuf,
     pub action_file_path: Option<PathBuf>,
+    pub trace_tx: tokio::sync::mpsc::Sender<Result<String, tonic::Status>>
 }
 
 impl PipelineExecutionContext {
-    pub fn new<T>(event_file_path: T, config: PipelineConfig) -> Self 
+    pub fn new<T>(event_file_path: T, config: PipelineConfig, trace_tx: tokio::sync::mpsc::Sender<Result<String, tonic::Status>>) -> Self 
     where 
     T: AsRef<Path> { 
         Self { 
             config,
             event_file_path: event_file_path.as_ref().to_path_buf(),
             action_file_path: Option::None,
+            trace_tx
         } 
     }
 
