@@ -1,10 +1,10 @@
-use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, thread};
+use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, sync::Arc, thread};
 
+use tokio::sync::{Mutex, mpsc};
 use serde::{Serialize, Deserialize};
 use notify::{RecommendedWatcher, Watcher};
 
-use generated_types::{HandlerStateResponse};
-use tokio::sync::mpsc;
+use generated_types::HandlerStateResponse;
 use crate::{config::Config, handler_mapping::HandlerMapping};
 use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
@@ -65,7 +65,7 @@ impl Mapping {
                         });            
                         // Insert or update the value of the current handled directory
                         handler_mapping.watcher_tx = Option::Some(events_tx);
-                        handler_mapping.watcher_rx = Option::Some(trace_rx);
+                        handler_mapping.watcher_rx = Option::Some(Arc::new(Mutex::new(trace_rx)));
                         self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
                         Ok(())
                     }

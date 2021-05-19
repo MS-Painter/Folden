@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use tracing;
 use tonic::{Request, Response};
@@ -6,7 +6,7 @@ use tokio_stream::wrappers::ReceiverStream;
 
 use super::Server;
 use crate::handler_mapping::HandlerMapping;
-use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, TraceHandlerResponse, handler_service_server::HandlerService};
+use generated_types::{GetDirectoryStatusRequest, TraceHandlerResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
@@ -217,16 +217,21 @@ impl HandlerService for Server {
         tracing::info!("Tracing directory handler");
         let request = request.into_inner();
         let mut mapping = self.mapping.read().await.clone();
-        match mapping.directory_mapping.remove_entry(request.directory_path.as_str()) {
-            Some((_dir, handler_mapping)) => {
+        match mapping.directory_mapping.remove(request.directory_path.as_str()) {
+            Some(handler_mapping) => {
                 match handler_mapping.watcher_rx {
-                    Some(rx) => Ok(Response::new(ReceiverStream::new(rx))),
+                    Some(rx) => {
+                        match Arc::try_unwrap(rx) {
+                            Ok(lock) => Ok(Response::new(ReceiverStream::new(lock.into_inner()))),
+                            Err(_) => Err(tonic::Status::failed_precondition("Handler shared data fetch failed"))
+                        }
+                    }
                     None => Err(tonic::Status::failed_precondition("Handler needs to be live to trace"))
                 }
             }
             None => {
                 if request.directory_path.is_empty() { // If empty - All directories are requested
-                    todo!()
+                    unimplemented!();
                 }
                 Err(tonic::Status::not_found("Handler not registered to directory"))
             }

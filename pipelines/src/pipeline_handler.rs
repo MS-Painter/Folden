@@ -11,6 +11,8 @@ use generated_types::TraceHandlerResponse;
 use crate::pipeline_config::PipelineConfig;
 use crate::pipeline_execution_context::PipelineExecutionContext;
 
+type OutputTraceSender = tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>;
+
 pub struct PipelineHandler {
     pub config: PipelineConfig,
     pub naming_regex: Option<Regex>,
@@ -30,7 +32,7 @@ impl PipelineHandler {
         }
     }
 
-    fn handle(&self, file_path: &PathBuf, trace_tx: &tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>) {
+    fn handle(&self, file_path: &PathBuf, trace_tx: &OutputTraceSender) {
         match &self.naming_regex {
             Some(naming_regex) => {
                 if naming_regex.is_match(file_path.to_str().unwrap()) {
@@ -41,7 +43,7 @@ impl PipelineHandler {
         }
     }
 
-    fn execute_pipeline(&self, file_path: &PathBuf, trace_tx: &tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>) {
+    fn execute_pipeline(&self, file_path: &PathBuf, trace_tx: &OutputTraceSender) {
         let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), trace_tx.clone());
         for action in &self.config.actions {
             let action_succeeded = action.run(&mut context);
@@ -51,7 +53,7 @@ impl PipelineHandler {
         }
     }
 
-    fn apply_on_existing_files(&self, path: &PathBuf, trace_tx: &tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>) {
+    fn apply_on_existing_files(&self, path: &PathBuf, trace_tx: &OutputTraceSender) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
             let metadata = entry.metadata().unwrap();
@@ -61,8 +63,7 @@ impl PipelineHandler {
         }
     }
 
-    fn on_watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>, 
-        trace_tx: &tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>) {
+    fn on_watch(&self, watcher_rx: Receiver<Result<notify::Event, notify::Error>>, trace_tx: &OutputTraceSender) {
         for result in watcher_rx {
             match result {
                 Ok(event) => {
@@ -84,7 +85,7 @@ impl PipelineHandler {
     }
 
     pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, 
-        events_rx: Receiver<Result<notify::Event, notify::Error>>, trace_tx: tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>) {
+        events_rx: Receiver<Result<notify::Event, notify::Error>>, trace_tx: OutputTraceSender) {
         let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
         watcher.watch(path.clone(), recursive_mode).unwrap();
         if self.config.apply_on_startup_on_existing_files {
