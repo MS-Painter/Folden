@@ -43,7 +43,7 @@ impl<'a> PipelineExecutionContext<'a> {
     pub fn handle_error<T>(&self, msg: T) -> bool
     where 
     T: AsRef<str> {
-        self. log(msg.as_ref());
+        self.log(msg.as_ref());
         if self.config.panic_handler_on_error {
             tracing::error!("{}", msg.as_ref());
             panic!("{}", msg.as_ref());
