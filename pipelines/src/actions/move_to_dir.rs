@@ -76,6 +76,7 @@ impl Default for MoveToDir {
 
 impl PipelineAction for MoveToDir {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
+        context.log("Starting MoveToDir action");
         match context.get_input(self.input) {
             Some(input_path) => {
                 match input_path.file_name() {

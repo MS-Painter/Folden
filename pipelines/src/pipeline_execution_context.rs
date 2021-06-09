@@ -31,9 +31,19 @@ impl<'a> PipelineExecutionContext<'a> {
         }
     }
 
+    pub fn log<T>(&self, msg: T) 
+    where
+    T: AsRef<str> {
+        let _ = self.trace_tx.send(Ok(TraceHandlerResponse {
+            directory_path: self.event_file_path.to_str().unwrap().to_string(),
+            message: msg.as_ref().to_string(),
+        }));
+    }
+
     pub fn handle_error<T>(&self, msg: T) -> bool
     where 
     T: AsRef<str> {
+        self. log(msg.as_ref());
         if self.config.panic_handler_on_error {
             tracing::error!("{}", msg.as_ref());
             panic!("{}", msg.as_ref());
