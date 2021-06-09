@@ -1,8 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use tracing;
 use tonic::{Request, Response};
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::wrappers::WatchStream;
 
 use super::Server;
 use crate::handler_mapping::HandlerMapping;
@@ -10,7 +10,7 @@ use generated_types::{GetDirectoryStatusRequest, TraceHandlerResponse, HandlerSt
 
 #[tonic::async_trait]
 impl HandlerService for Server {
-    type TraceHandlerStream = ReceiverStream<Result<TraceHandlerResponse, tonic::Status>>;
+    type TraceHandlerStream = WatchStream<Result<TraceHandlerResponse, tonic::Status>>;
 
     #[tracing::instrument]
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) -> Result<Response<HandlerStateResponse>,tonic::Status> {
@@ -220,12 +220,7 @@ impl HandlerService for Server {
         match mapping.directory_mapping.remove(request.directory_path.as_str()) {
             Some(handler_mapping) => {
                 match handler_mapping.watcher_rx {
-                    Some(rx) => {
-                        match Arc::try_unwrap(rx) {
-                            Ok(lock) => Ok(Response::new(ReceiverStream::new(lock.into_inner()))),
-                            Err(_) => Err(tonic::Status::failed_precondition("Handler shared data fetch failed"))
-                        }
-                    }
+                    Some(rx) => Ok(Response::new(WatchStream::new(rx))),
                     None => Err(tonic::Status::failed_precondition("Handler needs to be live to trace"))
                 }
             }

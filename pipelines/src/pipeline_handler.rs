@@ -11,7 +11,7 @@ use generated_types::TraceHandlerResponse;
 use crate::pipeline_config::PipelineConfig;
 use crate::pipeline_execution_context::PipelineExecutionContext;
 
-type OutputTraceSender = tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>;
+type OutputTraceSender = tokio::sync::watch::Sender<Result<TraceHandlerResponse, tonic::Status>>;
 
 pub struct PipelineHandler {
     pub config: PipelineConfig,
@@ -44,7 +44,7 @@ impl PipelineHandler {
     }
 
     fn execute_pipeline(&self, file_path: &PathBuf, trace_tx: &OutputTraceSender) {
-        let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), trace_tx.clone());
+        let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), trace_tx);
         for action in &self.config.actions {
             let action_succeeded = action.run(&mut context);
             if !action_succeeded {

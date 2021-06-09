@@ -1,11 +1,11 @@
-use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, sync::Arc, thread};
+use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, thread};
 
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::watch;
 use serde::{Serialize, Deserialize};
 use notify::{RecommendedWatcher, Watcher};
 
-use generated_types::HandlerStateResponse;
 use crate::{config::Config, handler_mapping::HandlerMapping};
+use generated_types::{HandlerStateResponse, TraceHandlerResponse};
 use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
@@ -55,7 +55,7 @@ impl Mapping {
                 match PipelineConfig::try_from(data) {
                     Ok(config) => {
                         let (events_tx, events_rx) = crossbeam::channel::unbounded();
-                        let (trace_tx, trace_rx) = mpsc::channel(3);
+                        let (trace_tx, trace_rx) = watch::channel(Ok(TraceHandlerResponse::default()));
                         let thread_tx = events_tx.clone();
                         let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
@@ -65,7 +65,7 @@ impl Mapping {
                         });            
                         // Insert or update the value of the current handled directory
                         handler_mapping.watcher_tx = Option::Some(events_tx);
-                        handler_mapping.watcher_rx = Option::Some(Arc::new(Mutex::new(trace_rx)));
+                        handler_mapping.watcher_rx = Option::Some(trace_rx);
                         self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
                         Ok(())
                     }

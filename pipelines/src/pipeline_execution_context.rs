@@ -3,17 +3,17 @@ use std::path::{Path, PathBuf};
 use generated_types::TraceHandlerResponse;
 use crate::{pipeline_config::PipelineConfig, pipeline_context_input::PipelineContextInput};
 
-type OutputTraceSender = tokio::sync::mpsc::Sender<Result<TraceHandlerResponse, tonic::Status>>;
+type OutputTraceSender = tokio::sync::watch::Sender<Result<TraceHandlerResponse, tonic::Status>>;
 
-pub struct PipelineExecutionContext {
+pub struct PipelineExecutionContext<'a> {
     pub config: PipelineConfig,
     pub event_file_path: PathBuf,
     pub action_file_path: Option<PathBuf>,
-    pub trace_tx: OutputTraceSender
+    pub trace_tx: &'a OutputTraceSender
 }
 
-impl PipelineExecutionContext {
-    pub fn new<T>(event_file_path: T, config: PipelineConfig, trace_tx: OutputTraceSender) -> Self 
+impl<'a> PipelineExecutionContext<'a> {
+    pub fn new<T>(event_file_path: T, config: PipelineConfig, trace_tx: &'a OutputTraceSender) -> Self 
     where 
     T: AsRef<Path> { 
         Self { 

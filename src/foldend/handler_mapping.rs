@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use tokio::sync::Mutex;
 use notify::{Event, EventKind};
 use crossbeam::channel::Sender;
 use serde::{Serialize, Deserialize};
@@ -13,7 +10,7 @@ pub struct HandlerMapping {
     #[serde(skip)]
     pub watcher_tx: Option<Sender<Result<Event, notify::Error>>>, // Channel sender providing thread health and allowing manual thread shutdown
     #[serde(skip)]
-    pub watcher_rx: Option<Arc<Mutex<tokio::sync::mpsc::Receiver<Result<TraceHandlerResponse, tonic::Status>>>>>,
+    pub watcher_rx: Option<tokio::sync::watch::Receiver<Result<TraceHandlerResponse, tonic::Status>>>,
     pub handler_config_path: String,
     pub is_auto_startup: bool,
     pub description: String,
