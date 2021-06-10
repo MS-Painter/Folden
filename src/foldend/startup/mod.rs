@@ -90,6 +90,8 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     let server = Server {
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
+        handlers_trace_tx: Arc::new(None),
+        handlers_trace_rx: Arc::new(None),
     };
 
     startup_handlers(&server).await; // Handlers are raised before being able to accept client calls.
