@@ -226,19 +226,8 @@ impl HandlerService for Server {
         tracing::info!("{}", self.handlers_trace_tx.receiver_count());
         // Convert the channels to a `Stream`.
         let rx_stream = Box::pin(async_stream::stream! {
-            let mut closed = false;
-            while !closed {
-                match rx.try_recv() {
-                    Ok(res) => {
-                        yield res;
-                    },
-                    Err(err) => match err {
-                        tokio::sync::broadcast::error::TryRecvError::Closed => {
-                            closed = true;
-                        },
-                        _ => {},
-                    },
-                }
+            while let Ok(item) = rx.recv().await {
+                yield item;
             }
         }) as Self::TraceHandlerStream;
         return Ok(Response::new(rx_stream));
