@@ -1,6 +1,7 @@
 use std::{ops::Deref, sync::Arc};
 
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::RwLock;
+use tokio::sync::broadcast;
 
 use crate::config::Config;
 use crate::mapping::Mapping;
@@ -11,8 +12,7 @@ pub mod handler_service;
 pub struct Server {
     pub config: Arc<Config>,
     pub mapping: Arc<RwLock<Mapping>>,
-    pub handlers_trace_tx: Arc<Option<mpsc::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>>>,
-    pub handlers_trace_rx: Arc<Option<mpsc::Receiver<Result<generated_types::TraceHandlerResponse, tonic::Status>>>>,
+    pub handlers_trace_tx: Arc<broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>>,
 }
 
 impl Server {

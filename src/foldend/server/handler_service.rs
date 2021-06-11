@@ -1,8 +1,9 @@
+use std::pin::Pin;
 use std::collections::HashMap;
 
 use tracing;
+use tokio_stream::Stream;
 use tonic::{Request, Response};
-use tokio_stream::wrappers::WatchStream;
 
 use super::Server;
 use crate::handler_mapping::HandlerMapping;
@@ -10,7 +11,7 @@ use generated_types::{GetDirectoryStatusRequest, TraceHandlerResponse, HandlerSt
 
 #[tonic::async_trait]
 impl HandlerService for Server {
-    type TraceHandlerStream = WatchStream<Result<TraceHandlerResponse, tonic::Status>>;
+    type TraceHandlerStream = Pin<Box<dyn Stream<Item = Result<TraceHandlerResponse, tonic::Status>> + Send + Sync + 'static>>;
 
     #[tracing::instrument]
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) -> Result<Response<HandlerStateResponse>,tonic::Status> {
@@ -50,7 +51,8 @@ impl HandlerService for Server {
                         message: format!("Registered handler without starting - Reached concurrent live handler limit ({})", self.config.concurrent_threads_limit),
                     }));
                 }
-                match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping) {
+                let trace_tx = self.handlers_trace_tx.clone();
+                match mapping.spawn_handler_thread(request.directory_path, &mut handler_mapping, trace_tx) {
                     Ok(_) => {
                         let _result = mapping.save(&self.config.mapping_state_path);
                         Ok(Response::new(HandlerStateResponse {
@@ -119,7 +121,8 @@ impl HandlerService for Server {
                     return Err(tonic::Status::failed_precondition(
                         format!("Aborted start handler - Reached concurrent live handler limit ({})", self.config.concurrent_threads_limit)));
                 }
-                let response = mapping.start_handler(directory_path, handler_mapping);
+                let trace_tx = self.handlers_trace_tx.clone();
+                let response = mapping.start_handler(directory_path, handler_mapping, trace_tx);
                 states_map.insert(directory_path.to_owned(), response);
                 Ok(Response::new(HandlerStatesMapResponse {
                     states_map,
@@ -134,7 +137,8 @@ impl HandlerService for Server {
                             self.config.concurrent_threads_limit, mapping.get_live_handlers().count())));
                     }
                     for (directory_path, handler_mapping) in mapping.clone().directory_mapping.iter_mut() {
-                        let response = mapping.start_handler(directory_path, handler_mapping);
+                        let trace_tx = self.handlers_trace_tx.clone();
+                        let response = mapping.start_handler(directory_path, handler_mapping, trace_tx);
                         states_map.insert(directory_path.to_owned(), response);
                     }
                 }
@@ -213,23 +217,30 @@ impl HandlerService for Server {
         }
     }
 
-    async fn trace_handler(&self, request: Request<TraceHandlerRequest>,)->Result<Response<Self::TraceHandlerStream>, tonic::Status> {
+    async fn trace_handler(&self, request: Request<TraceHandlerRequest>) -> Result<Response<Self::TraceHandlerStream>, tonic::Status> {
         tracing::info!("Tracing directory handler");
-        let request = request.into_inner();
-        let mut mapping = self.mapping.read().await.clone();
-        match mapping.directory_mapping.remove(request.directory_path.as_str()) {
-            Some(handler_mapping) => {
-                match handler_mapping.watcher_rx {
-                    Some(rx) => Ok(Response::new(WatchStream::new(rx))),
-                    None => Err(tonic::Status::failed_precondition("Handler needs to be live to trace"))
+        //let request = request.into_inner();
+        //let mut mapping = self.mapping.read().await;
+
+        let mut rx = self.handlers_trace_tx.subscribe();
+        tracing::info!("{}", self.handlers_trace_tx.receiver_count());
+        // Convert the channels to a `Stream`.
+        let rx_stream = Box::pin(async_stream::stream! {
+            let mut closed = false;
+            while !closed {
+                match rx.try_recv() {
+                    Ok(res) => {
+                        yield res;
+                    },
+                    Err(err) => match err {
+                        tokio::sync::broadcast::error::TryRecvError::Closed => {
+                            closed = true;
+                        },
+                        _ => {},
+                    },
                 }
             }
-            None => {
-                if request.directory_path.is_empty() { // If empty - All directories are requested
-                    unimplemented!();
-                }
-                Err(tonic::Status::not_found("Handler not registered to directory"))
-            }
-        }
+        }) as Self::TraceHandlerStream;
+        return Ok(Response::new(rx_stream));
     }
 }

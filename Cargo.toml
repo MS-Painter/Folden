@@ -31,6 +31,7 @@ typetag = "0.1.6"
 futures = "0.3.14"
 cli-table = "0.4.6"
 dyn-clone = "1.0.4"
+async-stream = "0.3.2"
 serde = {version = "1.0.117", features = ["derive"] }
 tokio = { version = "1.6.1", features = ["full"] }
 tokio-stream = { version ="0.1.6", features = ["default", "sync"] }

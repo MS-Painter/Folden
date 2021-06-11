@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use generated_types::TraceHandlerResponse;
 use crate::{pipeline_config::PipelineConfig, pipeline_context_input::PipelineContextInput};
 
-type OutputTraceSender = tokio::sync::watch::Sender<Result<TraceHandlerResponse, tonic::Status>>;
+type OutputTraceSender = tokio::sync::broadcast::Sender<Result<TraceHandlerResponse, tonic::Status>>;
 
 pub struct PipelineExecutionContext<'a> {
     pub config: PipelineConfig,

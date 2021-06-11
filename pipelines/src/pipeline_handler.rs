@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::Arc;
 use std::path::PathBuf;
 
 use tracing;
@@ -11,7 +12,7 @@ use generated_types::TraceHandlerResponse;
 use crate::pipeline_config::PipelineConfig;
 use crate::pipeline_execution_context::PipelineExecutionContext;
 
-type OutputTraceSender = tokio::sync::watch::Sender<Result<TraceHandlerResponse, tonic::Status>>;
+type OutputTraceSender = Arc<tokio::sync::broadcast::Sender<Result<TraceHandlerResponse, tonic::Status>>>;
 
 pub struct PipelineHandler {
     pub config: PipelineConfig,

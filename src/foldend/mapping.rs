@@ -1,11 +1,11 @@
-use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, thread};
+use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, sync::Arc, thread};
 
-use tokio::sync::watch;
+use tokio::sync::broadcast;
 use serde::{Serialize, Deserialize};
 use notify::{RecommendedWatcher, Watcher};
 
+use generated_types::HandlerStateResponse;
 use crate::{config::Config, handler_mapping::HandlerMapping};
-use generated_types::{HandlerStateResponse, TraceHandlerResponse};
 use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
@@ -26,7 +26,8 @@ impl Mapping {
         self.directory_mapping.iter().filter(|(_dir, mapping)| mapping.is_alive())
     }
 
-    pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &mut HandlerMapping) -> HandlerStateResponse {
+    pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &mut HandlerMapping, 
+        trace_tx: Arc<broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>>) -> HandlerStateResponse {
         if handler_mapping.is_alive() {
             HandlerStateResponse {
                 is_alive: true,
@@ -34,7 +35,7 @@ impl Mapping {
             }
         }
         else {
-            match self.spawn_handler_thread(directory_path.to_string(), handler_mapping) {
+            match self.spawn_handler_thread(directory_path.to_string(), handler_mapping, trace_tx) {
                 Ok(_) => HandlerStateResponse {
                     is_alive: true,
                     message: String::from("Started handler"),
@@ -47,7 +48,9 @@ impl Mapping {
         }
     }
     
-    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_mapping: &mut HandlerMapping) -> Result<(), String> {
+    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_mapping: &mut HandlerMapping, 
+        trace_tx: Arc<broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>>) -> 
+    Result<(), String> {
         let path = PathBuf::from(directory_path.clone());
         let config_path = PathBuf::from(&handler_mapping.handler_config_path);
         match fs::read(&config_path) {
@@ -55,17 +58,16 @@ impl Mapping {
                 match PipelineConfig::try_from(data) {
                     Ok(config) => {
                         let (events_tx, events_rx) = crossbeam::channel::unbounded();
-                        let (trace_tx, trace_rx) = watch::channel(Ok(TraceHandlerResponse::default()));
                         let thread_tx = events_tx.clone();
+                        let thread_trace_tx = trace_tx.clone();
                         let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
                             let mut handler = PipelineHandler::new(config);
-                            handler.watch(&path, watcher, events_rx, trace_tx);
+                            handler.watch(&path, watcher, events_rx, thread_trace_tx);
                         });            
                         // Insert or update the value of the current handled directory
                         handler_mapping.watcher_tx = Option::Some(events_tx);
-                        handler_mapping.watcher_rx = Option::Some(trace_rx);
                         self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
                         Ok(())
                     }
