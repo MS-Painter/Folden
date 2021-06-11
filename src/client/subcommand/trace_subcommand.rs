@@ -3,7 +3,7 @@ use futures::executor::block_on;
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{TraceHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path};
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct TraceSubCommand {}
@@ -13,6 +13,8 @@ impl SubCommandUtil for TraceSubCommand {
 
     fn alias(&self) -> &str { "" }
 
+    fn requires_connection(&self) -> bool { true }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Trace directory handler output")
@@ -20,15 +22,10 @@ impl SubCommandUtil for TraceSubCommand {
             .args(construct_directory_or_all_args().as_slice())
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
-        if let Some(server_url) = construct_server_url(sub_matches) {
-            match connect_client(server_url) {
-                Ok(client) => execute_trace(sub_matches, client),
-                Err(e) => println!("{}", e)
-            }
-        }
-        else {
-            println!("Couldn't send request - No valid endpoint could be parsed");
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, server_url: Option<String>) {
+        match connect_client(server_url.unwrap()) {
+            Ok(client) => execute_trace(sub_matches, client),
+            Err(e) => println!("{}", e)
         }
     }
 }

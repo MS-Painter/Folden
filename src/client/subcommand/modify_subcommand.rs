@@ -3,7 +3,7 @@ use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_server_url, construct_startup_type_arg, get_path_from_matches_or_current_path};
+use super::subcommand::{connect_client, construct_directory_or_all_args, construct_port_arg, construct_startup_type_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct ModifySubCommand {}
@@ -12,6 +12,8 @@ impl SubCommandUtil for ModifySubCommand {
     fn name(&self) -> &str { "modify" }
 
     fn alias(&self) -> &str { "mod" }
+
+    fn requires_connection(&self) -> bool { true }
 
     fn construct_subcommand(&self) -> App {
         self.create_instance()
@@ -24,15 +26,10 @@ impl SubCommandUtil for ModifySubCommand {
             .args(construct_directory_or_all_args().as_slice())
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
-        if let Some(server_url) = construct_server_url(sub_matches) {
-            match connect_client(server_url) {
-                Ok(client) => execute_modify(sub_matches, client),
-                Err(e) => println!("{}", e)
-            }
-        }
-        else {
-
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, server_url: Option<String>) {
+        match connect_client(server_url.unwrap()) {
+            Ok(client) => execute_modify(sub_matches, client),
+            Err(e) => println!("{}", e)
         }
     }
 }

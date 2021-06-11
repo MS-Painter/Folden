@@ -12,10 +12,12 @@ pub trait SubCommandUtil: DynClone {
     fn name(&self) -> &str;
 
     fn alias(&self) -> &str;
+
+    fn requires_connection(&self) -> bool;
     
     fn construct_subcommand(&self) -> App;
     
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches);
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, server_url: Option<String>);
     
     fn create_instance(&self) -> App {
         if self.alias().is_empty() {

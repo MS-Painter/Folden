@@ -1,6 +1,7 @@
 use clap::{App, AppSettings, crate_version};
 
 use subcommand::subcommand::SubCommandCollection;
+use crate::subcommand::subcommand::construct_server_url;
 
 mod subcommand;
 
@@ -25,7 +26,18 @@ async fn main() {
     let matches = app.get_matches();
     for subcommand in subcommands {
         if let Some(sub_matches) = subcommand.subcommand_matches(&matches) {
-            subcommand.subcommand_runtime(sub_matches);
+            if subcommand.requires_connection() {
+                if let Some(server_url) = construct_server_url(sub_matches) {
+                    subcommand.subcommand_runtime(sub_matches, Some(server_url));
+                }
+                else {
+                    println!("Couldn't send request - No valid endpoint could be parsed");
+                }
+            }
+            else {
+                subcommand.subcommand_runtime(sub_matches, None);
+            }
+            return;
         }
     }
 }

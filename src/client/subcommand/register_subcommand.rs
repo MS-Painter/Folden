@@ -6,7 +6,7 @@ use clap::{App, Arg, ArgMatches, ErrorKind};
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{RegisterToDirectoryRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_port_arg, construct_server_url, construct_startup_type_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
+use super::subcommand::{connect_client, construct_port_arg, construct_startup_type_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
 
 #[derive(Clone)]
 pub struct RegisterSubCommand {}
@@ -15,6 +15,8 @@ impl SubCommandUtil for RegisterSubCommand {
     fn name(&self) -> &str { "register" }
 
     fn alias(&self) -> &str { "reg" }
+
+    fn requires_connection(&self) -> bool { true }
  
     fn construct_subcommand(&self) -> App {
         self.create_instance()
@@ -36,15 +38,10 @@ impl SubCommandUtil for RegisterSubCommand {
             .arg(construct_startup_type_arg().default_value("manual"))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
-        if let Some(server_url) = construct_server_url(sub_matches) {
-            match connect_client(server_url) {
-                Ok(client) => execute_register(sub_matches, client),
-                Err(e) => println!("{}", e)
-            }
-        }
-        else {
-            println!("Couldn't send request - No valid endpoint could be parsed");
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, server_url: Option<String>) {
+        match connect_client(server_url.unwrap()) {
+            Ok(client) => execute_register(sub_matches, client),
+            Err(e) => println!("{}", e)
         }
     }
 }

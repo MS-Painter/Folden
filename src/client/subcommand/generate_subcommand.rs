@@ -35,6 +35,8 @@ impl SubCommandUtil for GenerateSubCommand {
 
     fn alias(&self) -> &str { "gen" }
 
+    fn requires_connection(&self) -> bool { false }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Generate default handler pipeline config")
@@ -55,7 +57,7 @@ impl SubCommandUtil for GenerateSubCommand {
                 .help("File path. Leave empty to generate with default name."))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches, _server_url: Option<String>) {
         let events = sub_matches.values_of("events");
         let actions = sub_matches.values_of("actions");
         let path = GenerateSubCommand::construct_config_path("folden_pipeline",sub_matches.value_of("path"));
