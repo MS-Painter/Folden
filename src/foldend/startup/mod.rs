@@ -87,7 +87,7 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     tracing::subscriber::set_global_default(subscriber).expect("Unable to set a global collector");
 
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
-    let (trace_tx, _trace_rx) = broadcast::channel(10);
+    let (trace_tx, _) = broadcast::channel(10);
     let server = Server {
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
