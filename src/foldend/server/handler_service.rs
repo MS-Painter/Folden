@@ -6,14 +6,14 @@ use tonic::{Request, Response};
 use super::Server;
 use super::TraceHandlerStream;
 use crate::handler_mapping::HandlerMapping;
-use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
+use generated_types::{HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
     type TraceHandlerStream = TraceHandlerStream;
 
     #[tracing::instrument]
-    async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) -> Result<Response<HandlerStateResponse>,tonic::Status> {
+    async fn register_to_directory(&self, request:Request<generated_types::RegisterToDirectoryRequest>) -> Result<Response<HandlerStateResponse>,tonic::Status> {
         tracing::info!("Registering handler to directory");
         let request = request.into_inner();
         let mut mapping = self.mapping.write().await;
@@ -77,7 +77,7 @@ impl HandlerService for Server {
     }
 
     #[tracing::instrument]
-    async fn get_directory_status(&self, request:Request<GetDirectoryStatusRequest>) -> Result<Response<HandlerSummaryMapResponse>,tonic::Status> {
+    async fn get_directory_status(&self, request:Request<generated_types::GetDirectoryStatusRequest>) -> Result<Response<HandlerSummaryMapResponse>,tonic::Status> {
         tracing::info!("Getting directory status");
         let request = request.into_inner();
         let mapping = &*self.mapping.read().await;
@@ -107,7 +107,7 @@ impl HandlerService for Server {
     }
 
     #[tracing::instrument]
-    async fn start_handler(&self,request:Request<StartHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
+    async fn start_handler(&self,request:Request<generated_types::StartHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
         tracing::info!("Starting handler");
         let request = request.into_inner();
         let mut mapping = self.mapping.write().await;
@@ -155,7 +155,7 @@ impl HandlerService for Server {
     }
 
     #[tracing::instrument]
-    async fn stop_handler(&self,request:Request<StopHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
+    async fn stop_handler(&self,request:Request<generated_types::StopHandlerRequest>,)->Result<Response<HandlerStatesMapResponse>,tonic::Status> {
         tracing::info!("Stopping handler");
         let request = request.into_inner();
         let mut mapping = self.mapping.write().await;
@@ -191,7 +191,7 @@ impl HandlerService for Server {
     }
 
     #[tracing::instrument]
-    async fn modify_handler(&self,request:Request<ModifyHandlerRequest>,)->Result<Response<()>,tonic::Status> {
+    async fn modify_handler(&self,request:Request<generated_types::ModifyHandlerRequest>,)->Result<Response<()>,tonic::Status> {
         tracing::info!("Modifying handler");
         let request = request.into_inner();
         let mut mapping = self.mapping.write().await;
@@ -216,7 +216,7 @@ impl HandlerService for Server {
         }
     }
 
-    async fn trace_handler(&self, request: Request<TraceHandlerRequest>) -> Result<Response<Self::TraceHandlerStream>, tonic::Status> {
+    async fn trace_handler(&self, request: Request<generated_types::TraceHandlerRequest>) -> Result<Response<Self::TraceHandlerStream>, tonic::Status> {
         tracing::info!("Tracing directory handler");
         let request = request.into_inner();
         let mapping = self.mapping.read().await;
