@@ -42,7 +42,7 @@ impl PipelineAction for RunCmd {
                         }
                         else {
                             let stdout = String::from_utf8(out.stdout).unwrap();
-                            tracing::debug!("RunCmd stdout - {:?}", stdout);
+                            context.log(format!("RunCmd stdout - {:?}", stdout));
                             true
                         }
                     }
