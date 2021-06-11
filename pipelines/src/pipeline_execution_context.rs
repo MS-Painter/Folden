@@ -53,7 +53,7 @@ impl<'a> PipelineExecutionContext<'a> {
     where
     T: AsRef<str> {
         let _ = self.trace_tx.send(Ok(TraceHandlerResponse {
-            directory_path: self.event_file_path.to_str().unwrap().to_string(),
+            directory_path: self.event_file_path.parent().unwrap().to_str().unwrap().to_string(),
             action,
             message: msg.as_ref().to_string(),
         }));
