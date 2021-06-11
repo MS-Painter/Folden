@@ -46,5 +46,6 @@ message TraceHandlerRequest {
 
 message TraceHandlerResponse {
   string directory_path = 1;
-  string message = 2;
+  google.protobuf.StringValue action = 2;
+  string message = 3;
 }

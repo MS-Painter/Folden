@@ -19,7 +19,7 @@ impl MoveToDir {
     fn ensure_dir_exists(&self, context: &mut PipelineExecutionContext, working_dir_path: &PathBuf) -> bool {
         if !working_dir_path.is_dir() {
             if self.requires_directory_exists {
-                return context.handle_error("Directory required to exist");
+                return context.handle_error(Some("MoveToDir".to_string()), "Directory required to exist");
             }
             else {
                 fs::create_dir_all(&working_dir_path).unwrap();
@@ -36,12 +36,12 @@ impl MoveToDir {
         let mut new_file_path = PathBuf::from(working_dir_path);
         new_file_path.push(input_file_name);
         if new_file_path.is_file() && !self.replace_older_files {
-            return context.handle_error("Can't replace older file");
+            return context.handle_error(Some("MoveToDir".to_string()),"Can't replace older file");
         }
         else {
             match fs::copy(&input_path, &new_file_path) {
                 Ok(_) => {
-                    context.log("MoveToDir - Copied file");
+                    context.log(Some("MoveToDir".to_string()), "Copied file");
                     if self.keep_input_file_intact {
                         context.action_file_path = Some(new_file_path);
                         true
@@ -49,15 +49,15 @@ impl MoveToDir {
                     else {
                         match fs::remove_file(input_path) {
                             Ok(_) => {
-                                context.log("MoveToDir - Deleted original file");
+                                context.log(Some("MoveToDir".to_string()), "Deleted original file");
                                 context.action_file_path = Some(new_file_path);
                                 true
                             },
-                            Err(err) => context.handle_error(format!("{}", err))
+                            Err(err) => context.handle_error(Some("MoveToDir".to_string()), format!("{}", err))
                         }
                     }
                 },
-                Err(err) => context.handle_error(format!("{:?}", err))
+                Err(err) => context.handle_error(Some("MoveToDir".to_string()), format!("{:?}", err))
             }
         }
     }
@@ -78,7 +78,7 @@ impl Default for MoveToDir {
 
 impl PipelineAction for MoveToDir {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
-        context.log("Starting MoveToDir action");
+        context.log(Some("MoveToDir".to_string()), "Starting action");
         match context.get_input(self.input) {
             Some(input_path) => {
                 match input_path.file_name() {
@@ -99,15 +99,15 @@ impl PipelineAction for MoveToDir {
                                         }
                                         self.apply(context, &working_dir_path.canonicalize().unwrap(), &input_path, input_file_name)
                                     },
-                                    _ => context.handle_error(format!("{:?}", err))
+                                    _ => context.handle_error(Some("MoveToDir".to_string()), format!("{:?}", err))
                                 }
                             }
                         }
                     }
-                    None => context.handle_error("Path can't be parsed as file")
+                    None => context.handle_error(Some("MoveToDir".to_string()), "Path can't be parsed as file")
                 }
             }
-            None => context.handle_error("Input doesn't contain value")
+            None => context.handle_error(Some("MoveToDir".to_string()), "Input doesn't contain value")
         }
     }
 }

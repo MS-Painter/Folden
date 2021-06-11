@@ -31,29 +31,30 @@ impl<'a> PipelineExecutionContext<'a> {
         }
     }
 
-    pub fn log<T>(&self, msg: T) 
+    pub fn log<T>(&self, action: Option<String>, msg: T) 
     where
     T: AsRef<str> {
         tracing::info!("{}", msg.as_ref());
-        self.send_trace_message(msg);
+        self.send_trace_message(action, msg);
     }
 
-    pub fn handle_error<T>(&self, msg: T) -> bool
+    pub fn handle_error<T>(&self, action: Option<String>, msg: T) -> bool
     where 
     T: AsRef<str> {
         tracing::error!("{}", msg.as_ref());
-        self.send_trace_message(msg.as_ref());
+        self.send_trace_message(action, msg.as_ref());
         if self.config.panic_handler_on_error {
             panic!("{}", msg.as_ref());
         }
         return false;
     }
 
-    fn send_trace_message<T>(&self, msg: T) 
+    fn send_trace_message<T>(&self, action: Option<String>, msg: T) 
     where
     T: AsRef<str> {
         let _ = self.trace_tx.send(Ok(TraceHandlerResponse {
             directory_path: self.event_file_path.to_str().unwrap().to_string(),
+            action,
             message: msg.as_ref().to_string(),
         }));
     }
