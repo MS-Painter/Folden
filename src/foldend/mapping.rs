@@ -58,12 +58,11 @@ impl Mapping {
                 match PipelineConfig::try_from(data) {
                     Ok(config) => {
                         let (events_tx, events_rx) = crossbeam::channel::unbounded();
-                        let thread_tx = events_tx.clone();
-                        let thread_trace_tx = trace_tx.clone();
-                        let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
+                        let events_thread_tx = events_tx.clone();
+                        let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| events_thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
-                            let mut handler = PipelineHandler::new(config, thread_trace_tx);
+                            let mut handler = PipelineHandler::new(config, trace_tx);
                             handler.watch(&path, watcher, events_rx);
                         });            
                         // Insert or update the value of the current handled directory
