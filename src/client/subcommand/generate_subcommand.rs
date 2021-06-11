@@ -1,9 +1,10 @@
 use std::{env, ops::Deref, path::PathBuf};
 
+use strum::VariantNames;
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use pipelines::{actions::ACTION_TYPES, event::EVENT_TYPES, pipeline_config::PipelineConfig};
+use pipelines::{actions::PipelineActions, event::EVENT_TYPES, pipeline_config::PipelineConfig};
 
 #[derive(Clone)]
 pub struct GenerateSubCommand {}
@@ -48,7 +49,7 @@ impl SubCommandUtil for GenerateSubCommand {
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&ACTION_TYPES))
+                .possible_values(&PipelineActions::VARIANTS))
             .arg(Arg::with_name("path")
                 .required(false)
                 .help("File path. Leave empty to generate with default name."))

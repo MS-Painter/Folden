@@ -24,6 +24,8 @@ members = [
 generated_types = {path = "generated_types"}
 pipelines = {path = "pipelines"}
 
+strum = "0.21.0"
+strum_macros = "0.21.0"
 toml = "0.5.7"
 tonic = "0.4.2"
 clap = "2.33.3"
