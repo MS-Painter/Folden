@@ -236,6 +236,7 @@ impl HandlerService for Server {
         }
 
         let rx_stream = self.convert_trace_channel_reciever_to_stream();
+        tracing::debug!("Handler trace receivers live: {}", self.handlers_trace_tx.receiver_count());
         return Ok(Response::new(rx_stream));
     }
 }

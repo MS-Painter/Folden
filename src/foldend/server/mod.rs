@@ -36,8 +36,6 @@ impl Server {
 
     fn convert_trace_channel_reciever_to_stream(&self) -> TraceHandlerStream {
         let mut rx = self.handlers_trace_tx.subscribe();
-        tracing::info!("{}", self.handlers_trace_tx.receiver_count());
-        // Convert the channels to a `Stream`.
         Box::pin(async_stream::stream! {
             while let Ok(item) = rx.recv().await {
                 yield item;
