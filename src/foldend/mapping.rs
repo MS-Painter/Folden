@@ -63,8 +63,8 @@ impl Mapping {
                         let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
-                            let mut handler = PipelineHandler::new(config);
-                            handler.watch(&path, watcher, events_rx, thread_trace_tx);
+                            let mut handler = PipelineHandler::new(config, thread_trace_tx);
+                            handler.watch(&path, watcher, events_rx);
                         });            
                         // Insert or update the value of the current handled directory
                         handler_mapping.watcher_tx = Option::Some(events_tx);
