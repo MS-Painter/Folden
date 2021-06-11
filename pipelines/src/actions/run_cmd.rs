@@ -29,7 +29,6 @@ impl RunCmd {
 
 impl PipelineAction for RunCmd {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
-        context.log("Starting action");
         let formatted_command = self.format_command(context);
         match spawn_command(&formatted_command, context) {
             Ok(process) => {

@@ -47,6 +47,7 @@ impl PipelineHandler {
         for action in &self.config.actions {
             let action_name: &'static str = action.into();
             context.action_name = Some(action_name.into());
+            context.log("Starting action");
             let action_succeeded = action.run(&mut context);
             if !action_succeeded {
                 break;
