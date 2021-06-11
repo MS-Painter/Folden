@@ -9,6 +9,8 @@ edition = "2018"
 [dependencies]
 generated_types = { path = "../generated_types" }
 
+strum = "0.21.0"
+strum_macros = "0.21.0"
 clap = "2.33.3"
 regex = "1"
 itertools = "0.10.0"

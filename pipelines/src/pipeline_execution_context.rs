@@ -9,7 +9,8 @@ pub struct PipelineExecutionContext<'a> {
     pub config: PipelineConfig,
     pub event_file_path: PathBuf,
     pub action_file_path: Option<PathBuf>,
-    pub trace_tx: &'a OutputTraceSender
+    pub trace_tx: &'a OutputTraceSender,
+    pub action_name: Option<String>,
 }
 
 impl<'a> PipelineExecutionContext<'a> {
@@ -19,8 +20,9 @@ impl<'a> PipelineExecutionContext<'a> {
         Self { 
             config,
             event_file_path: event_file_path.as_ref().to_path_buf(),
-            action_file_path: Option::None,
-            trace_tx
+            action_file_path: None,
+            trace_tx,
+            action_name: None,
         } 
     }
 
@@ -31,30 +33,30 @@ impl<'a> PipelineExecutionContext<'a> {
         }
     }
 
-    pub fn log<T>(&self, action: Option<String>, msg: T) 
+    pub fn log<T>(&self, msg: T) 
     where
     T: AsRef<str> {
         tracing::info!("{}", msg.as_ref());
-        self.send_trace_message(action, msg);
+        self.send_trace_message(msg);
     }
 
-    pub fn handle_error<T>(&self, action: Option<String>, msg: T) -> bool
+    pub fn handle_error<T>(&self, msg: T) -> bool
     where 
     T: AsRef<str> {
         tracing::error!("{}", msg.as_ref());
-        self.send_trace_message(action, msg.as_ref());
+        self.send_trace_message(msg.as_ref());
         if self.config.panic_handler_on_error {
             panic!("{}", msg.as_ref());
         }
         return false;
     }
 
-    fn send_trace_message<T>(&self, action: Option<String>, msg: T) 
+    fn send_trace_message<T>(&self, msg: T) 
     where
     T: AsRef<str> {
         let _ = self.trace_tx.send(Ok(TraceHandlerResponse {
             directory_path: self.event_file_path.parent().unwrap().to_str().unwrap().to_string(),
-            action,
+            action: self.action_name.to_owned(),
             message: msg.as_ref().to_string(),
         }));
     }

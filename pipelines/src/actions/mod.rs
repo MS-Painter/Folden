@@ -3,6 +3,7 @@ use std::{borrow::Cow, path::PathBuf};
 use chrono;
 use regex::Regex;
 use lazy_static::lazy_static;
+use strum_macros::IntoStaticStr;
 use serde::{Deserialize, Serialize};
 
 mod run_cmd;
@@ -37,7 +38,7 @@ pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> 
     working_path
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, IntoStaticStr, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum PipelineActions {
     MoveToDir(MoveToDir),
