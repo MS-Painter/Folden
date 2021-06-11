@@ -1,17 +1,16 @@
-use std::pin::Pin;
 use std::collections::HashMap;
 
 use tracing;
-use tokio_stream::Stream;
 use tonic::{Request, Response};
 
 use super::Server;
+use super::TraceHandlerStream;
 use crate::handler_mapping::HandlerMapping;
-use generated_types::{GetDirectoryStatusRequest, TraceHandlerResponse, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
+use generated_types::{GetDirectoryStatusRequest, HandlerStateResponse, HandlerStatesMapResponse, HandlerSummary, HandlerSummaryMapResponse, ModifyHandlerRequest, RegisterToDirectoryRequest, StartHandlerRequest, StopHandlerRequest, TraceHandlerRequest, handler_service_server::HandlerService};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
-    type TraceHandlerStream = Pin<Box<dyn Stream<Item = Result<TraceHandlerResponse, tonic::Status>> + Send + Sync + 'static>>;
+    type TraceHandlerStream = TraceHandlerStream;
 
     #[tracing::instrument]
     async fn register_to_directory(&self, request:Request<RegisterToDirectoryRequest>) -> Result<Response<HandlerStateResponse>,tonic::Status> {
@@ -219,17 +218,21 @@ impl HandlerService for Server {
 
     async fn trace_handler(&self, request: Request<TraceHandlerRequest>) -> Result<Response<Self::TraceHandlerStream>, tonic::Status> {
         tracing::info!("Tracing directory handler");
-        //let request = request.into_inner();
-        //let mut mapping = self.mapping.read().await;
+        let request = request.into_inner();
+        let mapping = self.mapping.read().await;
 
-        let mut rx = self.handlers_trace_tx.subscribe();
-        tracing::info!("{}", self.handlers_trace_tx.receiver_count());
-        // Convert the channels to a `Stream`.
-        let rx_stream = Box::pin(async_stream::stream! {
-            while let Ok(item) = rx.recv().await {
-                yield item;
+        if !request.directory_path.is_empty() { // If empty - All directories are requested
+            match mapping.directory_mapping.get(&request.directory_path) {
+                Some(handler_mapping) => {
+                    if !handler_mapping.is_alive() {
+                        return Err(tonic::Status::failed_precondition("Directory handler isn't alive to trace"))
+                    }
+                },
+                None => return Err(tonic::Status::not_found("Directory isn't registered to handle")),
             }
-        }) as Self::TraceHandlerStream;
+        }
+
+        let rx_stream = self.convert_trace_channel_reciever_to_stream();
         return Ok(Response::new(rx_stream));
     }
 }

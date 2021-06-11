@@ -1,6 +1,8 @@
+use std::pin::Pin;
 use std::{ops::Deref, sync::Arc};
 
 use tokio::sync::RwLock;
+use tokio_stream::Stream;
 use tokio::sync::broadcast;
 
 use crate::config::Config;
@@ -31,4 +33,17 @@ impl Server {
         }
         false
     }
+
+    fn convert_trace_channel_reciever_to_stream(&self) -> TraceHandlerStream {
+        let mut rx = self.handlers_trace_tx.subscribe();
+        tracing::info!("{}", self.handlers_trace_tx.receiver_count());
+        // Convert the channels to a `Stream`.
+        Box::pin(async_stream::stream! {
+            while let Ok(item) = rx.recv().await {
+                yield item;
+            }
+        }) as TraceHandlerStream
+    }
 }
+
+pub type TraceHandlerStream = Pin<Box<dyn Stream<Item = Result<generated_types::TraceHandlerResponse, tonic::Status>> + Send + Sync + 'static>>;
