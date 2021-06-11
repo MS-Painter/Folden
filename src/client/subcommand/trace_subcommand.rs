@@ -39,14 +39,6 @@ fn execute_trace(sub_matches: &ArgMatches, mut client: HandlerServiceClient<toni
         let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         directory_path = path.into_os_string().into_string().unwrap();
     }
-    else {
-        match sub_matches.value_of_os("directory") {
-            Some(path) => {
-                directory_path = path.to_os_string().into_string().unwrap();
-            }
-            None => {}
-        }
-    }
     let response = client.trace_handler(TraceHandlerRequest {
         directory_path,
     });
