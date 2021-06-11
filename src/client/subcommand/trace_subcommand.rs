@@ -15,7 +15,7 @@ impl SubCommandUtil for TraceSubCommand {
 
     fn construct_subcommand(&self) -> App {
         self.create_instance()
-            .about("Trace directory handler ouput")
+            .about("Trace directory handler output")
             .arg(construct_port_arg())
             .args(construct_directory_or_all_args().as_slice())
     }
@@ -28,7 +28,7 @@ impl SubCommandUtil for TraceSubCommand {
             }
         }
         else {
-
+            println!("Couldn't send request - No valid endpoint could be parsed");
         }
     }
 }
