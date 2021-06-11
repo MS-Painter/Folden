@@ -57,11 +57,15 @@ impl SubCommandUtil for GenerateSubCommand {
                 .help("File path. Leave empty to generate with default name."))
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, _server_url: Option<String>) {
+    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
         let events = sub_matches.values_of("events");
         let actions = sub_matches.values_of("actions");
         let path = GenerateSubCommand::construct_config_path("folden_pipeline",sub_matches.value_of("path"));
         let config = PipelineConfig::default_new(events, actions);
         config.generate_config(path.deref()).unwrap();
+    }
+
+    fn subcommand_connection_runtime(&self, sub_matches: &ArgMatches, _client: generated_types::handler_service_client::HandlerServiceClient<tonic::transport::Channel>) {
+        self.subcommand_runtime(sub_matches);
     }
 }

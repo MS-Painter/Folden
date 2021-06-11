@@ -16,8 +16,12 @@ pub trait SubCommandUtil: DynClone {
     fn requires_connection(&self) -> bool;
     
     fn construct_subcommand(&self) -> App;
+
+    fn subcommand_runtime(&self, _sub_matches: &ArgMatches) {
+        panic!("Command execution without connection unsupported")
+    }
     
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, server_url: Option<String>);
+    fn subcommand_connection_runtime(&self, sub_matches: &ArgMatches, client: HandlerServiceClient<tonic::transport::Channel>);
     
     fn create_instance(&self) -> App {
         if self.alias().is_empty() {

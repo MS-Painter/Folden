@@ -1,7 +1,7 @@
 use clap::{App, AppSettings, crate_version};
 
 use subcommand::subcommand::SubCommandCollection;
-use crate::subcommand::subcommand::construct_server_url;
+use crate::subcommand::subcommand::{connect_client, construct_server_url};
 
 mod subcommand;
 
@@ -28,14 +28,17 @@ async fn main() {
         if let Some(sub_matches) = subcommand.subcommand_matches(&matches) {
             if subcommand.requires_connection() {
                 if let Some(server_url) = construct_server_url(sub_matches) {
-                    subcommand.subcommand_runtime(sub_matches, Some(server_url));
+                    match connect_client(server_url) {
+                        Ok(client) => subcommand.subcommand_connection_runtime(sub_matches, client),
+                        Err(e) => println!("{}", e)
+                    }
                 }
                 else {
                     println!("Couldn't send request - No valid endpoint could be parsed");
                 }
             }
             else {
-                subcommand.subcommand_runtime(sub_matches, None);
+                subcommand.subcommand_runtime(sub_matches);
             }
             return;
         }

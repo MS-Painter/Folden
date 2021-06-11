@@ -5,7 +5,7 @@ use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::{SubCommandUtil, print_handler_states};
 use generated_types::{StopHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, get_path_from_matches_or_current_path};
+use super::subcommand::{construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct StopSubCommand  {}
@@ -29,26 +29,19 @@ impl SubCommandUtil for StopSubCommand {
             .args(construct_directory_or_all_args().as_slice())
         }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches, server_url: Option<String>) {
-        match connect_client(server_url.unwrap()) {
-            Ok(client) => execute_stop(sub_matches, client),
-            Err(e) => println!("{}", e)
+    fn subcommand_connection_runtime(&self, sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic::transport::Channel>) {
+        let is_handler_to_be_removed = sub_matches.is_present("remove");
+        let mut path = PathBuf::new();
+        if !sub_matches.is_present("all") {
+            path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         }
-    }
-}
-
-fn execute_stop(sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic::transport::Channel>) {
-    let is_handler_to_be_removed = sub_matches.is_present("remove");
-    let mut path = PathBuf::new();
-    if !sub_matches.is_present("all") {
-        path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
-    }
-    let response = client.stop_handler(StopHandlerRequest {
-        directory_path: String::from(path.as_os_str().to_str().unwrap()),
-        remove: is_handler_to_be_removed,
-    });
-    match block_on(response) {
-        Ok(response) => print_handler_states(response.into_inner(), sub_matches),
-        Err(e) => println!("{}", e.message())
+        let response = client.stop_handler(StopHandlerRequest {
+            directory_path: String::from(path.as_os_str().to_str().unwrap()),
+            remove: is_handler_to_be_removed,
+        });
+        match block_on(response) {
+            Ok(response) => print_handler_states(response.into_inner(), sub_matches),
+            Err(e) => println!("{}", e.message())
+        }
     }
 }
