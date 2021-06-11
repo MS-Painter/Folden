@@ -225,11 +225,14 @@ impl HandlerService for Server {
             match mapping.directory_mapping.get(&request.directory_path) {
                 Some(handler_mapping) => {
                     if !handler_mapping.is_alive() {
-                        return Err(tonic::Status::failed_precondition("Directory handler isn't alive to trace"))
+                        return Err(tonic::Status::failed_precondition("Directory handler isn't alive to trace"));
                     }
                 },
                 None => return Err(tonic::Status::not_found("Directory isn't registered to handle")),
             }
+        }
+        else if mapping.directory_mapping.is_empty() {
+            return Err(tonic::Status::not_found("No handler registered to filesystem to trace"));
         }
 
         let rx_stream = self.convert_trace_channel_reciever_to_stream();

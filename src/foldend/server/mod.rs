@@ -42,7 +42,7 @@ impl Server {
             while let Ok(item) = rx.recv().await {
                 yield item;
             }
-        }) as TraceHandlerStream
+        })
     }
 }
 
