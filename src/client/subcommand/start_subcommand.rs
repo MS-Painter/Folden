@@ -5,7 +5,7 @@ use futures::executor::block_on;
 
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{StartHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{connect_client, construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, construct_server_url, get_path_from_matches_or_current_path, print_handler_states};
+use super::subcommand::{construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, get_path_from_matches_or_current_path, print_handler_states};
 
 #[derive(Clone)]
 pub struct StartSubCommand  {}
@@ -15,6 +15,8 @@ impl SubCommandUtil for StartSubCommand {
 
     fn alias(&self) -> &str { "" }
 
+    fn requires_connection(&self) -> bool { true }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Start handler on directory")
@@ -23,29 +25,17 @@ impl SubCommandUtil for StartSubCommand {
             .arg(construct_simple_output_arg())
     }
 
-    fn subcommand_runtime(&self, sub_matches: &ArgMatches) {
-        if let Some(server_url) = construct_server_url(sub_matches) {
-            match connect_client(server_url) {
-                Ok(client) => execute_start(sub_matches, client),
-                Err(e) => println!("{}", e)
-            }
+    fn subcommand_connection_runtime(&self, sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic::transport::Channel>) {
+        let mut path = PathBuf::new();
+        if !sub_matches.is_present("all") {
+            path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
         }
-        else {
-            println!("Couldn't send request - No valid endpoint could be parsed");
+        let response = client.start_handler(StartHandlerRequest {
+            directory_path: String::from(path.as_os_str().to_str().unwrap()),
+        });
+        match block_on(response) {
+            Ok(response) => print_handler_states(response.into_inner(), sub_matches),
+            Err(e) => println!("{}", e.message())
         }
-    }
-}
-
-fn execute_start(sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic::transport::Channel>) {
-    let mut path = PathBuf::new();
-    if !sub_matches.is_present("all") {
-        path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
-    }
-    let response = client.start_handler(StartHandlerRequest {
-        directory_path: String::from(path.as_os_str().to_str().unwrap()),
-    });
-    match block_on(response) {
-        Ok(response) => print_handler_states(response.into_inner(), sub_matches),
-        Err(e) => println!("{}", e.message())
     }
 }

@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::Arc;
 use std::path::PathBuf;
 
 use tracing;
@@ -7,42 +8,46 @@ use crossbeam::channel::Receiver;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 
 use crate::actions::PipelineAction;
+use generated_types::TraceHandlerResponse;
 use crate::pipeline_config::PipelineConfig;
 use crate::pipeline_execution_context::PipelineExecutionContext;
+
+type OutputTraceSender = Arc<tokio::sync::broadcast::Sender<Result<TraceHandlerResponse, tonic::Status>>>;
 
 pub struct PipelineHandler {
     pub config: PipelineConfig,
     pub naming_regex: Option<Regex>,
+    pub trace_tx: OutputTraceSender,
 }
 
 impl PipelineHandler {
-    pub fn new(config: PipelineConfig) -> Self {
-        match config.event.naming_regex_match.to_owned() {
-            Some(naming_regex_match) => Self { 
-                config,
-                naming_regex: Some(Regex::new(&naming_regex_match).unwrap())
-            },
-            None => Self { 
-                config, 
-                naming_regex: None
-            },
+    pub fn new(config: PipelineConfig, trace_tx: OutputTraceSender) -> Self {
+        let mut naming_regex: Option<Regex> = None;
+        if let Some(naming_regex_match) = config.event.naming_regex_match.to_owned() {
+            naming_regex = Some(Regex::new(&naming_regex_match).unwrap());
+        }
+        Self { 
+            config, 
+            naming_regex,
+            trace_tx
         }
     }
 
     fn handle(&self, file_path: &PathBuf) {
-        match &self.naming_regex {
-            Some(naming_regex) => {
-                if naming_regex.is_match(file_path.to_str().unwrap()) {
-                    self.execute_pipeline(file_path);
-                }
+        if let Some(naming_regex) = &self.naming_regex {
+            if !naming_regex.is_match(file_path.to_str().unwrap()) {
+                return;
             }
-            None => self.execute_pipeline(file_path)
         }
+        self.execute_pipeline(file_path);
     }
 
     fn execute_pipeline(&self, file_path: &PathBuf) {
-        let mut context = PipelineExecutionContext::new(file_path, self.config.clone());
+        let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), self.trace_tx.clone());
         for action in &self.config.actions {
+            let action_name: &'static str = action.into();
+            context.action_name = Some(action_name.into());
+            context.log("Starting action");
             let action_succeeded = action.run(&mut context);
             if !action_succeeded {
                 break;
@@ -81,14 +86,20 @@ impl PipelineHandler {
         }
     }
 
-    pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, rx: Receiver<Result<notify::Event, notify::Error>>) {
+    pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, 
+        events_rx: Receiver<Result<notify::Event, notify::Error>>) {
         let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
         watcher.watch(path.clone(), recursive_mode).unwrap();
         if self.config.apply_on_startup_on_existing_files {
             self.apply_on_existing_files(path);
             tracing::info!("Ended startup phase");
         }
-        self.on_watch(rx);
+        self.on_watch(events_rx);
         tracing::info!("Ending watch");
+        let _ = self.trace_tx.send(Ok(TraceHandlerResponse {
+            directory_path: path.to_str().unwrap().to_string(),
+            action: None,
+            message: "Handler runtime ended".to_string(),
+        }));
     }
 }

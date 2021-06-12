@@ -8,7 +8,7 @@ use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
 use tracing;
 use tonic::Request;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, broadcast};
 use tonic::transport::Server as TonicServer;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand, crate_version};
 use tracing_subscriber::{EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt};
@@ -87,9 +87,11 @@ async fn startup_server(config: Config, mapping: Mapping) -> Result<(), Box<dyn 
     tracing::subscriber::set_global_default(subscriber).expect("Unable to set a global collector");
 
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
+    let (trace_tx, _) = broadcast::channel(10);
     let server = Server {
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
+        handlers_trace_tx: Arc::new(trace_tx),
     };
 
     startup_handlers(&server).await; // Handlers are raised before being able to accept client calls.

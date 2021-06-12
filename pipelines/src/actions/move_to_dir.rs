@@ -41,6 +41,7 @@ impl MoveToDir {
         else {
             match fs::copy(&input_path, &new_file_path) {
                 Ok(_) => {
+                    context.log("Copied file");
                     if self.keep_input_file_intact {
                         context.action_file_path = Some(new_file_path);
                         true
@@ -48,6 +49,7 @@ impl MoveToDir {
                     else {
                         match fs::remove_file(input_path) {
                             Ok(_) => {
+                                context.log("Deleted original file");
                                 context.action_file_path = Some(new_file_path);
                                 true
                             },

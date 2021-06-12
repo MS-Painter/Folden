@@ -37,18 +37,18 @@ impl PipelineAction for RunCmd {
                     Ok(out) => {
                         if out.stdout.is_empty() {
                             let stderr = String::from_utf8(out.stderr).unwrap();
-                            context.handle_error(format!("RunCmd stderr - {:?}", stderr))
+                            context.handle_error(format!("Stderr - {:?}", stderr))
                         }
                         else {
                             let stdout = String::from_utf8(out.stdout).unwrap();
-                            tracing::debug!("RunCmd stdout - {:?}", stdout);
+                            context.log(format!("Stdout - {:?}", stdout));
                             true
                         }
                     }
-                    Err(e) => context.handle_error(format!("RunCmd error - {:?}", e))
+                    Err(e) => context.handle_error(format!("Error - {:?}", e))
                 }
             }
-            Err(e) => context.handle_error(format!("RunCmd could not spawn command.\nCommand: {:?}\nError: {:?}", formatted_command, e))
+            Err(e) => context.handle_error(format!("Could not spawn command.\nCommand: {:?}\nError: {:?}", formatted_command, e))
         }
     }
 }

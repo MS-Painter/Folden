@@ -1,6 +1,7 @@
 use clap::{App, AppSettings, crate_version};
 
 use subcommand::subcommand::SubCommandCollection;
+use crate::subcommand::subcommand::{connect_client, construct_server_url};
 
 mod subcommand;
 
@@ -13,6 +14,7 @@ async fn main() {
     subcommands.add(Box::new(subcommand::stop_subcommand::StopSubCommand {}));
     subcommands.add(Box::new(subcommand::generate_subcommand::GenerateSubCommand {}));
     subcommands.add(Box::new(subcommand::modify_subcommand::ModifySubCommand {}));
+    subcommands.add(Box::new(subcommand::trace_subcommand::TraceSubCommand {}));
     let subcommands_clone = subcommands.clone();
 
     let app = App::new("Folden")
@@ -24,7 +26,21 @@ async fn main() {
     let matches = app.get_matches();
     for subcommand in subcommands {
         if let Some(sub_matches) = subcommand.subcommand_matches(&matches) {
-            subcommand.subcommand_runtime(sub_matches);
+            if subcommand.requires_connection() {
+                if let Some(server_url) = construct_server_url(sub_matches) {
+                    match connect_client(server_url) {
+                        Ok(client) => subcommand.subcommand_connection_runtime(sub_matches, client),
+                        Err(e) => println!("{}", e)
+                    }
+                }
+                else {
+                    println!("Couldn't send request - No valid endpoint could be parsed");
+                }
+            }
+            else {
+                subcommand.subcommand_runtime(sub_matches);
+            }
+            return;
         }
     }
 }

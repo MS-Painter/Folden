@@ -4,13 +4,12 @@ use chrono;
 use regex::Regex;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use strum_macros::{EnumVariantNames, IntoStaticStr};
 
 mod run_cmd;
 mod move_to_dir;
 use self::{move_to_dir::MoveToDir, run_cmd::RunCmd};
 use crate::pipeline_execution_context::PipelineExecutionContext;
-
-pub const ACTION_TYPES: [&str; 2] = ["runcmd", "movetodir"];
 
 pub trait PipelineAction {
     // Execute action. Returns if action deemed successful.
@@ -37,12 +36,11 @@ pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> 
     working_path
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, EnumVariantNames, IntoStaticStr, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum PipelineActions {
     MoveToDir(MoveToDir),
     RunCmd(RunCmd),
-    None,
 }
 
 impl PipelineActions {
@@ -52,7 +50,7 @@ impl PipelineActions {
             match action_name.to_lowercase().as_str() {
                 "runcmd" => Self::RunCmd(RunCmd::default()),
                 "movetodir" => Self::MoveToDir(MoveToDir::default()),
-                _ => Self::None,
+                _ => panic!("Incompatible action provided"),
             }
         }).collect()
     }
@@ -62,8 +60,7 @@ impl PipelineAction for PipelineActions {
     fn run(&self, context: &mut PipelineExecutionContext) -> bool {
         match self {
             PipelineActions::MoveToDir(action) => action.run(context),
-            PipelineActions::RunCmd(action) => action.run(context),
-            PipelineActions::None => false
+            PipelineActions::RunCmd(action) => action.run(context)
         }
     }
 }

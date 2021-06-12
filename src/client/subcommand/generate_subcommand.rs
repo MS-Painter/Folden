@@ -1,9 +1,10 @@
 use std::{env, ops::Deref, path::PathBuf};
 
+use strum::VariantNames;
 use clap::{App, Arg, ArgMatches};
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use pipelines::{actions::ACTION_TYPES, event::EVENT_TYPES, pipeline_config::PipelineConfig};
+use pipelines::{actions::PipelineActions, event::EVENT_TYPES, pipeline_config::PipelineConfig};
 
 #[derive(Clone)]
 pub struct GenerateSubCommand {}
@@ -34,6 +35,8 @@ impl SubCommandUtil for GenerateSubCommand {
 
     fn alias(&self) -> &str { "gen" }
 
+    fn requires_connection(&self) -> bool { false }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Generate default handler pipeline config")
@@ -48,7 +51,7 @@ impl SubCommandUtil for GenerateSubCommand {
                 .multiple(true)
                 .empty_values(false)
                 .case_insensitive(true)
-                .possible_values(&ACTION_TYPES))
+                .possible_values(&PipelineActions::VARIANTS))
             .arg(Arg::with_name("path")
                 .required(false)
                 .help("File path. Leave empty to generate with default name."))
@@ -60,5 +63,9 @@ impl SubCommandUtil for GenerateSubCommand {
         let path = GenerateSubCommand::construct_config_path("folden_pipeline",sub_matches.value_of("path"));
         let config = PipelineConfig::default_new(events, actions);
         config.generate_config(path.deref()).unwrap();
+    }
+
+    fn subcommand_connection_runtime(&self, sub_matches: &ArgMatches, _client: generated_types::handler_service_client::HandlerServiceClient<tonic::transport::Channel>) {
+        self.subcommand_runtime(sub_matches);
     }
 }
