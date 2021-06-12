@@ -2,7 +2,7 @@ use clap::{App, ArgMatches};
 use futures::executor::block_on;
 
 use crate::subcommand::subcommand::SubCommandUtil;
-use generated_types::{TraceHandlerRequest, handler_service_client::HandlerServiceClient};
+use generated_types::{GetDirectoryStatusRequest, TraceHandlerRequest, handler_service_client::HandlerServiceClient};
 use super::subcommand::{construct_directory_or_all_args, construct_port_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
@@ -36,12 +36,40 @@ impl SubCommandUtil for TraceSubCommand {
         match response {
             Ok(response) => {
                 let mut stream = response.into_inner();
-                while let Some(response) = block_on(stream.message()).unwrap() {
-                    if trace_all_directories {
-                        print_response(response, true);
-                    }
-                    else if response.directory_path == directory_path {
-                        print_response(response, false);
+                loop {
+                    match block_on(stream.message()) {
+                        Ok(response) => {
+                            let response = response.unwrap();
+                            if trace_all_directories {
+                                print_response(response, true);
+                            }
+                            else if response.directory_path == directory_path {
+                                print_response(response, false);
+                            }
+                        },
+                        Err(status) => {
+                            println!("{}", status);
+                            match status.code() {
+                                tonic::Code::Cancelled => {
+                                    if trace_all_directories {
+                                        let response = client.get_directory_status(GetDirectoryStatusRequest {
+                                            directory_path: String::new()
+                                        });
+                                        if let Ok(response) = block_on(response) {
+                                            let response = response.into_inner();
+                                            if response.summary_map.is_empty() || 
+                                            response.summary_map.iter().all(|(_dir, handler)| !handler.is_alive) {
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                },
+                                _ => break,
+                            }
+                        },
                     }
                 }
             }

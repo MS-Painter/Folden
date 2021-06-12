@@ -96,6 +96,6 @@ impl PipelineHandler {
         }
         self.on_watch(events_rx);
         tracing::info!("Ending watch");
-        let _ = self.trace_tx.send(Err(tonic::Status::aborted("Handler runtime ended")));
+        let _ = self.trace_tx.send(Err(tonic::Status::cancelled("Handler runtime ended")));
     }
 }
