@@ -43,7 +43,7 @@ impl PipelineHandler {
     }
 
     fn execute_pipeline(&self, file_path: &PathBuf) {
-        let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), &self.trace_tx);
+        let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), self.trace_tx.clone());
         for action in &self.config.actions {
             let action_name: &'static str = action.into();
             context.action_name = Some(action_name.into());
