@@ -36,40 +36,23 @@ impl SubCommandUtil for TraceSubCommand {
         match response {
             Ok(response) => {
                 let mut stream = response.into_inner();
-                loop {
-                    match block_on(stream.message()) {
-                        Ok(response) => {
-                            let response = response.unwrap();
-                            if trace_all_directories {
-                                print_response(response, true);
+                while let Ok(response) = block_on(stream.message()) {
+                    let response = response.unwrap();
+                    if trace_all_directories {
+                        let trace_ended = response.action.is_none();
+                        print_response(response, true);
+                        if trace_ended {
+                            if !is_any_handler_alive(&mut client) {
+                                break;
                             }
-                            else if response.directory_path == directory_path {
-                                print_response(response, false);
-                            }
-                        },
-                        Err(status) => {
-                            println!("{}", status);
-                            match status.code() {
-                                tonic::Code::Cancelled => {
-                                    if trace_all_directories {
-                                        let response = client.get_directory_status(GetDirectoryStatusRequest {
-                                            directory_path: String::new()
-                                        });
-                                        if let Ok(response) = block_on(response) {
-                                            let response = response.into_inner();
-                                            if response.summary_map.is_empty() || 
-                                            response.summary_map.iter().all(|(_dir, handler)| !handler.is_alive) {
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else {
-                                        break;
-                                    }
-                                },
-                                _ => break,
-                            }
-                        },
+                        }
+                    }
+                    else if response.directory_path == directory_path {
+                        let exit_trace = response.action.is_none();
+                        print_response(response, false);
+                        if exit_trace {
+                            break;
+                        }
                     }
                 }
             }
@@ -92,4 +75,15 @@ fn print_response(response: generated_types::TraceHandlerResponse, print_directo
         Message - {}
         ", response.action.unwrap_or("None".to_string()), response.message);
     }
+}
+
+fn is_any_handler_alive(client: &mut HandlerServiceClient<tonic::transport::Channel>) -> bool {
+    let response = client.get_directory_status(GetDirectoryStatusRequest {
+        directory_path: String::new()
+    });
+    if let Ok(response) = block_on(response) {
+        let response = response.into_inner();
+        return response.summary_map.iter().any(|(_dir, handler)| handler.is_alive);
+    }
+    false
 }
