@@ -225,18 +225,34 @@ impl HandlerService for Server {
             match mapping.directory_mapping.get(&request.directory_path) {
                 Some(handler_mapping) => {
                     if !handler_mapping.is_alive() {
-                        return Err(tonic::Status::failed_precondition("Directory handler isn't alive to trace"));
+                        return Err(tonic::Status::failed_precondition("Handler isn't alive to trace"));
                     }
                 },
                 None => return Err(tonic::Status::not_found("Directory isn't registered to handle")),
             }
         }
-        else if mapping.directory_mapping.is_empty() {
-            return Err(tonic::Status::not_found("No handler registered to filesystem to trace"));
+        else {
+            if mapping.directory_mapping.is_empty() {
+                return Err(tonic::Status::not_found("No handler registered to filesystem to trace"));
+            }
+            else if !is_any_handler_alive(self).await {
+                return Err(tonic::Status::not_found("No handler is alive to trace"));
+            }
         }
 
         let rx_stream = self.convert_trace_channel_reciever_to_stream();
         tracing::debug!("Handler trace receivers live: {}", self.handlers_trace_tx.receiver_count());
         return Ok(Response::new(rx_stream));
     }
+}
+
+async fn is_any_handler_alive(server: &Server) -> bool {
+    let response = server.get_directory_status(Request::new(generated_types::GetDirectoryStatusRequest {
+        directory_path: String::new()
+    }));
+    if let Ok(response) = response.await {
+        let response = response.into_inner();
+        return response.summary_map.iter().any(|(_dir, handler)| handler.is_alive);
+    }
+    false
 }
