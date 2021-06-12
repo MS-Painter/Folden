@@ -1,9 +1,10 @@
 use clap::{App, ArgMatches};
 use futures::executor::block_on;
 
+use folden::shared_utils::construct_port_arg;
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, TraceHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_directory_or_all_args, construct_port_arg, get_path_from_matches_or_current_path};
+use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct TraceSubCommand {}

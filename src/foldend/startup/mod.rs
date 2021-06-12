@@ -16,7 +16,8 @@ use tracing_subscriber::{EnvFilter, fmt, prelude::__tracing_subscriber_Subscribe
 use crate::config::Config;
 use crate::server::Server;
 use crate::mapping::Mapping;
-use generated_types::{DEFAULT_PORT_STR, StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
+use folden::shared_utils::construct_port_arg;
+use generated_types::{StartHandlerRequest, handler_service_server::{HandlerService, HandlerServiceServer}};
 
 fn construct_app<'a, 'b>() -> App<'a, 'b> {
     App::new("Foldend")
@@ -29,15 +30,12 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
             .takes_value(true)
             .help("Startup config file"))
         .subcommand(SubCommand::with_name("run").about("Startup server")
+            .arg(construct_port_arg())
             .arg(Arg::with_name("mapping").short("m").long("mapping")
                 .required(false).
                 empty_values(false)
                 .takes_value(true)
                 .help("Startup mapping file. Defaults to [foldend_mapping.toml]"))
-            .arg(Arg::with_name("port").short("p").long("port")
-                .default_value(DEFAULT_PORT_STR)
-                .empty_values(false)
-                .takes_value(true))
             .arg(Arg::with_name("limit").long("limit")
                 .empty_values(false)
                 .takes_value(true)

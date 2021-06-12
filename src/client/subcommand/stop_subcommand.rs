@@ -3,9 +3,10 @@ use std::path::PathBuf;
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
+use folden::shared_utils::construct_port_arg;
 use crate::subcommand::subcommand::{SubCommandUtil, print_handler_states};
 use generated_types::{StopHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_directory_or_all_args, construct_simple_output_arg, construct_port_arg, get_path_from_matches_or_current_path};
+use super::subcommand::{construct_directory_or_all_args, construct_simple_output_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct StopSubCommand  {}

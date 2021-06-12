@@ -2,7 +2,7 @@ use std::{convert::TryFrom, fs, path::PathBuf};
 
 use serde::{Serialize, Deserialize};
 
-use generated_types::DEFAULT_PORT;
+use folden::shared_config::DEFAULT_PORT;
 
 pub const DEFAULT_CONCURRENT_THREADS_LIMIT: u8 = 10;
 
@@ -28,7 +28,7 @@ impl Default for Config {
             mapping_state_path: PathBuf::from("foldend_mapping.toml"),
             tracing_file_path: PathBuf::from("foldend.log"),
             concurrent_threads_limit: DEFAULT_CONCURRENT_THREADS_LIMIT,
-            port: DEFAULT_PORT,
+            port: DEFAULT_PORT.parse().unwrap(),
         }
     }
 }

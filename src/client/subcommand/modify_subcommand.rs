@@ -1,9 +1,10 @@
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
+use folden::shared_utils::construct_port_arg;
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_directory_or_all_args, construct_port_arg, construct_startup_type_arg, get_path_from_matches_or_current_path};
+use super::subcommand::{construct_directory_or_all_args, construct_startup_type_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct ModifySubCommand {}

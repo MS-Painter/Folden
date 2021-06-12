@@ -4,7 +4,7 @@ use dyn_clone::DynClone;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use cli_table::{self, Cell, CellStruct, Table, TableStruct, print_stdout};
 
-use generated_types::{DEFAULT_PORT_STR, HandlerStatesMapResponse, HandlerSummaryMapResponse, handler_service_client::HandlerServiceClient};
+use generated_types::{HandlerStatesMapResponse, HandlerSummaryMapResponse, handler_service_client::HandlerServiceClient};
 
 const STARTUP_TYPES: [&str; 2] = ["auto", "manual"];
 
@@ -73,13 +73,6 @@ where
     D::Error: Into<tonic::codegen::StdError> {
     let client_connect_future = HandlerServiceClient::connect(dst);
     futures::executor::block_on(client_connect_future)
-}
-
-pub fn construct_port_arg<'a, 'b>() -> Arg<'a, 'b>{
-    Arg::with_name("port").short("p").long("port")
-        .default_value(DEFAULT_PORT_STR)
-        .empty_values(false)
-        .takes_value(true)
 }
 
 pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>>{

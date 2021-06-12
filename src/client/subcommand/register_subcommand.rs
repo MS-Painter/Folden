@@ -4,9 +4,10 @@ use clap::Error as CliError;
 use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches, ErrorKind};
 
+use folden::shared_utils::construct_port_arg;
 use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{RegisterToDirectoryRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_port_arg, construct_startup_type_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
+use super::subcommand::{construct_startup_type_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
 
 #[derive(Clone)]
 pub struct RegisterSubCommand {}
