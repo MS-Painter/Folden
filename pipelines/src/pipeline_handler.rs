@@ -1,8 +1,7 @@
 use std::fs;
 use std::sync::Arc;
-use std::path::PathBuf;
+use std::path::Path;
 
-use tracing;
 use regex::Regex;
 use crossbeam::channel::Receiver;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
@@ -33,7 +32,7 @@ impl PipelineHandler {
         }
     }
 
-    fn handle(&self, file_path: &PathBuf) {
+    fn handle(&self, file_path: &Path) {
         if let Some(naming_regex) = &self.naming_regex {
             if !naming_regex.is_match(file_path.to_str().unwrap()) {
                 return;
@@ -42,7 +41,7 @@ impl PipelineHandler {
         self.execute_pipeline(file_path);
     }
 
-    fn execute_pipeline(&self, file_path: &PathBuf) {
+    fn execute_pipeline(&self, file_path: &Path) {
         let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), self.trace_tx.clone());
         for action in &self.config.actions {
             let action_name: &'static str = action.into();
@@ -55,7 +54,7 @@ impl PipelineHandler {
         }
     }
 
-    fn apply_on_existing_files(&self, path: &PathBuf) {
+    fn apply_on_existing_files(&self, path: &Path) {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
             let metadata = entry.metadata().unwrap();
@@ -77,19 +76,18 @@ impl PipelineHandler {
                 }
                 Err(error) => {
                     tracing::warn!("Watcher error - {:?}", error);
-                    match error.kind {
-                        notify::ErrorKind::WatchNotFound => break,
-                        _ => {}
+                    if let notify::ErrorKind::WatchNotFound = error.kind { 
+                        break
                     }
                 }
             }
         }
     }
 
-    pub fn watch(&mut self, path: &PathBuf, mut watcher: RecommendedWatcher, 
+    pub fn watch(&mut self, path: &Path, mut watcher: RecommendedWatcher, 
         events_rx: Receiver<Result<notify::Event, notify::Error>>) {
         let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
-        watcher.watch(path.clone(), recursive_mode).unwrap();
+        watcher.watch(&*path, recursive_mode).unwrap();
         if self.config.apply_on_startup_on_existing_files {
             self.apply_on_existing_files(path);
             tracing::info!("Ended startup phase");

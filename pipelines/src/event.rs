@@ -26,7 +26,7 @@ impl PipelineEvent {
                 return true;
             }
         }
-        return false;
+        false
     }
 }
 

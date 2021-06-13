@@ -1,4 +1,4 @@
-pub mod subcommand;
+pub mod subcommand_utils;
 pub mod status_subcommand;
 pub mod start_subcommand;
 pub mod stop_subcommand;

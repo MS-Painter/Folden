@@ -1,4 +1,4 @@
-use std::process::{Child, Command, Stdio};
+use std::{process::{Child, Command, Stdio}};
 
 use serde::{Serialize, Deserialize};
 
@@ -14,14 +14,15 @@ pub struct RunCmd {
 }
 
 impl RunCmd {
-    fn format_command(&self, context: &mut PipelineExecutionContext) -> std::borrow::Cow<str> {
-        let mut formatted_command = self.command.to_owned().into();
+    fn format_command(&self, context: &mut PipelineExecutionContext) -> String {
+        let mut formatted_command = self.command.to_owned();
         if self.input_formatting {
-            formatted_command = Self::format_input(&self.command, context.get_input(self.input))
-            .unwrap_or(self.command.to_owned().into());
+            if let Some(input_path) = context.get_input(self.input) {
+                formatted_command = Self::format_input(&self.command, input_path).to_string();
+            }
         } 
         if self.datetime_formatting {
-            formatted_command = Self::format_datetime(formatted_command).into();
+            formatted_command = Self::format_datetime(formatted_command);
         };
         formatted_command
     }

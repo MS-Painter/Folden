@@ -1,6 +1,5 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, path::{Path, PathBuf}};
 
-use chrono;
 use regex::Regex;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -15,14 +14,11 @@ pub trait PipelineAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut PipelineExecutionContext) -> bool;
 
-    fn format_input(text: &String, input: Option<PathBuf>) -> Result<Cow<str>,()> {
-        if let Some(input) = input {
-            lazy_static! {
-                static ref INPUT_RE: Regex = Regex::new(r"(\$input\$)").unwrap();
-            }
-            return Ok(INPUT_RE.replace_all(text, input.to_string_lossy()))
+    fn format_input(text: &str, input: PathBuf) -> Cow<str> {
+        lazy_static! {
+            static ref INPUT_RE: Regex = Regex::new(r"(\$input\$)").unwrap();
         }
-        Err(())
+        INPUT_RE.replace_all(text, input.to_string_lossy())
     }
 
     fn format_datetime<S>(text: S) -> String where S: AsRef<str> {
@@ -30,7 +26,7 @@ pub trait PipelineAction {
     }
 }
 
-pub fn construct_working_dir(input_path: &PathBuf, directory_path: &PathBuf) -> PathBuf {
+pub fn construct_working_dir(input_path: &Path, directory_path: &Path) -> PathBuf {
     let mut working_path = PathBuf::from(input_path.parent().unwrap());
     working_path.push(directory_path); // If directory_path is absolute will replace the entire path
     working_path

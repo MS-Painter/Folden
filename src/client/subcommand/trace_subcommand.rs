@@ -2,9 +2,8 @@ use clap::{App, ArgMatches};
 use futures::executor::block_on;
 
 use folden::shared_utils::construct_port_arg;
-use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, TraceHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_directory_or_all_args, get_path_from_matches_or_current_path};
+use super::subcommand_utils::{SubCommandUtil, construct_directory_or_all_args, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct TraceSubCommand {}
@@ -42,17 +41,15 @@ impl SubCommandUtil for TraceSubCommand {
                     if trace_all_directories {
                         let trace_ended = response.action.is_none();
                         print_response(response, true);
-                        if trace_ended {
-                            if !is_any_handler_alive(&mut client) {
-                                break;
-                            }
+                        if trace_ended && !is_any_handler_alive(&mut client) {
+                            break
                         }
                     }
                     else if response.directory_path == directory_path {
                         let exit_trace = response.action.is_none();
                         print_response(response, false);
                         if exit_trace {
-                            break;
+                            break
                         }
                     }
                 }
@@ -68,13 +65,13 @@ fn print_response(response: generated_types::TraceHandlerResponse, print_directo
         Directory - {}
         Action - {}
         Message - {}
-        ", response.directory_path, response.action.unwrap_or("None".to_string()), response.message);
+        ", response.directory_path, response.action.unwrap_or_else(|| "None".to_string()), response.message);
     }
     else {
         println!("
         Action - {}
         Message - {}
-        ", response.action.unwrap_or("None".to_string()), response.message);
+        ", response.action.unwrap_or_else(|| "None".to_string()), response.message);
     }
 }
 

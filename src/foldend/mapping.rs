@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::TryFrom, fs, path::PathBuf, result::Result, sync::Arc, thread};
+use std::{collections::HashMap, convert::TryFrom, fs, path::{Path, PathBuf}, result::Result, sync::Arc, thread};
 
 use tokio::sync::broadcast;
 use serde::{Serialize, Deserialize};
@@ -17,12 +17,12 @@ pub struct Mapping {
 }
 
 impl Mapping {
-    pub fn save(&self, mapping_state_path: &PathBuf) -> Result<(), std::io::Error> {
+    pub fn save(&self, mapping_state_path: &Path) -> Result<(), std::io::Error> {
         let mapping_data: Vec<u8> = self.into();
         fs::write(mapping_state_path, mapping_data)
     }
 
-    pub fn get_live_handlers<'a>(&'a self) -> impl Iterator<Item = (&'a String, &'a HandlerMapping)> {
+    pub fn get_live_handlers(&self) -> impl Iterator<Item = (&String, &HandlerMapping)> {
         self.directory_mapping.iter().filter(|(_dir, mapping)| mapping.is_alive())
     }
 
@@ -131,14 +131,14 @@ impl TryFrom<Vec<u8>> for Mapping {
     }
 }
 
-impl Into<Vec<u8>> for Mapping {
-    fn into(self) -> Vec<u8> {
-        toml::to_vec(&self).unwrap()
+impl From<Mapping> for Vec<u8> {
+    fn from(val: Mapping) -> Self {
+        toml::to_vec(&val).unwrap()
     }
 }
 
-impl Into<Vec<u8>> for &Mapping {
-    fn into(self) -> Vec<u8> {
-        toml::to_vec(self).unwrap()
+impl From<&Mapping> for Vec<u8> {
+    fn from(val: &Mapping) -> Self {
+        toml::to_vec(val).unwrap()
     }
 }

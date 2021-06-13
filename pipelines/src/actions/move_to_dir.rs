@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, fs, io::ErrorKind, path::PathBuf};
+use std::{ffi::OsStr, fs, io::ErrorKind, path::{Path, PathBuf}};
 
 use serde::{Serialize, Deserialize};
 
@@ -16,7 +16,7 @@ pub struct MoveToDir {
 }
 
 impl MoveToDir {
-    fn ensure_dir_exists(&self, context: &mut PipelineExecutionContext, working_dir_path: &PathBuf) -> bool {
+    fn ensure_dir_exists(&self, context: &mut PipelineExecutionContext, working_dir_path: &Path) -> bool {
         if !working_dir_path.is_dir() {
             if self.requires_directory_exists {
                 return context.handle_error("Directory required to exist");
@@ -29,14 +29,14 @@ impl MoveToDir {
         true
     }
 
-    fn apply(&self, context: &mut PipelineExecutionContext, working_dir_path: &PathBuf, input_path: &PathBuf, input_file_name: &OsStr) -> bool {
+    fn apply(&self, context: &mut PipelineExecutionContext, working_dir_path: &Path, input_path: &Path, input_file_name: &OsStr) -> bool {
         if !self.ensure_dir_exists(context, working_dir_path) {
             return false;
         }
         let mut new_file_path = PathBuf::from(working_dir_path);
         new_file_path.push(input_file_name);
         if new_file_path.is_file() && !self.replace_older_files {
-            return context.handle_error("Can't replace older file");
+            context.handle_error("Can't replace older file")
         }
         else {
             match fs::copy(&input_path, &new_file_path) {

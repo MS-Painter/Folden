@@ -1,9 +1,8 @@
+pub mod subcommand;
+
 use clap::{App, AppSettings, crate_version};
 
-use subcommand::subcommand::SubCommandCollection;
-use crate::subcommand::subcommand::{connect_client, construct_server_url};
-
-mod subcommand;
+use subcommand::subcommand_utils::{SubCommandCollection, connect_client, construct_server_url};
 
 #[tokio::main]
 async fn main() {
