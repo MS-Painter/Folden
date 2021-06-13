@@ -5,6 +5,7 @@ mod mapping;
 mod startup;
 mod handler_mapping;
 
+#[cfg(windows)]
 use futures::executor::block_on;
 
 #[cfg(windows)]
