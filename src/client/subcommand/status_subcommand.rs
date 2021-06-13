@@ -2,9 +2,8 @@ use clap::{App, ArgMatches};
 use futures::executor::block_on;
 
 use folden::shared_utils::construct_port_arg;
-use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{GetDirectoryStatusRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_directory_or_all_args, construct_simple_output_arg, get_path_from_matches_or_current_path, print_handler_summaries};
+use super::subcommand_utils::{SubCommandUtil, construct_directory_or_all_args, construct_simple_output_arg, get_path_from_matches_or_current_path, print_handler_summaries};
 
 #[derive(Clone)]
 pub struct StatusSubCommand {}
@@ -28,11 +27,8 @@ impl SubCommandUtil for StatusSubCommand {
         let mut directory_path = String::new();
         let all_directories = sub_matches.is_present("all");
         if all_directories {
-            match sub_matches.value_of_os("directory") {
-                Some(path) => {
-                    directory_path = path.to_os_string().into_string().unwrap();
-                }
-                None => {}
+            if let Some(path) = sub_matches.value_of_os("directory") {
+                directory_path = path.to_os_string().into_string().unwrap();
             }
         }
         else {

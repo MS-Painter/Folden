@@ -5,9 +5,8 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches, ErrorKind};
 
 use folden::shared_utils::construct_port_arg;
-use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{RegisterToDirectoryRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_startup_type_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
+use super::subcommand_utils::{SubCommandUtil, construct_startup_type_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
 
 #[derive(Clone)]
 pub struct RegisterSubCommand {}
@@ -44,7 +43,7 @@ impl SubCommandUtil for RegisterSubCommand {
         let handler_config_path = Path::new(handler_config_match);
         let is_start_on_register = sub_matches.is_present("start");
         let is_auto_startup = match sub_matches.value_of("startup") {
-            Some(value) => if value.to_lowercase() == "auto" {true} else {false},
+            Some(value) => value.to_lowercase() == "auto",
             None => false,
         };
         match handler_config_path.canonicalize() {

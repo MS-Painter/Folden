@@ -3,7 +3,7 @@ use std::{env, ops::Deref, path::PathBuf};
 use strum::VariantNames;
 use clap::{App, Arg, ArgMatches};
 
-use crate::subcommand::subcommand::SubCommandUtil;
+use super::subcommand_utils::SubCommandUtil;
 use pipelines::{actions::PipelineActions, event::EVENT_TYPES, pipeline_config::PipelineConfig};
 
 #[derive(Clone)]

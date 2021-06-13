@@ -2,9 +2,8 @@ use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches};
 
 use folden::shared_utils::construct_port_arg;
-use crate::subcommand::subcommand::SubCommandUtil;
 use generated_types::{ModifyHandlerRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand::{construct_directory_or_all_args, construct_startup_type_arg, get_path_from_matches_or_current_path};
+use super::subcommand_utils::{SubCommandUtil, construct_directory_or_all_args, construct_startup_type_arg, get_path_from_matches_or_current_path};
 
 #[derive(Clone)]
 pub struct ModifySubCommand {}
@@ -28,26 +27,15 @@ impl SubCommandUtil for ModifySubCommand {
     }
 
     fn subcommand_connection_runtime(&self, sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic::transport::Channel>) {
-        let is_auto_startup = match sub_matches.value_of("startup") {
-            Some(value) => Some(if value.to_lowercase() == "auto" {true} else {false}),
-            None => None
-        };
-        let modify_description = match sub_matches.value_of("description") {
-            Some(description) => Some(description.to_string()),
-            None => None
-        };
+        let is_auto_startup = sub_matches.value_of("startup").map(|value| value.to_lowercase() == "auto");
+        let modify_description = sub_matches.value_of("description").map(|description| description.to_string());
         let mut directory_path = String::new();
         if !sub_matches.is_present("all") {
             let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();
             directory_path = path.into_os_string().into_string().unwrap();
         }
-        else {
-            match sub_matches.value_of_os("directory") {
-                Some(path) => {
-                    directory_path = path.to_os_string().into_string().unwrap();
-                }
-                None => {}
-            }
+        else if let Some(path) = sub_matches.value_of_os("directory") {
+            directory_path = path.to_os_string().into_string().unwrap();
         }
         let response = client.modify_handler(ModifyHandlerRequest {
             directory_path,

@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, fs, path::PathBuf};
+use std::{convert::TryFrom, fs, path::{Path, PathBuf}};
 
 use serde::{Serialize, Deserialize};
 
@@ -16,7 +16,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn save(&self, file_path: &PathBuf) -> Result<(), std::io::Error> {
+    pub fn save(&self, file_path: &Path) -> Result<(), std::io::Error> {
         let config_data: Vec<u8> = self.into();
         fs::write(file_path, config_data)
     }
@@ -41,8 +41,8 @@ impl TryFrom<Vec<u8>> for Config {
     }
 }
 
-impl Into<Vec<u8>> for &Config {
-    fn into(self) -> Vec<u8> {
-        toml::to_vec(&self).unwrap()
+impl From<&Config> for Vec<u8> {
+    fn from(val: &Config) -> Self {
+        toml::to_vec(&val).unwrap()
     }
 }

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use tracing;
 use tonic::{Request, Response};
 
 use super::Server;
@@ -30,13 +29,13 @@ impl HandlerService for Server {
                 if request_directory_path.contains(directory_path) {
                     return Ok(Response::new(HandlerStateResponse {
                         is_alive: false,
-                        message: format!("Couldn't register\nDirectory is a child of handled directory - {}", directory_path).to_string(),
+                        message: format!("Couldn't register\nDirectory is a child of handled directory - {}", directory_path),
                     }))
                 }
                 else if directory_path.contains(request_directory_path) {
                     return Ok(Response::new(HandlerStateResponse {
                         is_alive: false,
-                        message: format!("Couldn't register\nDirectory is a parent of requested directory - {}", directory_path).to_string(),
+                        message: format!("Couldn't register\nDirectory is a parent of requested directory - {}", directory_path),
                     }))
                 }
             }
@@ -231,13 +230,11 @@ impl HandlerService for Server {
                 None => return Err(tonic::Status::not_found("Directory isn't registered to handle")),
             }
         }
-        else {
-            if mapping.directory_mapping.is_empty() {
-                return Err(tonic::Status::not_found("No handler registered to filesystem to trace"));
-            }
-            else if !is_any_handler_alive(self).await {
-                return Err(tonic::Status::not_found("No handler is alive to trace"));
-            }
+        else if mapping.directory_mapping.is_empty() {
+            return Err(tonic::Status::not_found("No handler registered to filesystem to trace"));
+        }
+        else if !is_any_handler_alive(self).await {
+            return Err(tonic::Status::not_found("No handler is alive to trace"));
         }
 
         let rx_stream = self.convert_trace_channel_reciever_to_stream();

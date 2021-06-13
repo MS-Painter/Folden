@@ -52,9 +52,15 @@ impl SubCommandCollection {
     }
 
     pub fn collect_as_apps(&self) -> Vec<App> {
-        self.0.as_slice().into_iter()
+        self.0.as_slice().iter()
         .map(|item| item.construct_subcommand())
         .collect()
+    }
+}
+
+impl Default for SubCommandCollection {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

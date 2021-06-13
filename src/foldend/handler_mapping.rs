@@ -32,13 +32,12 @@ impl HandlerMapping {
     }
 
     pub fn summary(&self) -> HandlerSummary {
-        let state = HandlerSummary {
+        HandlerSummary {
             is_alive: self.is_alive(),
             config_path: self.handler_config_path.clone(),
             is_auto_startup: self.is_auto_startup,
             description: self.description.to_owned(),
-        };
-        state
+        }
     }
 
     pub fn stop_handler_thread(&self) -> Result<String, String> {

@@ -1,12 +1,12 @@
 #[cfg(windows)]
 pub mod windows;
 
+use std::path::Path;
 use std::{fs, path::PathBuf};
 use std::collections::HashMap;
 use std::{convert::TryFrom, sync::Arc};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 
-use tracing;
 use tonic::Request;
 use tokio::sync::{RwLock, broadcast};
 use tonic::transport::Server as TonicServer;
@@ -46,7 +46,7 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .help("Override file path to store logs at. Defaults to [foldend.log]")))
 }
 
-async fn startup_handlers(server: &Server) -> () {
+async fn startup_handlers(server: &Server) {
     let mapping = server.mapping.read().await;
     let handler_requests: Vec<StartHandlerRequest> = mapping.directory_mapping.iter()
     .filter_map(|(directory_path, handler_mapping)| {
@@ -137,10 +137,10 @@ fn get_mapping(config: &Config) -> Mapping {
     }
 }
 
-fn get_config(file_path: &PathBuf) -> Result<Config, Box<dyn std::error::Error>> {
+fn get_config(file_path: &Path) -> Result<Config, Box<dyn std::error::Error>> {
     match fs::read(&file_path) {
         Ok(data) => Ok(Config::try_from(data)?),
-        Err(e) => Err(e)?
+        Err(e) => Err(e.into())
     }
 }
 
@@ -178,10 +178,10 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         ("logs", Some(sub_matches)) => {
                             if sub_matches.value_of("view").is_some() {
-                
+                                unimplemented!("View logs from file")
                             }
                             else if sub_matches.value_of("clear").is_some() {
-                    
+                                unimplemented!("Clear logs file")
                             }
                         }
                         _ => {}   
@@ -205,7 +205,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
-        None => Err("Config path not provided")?
+        None => return Err("Config path not provided".into())
     }
     Ok(())
 }

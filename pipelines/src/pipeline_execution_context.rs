@@ -48,7 +48,7 @@ impl<'a> PipelineExecutionContext {
         if self.config.panic_handler_on_error {
             panic!("{}", msg.as_ref());
         }
-        return false;
+        false
     }
 
     fn send_trace_message<T>(&self, msg: T) 
