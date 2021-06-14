@@ -306,7 +306,7 @@ impl HandlerService for Server {
             return Err(tonic::Status::not_found(
                 "No handler registered to filesystem to trace",
             ));
-        } else if !is_any_handler_alive(self).await {
+        } else if !self.is_any_handler_alive().await {
             return Err(tonic::Status::not_found("No handler is alive to trace"));
         }
 
@@ -317,19 +317,4 @@ impl HandlerService for Server {
         );
         return Ok(Response::new(rx_stream));
     }
-}
-
-async fn is_any_handler_alive(server: &Server) -> bool {
-    let response =
-        server.get_directory_status(Request::new(generated_types::GetDirectoryStatusRequest {
-            directory_path: String::new(),
-        }));
-    if let Ok(response) = response.await {
-        let response = response.into_inner();
-        return response
-            .summary_map
-            .iter()
-            .any(|(_dir, handler)| handler.is_alive);
-    }
-    false
 }

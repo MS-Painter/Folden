@@ -4,9 +4,11 @@ use std::{ops::Deref, sync::Arc};
 use tokio::sync::broadcast;
 use tokio::sync::RwLock;
 use tokio_stream::Stream;
+use tonic::Request;
 
 use crate::config::Config;
 use crate::mapping::Mapping;
+use generated_types::handler_service_server::HandlerService;
 
 pub mod handler_service;
 
@@ -45,6 +47,21 @@ impl Server {
                 yield item;
             }
         })
+    }
+
+    async fn is_any_handler_alive(&self) -> bool {
+        let response =
+            self.get_directory_status(Request::new(generated_types::GetDirectoryStatusRequest {
+                directory_path: String::new(),
+            }));
+        if let Ok(response) = response.await {
+            let response = response.into_inner();
+            return response
+                .summary_map
+                .iter()
+                .any(|(_dir, handler)| handler.is_alive);
+        }
+        false
     }
 }
 
