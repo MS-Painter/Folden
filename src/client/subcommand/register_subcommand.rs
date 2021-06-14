@@ -1,44 +1,66 @@
 use std::path::Path;
 
 use clap::Error as CliError;
-use futures::executor::block_on;
 use clap::{App, Arg, ArgMatches, ErrorKind};
+use futures::executor::block_on;
 
+use super::subcommand_utils::{
+    construct_startup_type_arg, get_path_from_matches_or_current_path,
+    is_existing_directory_validator, SubCommandUtil,
+};
 use folden::shared_utils::construct_port_arg;
-use generated_types::{RegisterToDirectoryRequest, handler_service_client::HandlerServiceClient};
-use super::subcommand_utils::{SubCommandUtil, construct_startup_type_arg, get_path_from_matches_or_current_path, is_existing_directory_validator};
+use generated_types::{handler_service_client::HandlerServiceClient, RegisterToDirectoryRequest};
 
 #[derive(Clone)]
-pub struct RegisterSubCommand {}
+pub struct RegisterSubCommand;
 
 impl SubCommandUtil for RegisterSubCommand {
-    fn name(&self) -> &str { "register" }
+    fn name(&self) -> &str {
+        "register"
+    }
 
-    fn alias(&self) -> &str { "reg" }
+    fn alias(&self) -> &str {
+        "reg"
+    }
 
-    fn requires_connection(&self) -> bool { true }
- 
+    fn requires_connection(&self) -> bool {
+        true
+    }
+
     fn construct_subcommand(&self) -> App {
         self.create_instance()
             .about("Register handler pipeline to directory")
-            .arg(Arg::with_name("handler_config").value_name("FILE")
-                .takes_value(true).required(true)
-                .help("Handler pipeline configuration file"))
-            .arg(Arg::with_name("directory")
-                .required(false)
-                .empty_values(false)
-                .takes_value(true)
-                .validator_os(is_existing_directory_validator)
-                .help("Directory to register to. Leave empty to apply on current"))
-            .arg(Arg::with_name("start").long("start")
-                .required(false)
-                .takes_value(false)
-                .help("Start handler on register"))
+            .arg(
+                Arg::with_name("handler_config")
+                    .value_name("FILE")
+                    .takes_value(true)
+                    .required(true)
+                    .help("Handler pipeline configuration file"),
+            )
+            .arg(
+                Arg::with_name("directory")
+                    .required(false)
+                    .empty_values(false)
+                    .takes_value(true)
+                    .validator_os(is_existing_directory_validator)
+                    .help("Directory to register to. Leave empty to apply on current"),
+            )
+            .arg(
+                Arg::with_name("start")
+                    .long("start")
+                    .required(false)
+                    .takes_value(false)
+                    .help("Start handler on register"),
+            )
             .arg(construct_port_arg())
             .arg(construct_startup_type_arg().default_value("manual"))
     }
 
-    fn subcommand_connection_runtime(&self, sub_matches: &ArgMatches, mut client: HandlerServiceClient<tonic::transport::Channel>) {
+    fn subcommand_connection_runtime(
+        &self,
+        sub_matches: &ArgMatches,
+        mut client: HandlerServiceClient<tonic::transport::Channel>,
+    ) {
         let handler_config_match = sub_matches.value_of("handler_config").unwrap();
         let handler_config_path = Path::new(handler_config_match);
         let is_start_on_register = sub_matches.is_present("start");
@@ -57,11 +79,12 @@ impl SubCommandUtil for RegisterSubCommand {
                 });
                 match block_on(response) {
                     Ok(response) => println!("{}", response.into_inner().message),
-                    Err(e) => println!("{}", e.message())
+                    Err(e) => println!("{}", e.message()),
                 }
             }
             Err(_) => {
-                CliError::with_description("Config file doesn't exist", ErrorKind::InvalidValue).exit();
+                CliError::with_description("Config file doesn't exist", ErrorKind::InvalidValue)
+                    .exit();
             }
         }
     }

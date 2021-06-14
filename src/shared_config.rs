@@ -1,1 +1,1 @@
-pub const DEFAULT_PORT : &str = "4575";
+pub const DEFAULT_PORT: &str = "4575";

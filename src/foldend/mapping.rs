@@ -1,11 +1,19 @@
-use std::{collections::HashMap, convert::TryFrom, fs, path::{Path, PathBuf}, result::Result, sync::Arc, thread};
+use std::{
+    collections::HashMap,
+    convert::TryFrom,
+    fs,
+    path::{Path, PathBuf},
+    result::Result,
+    sync::Arc,
+    thread,
+};
 
-use tokio::sync::broadcast;
-use serde::{Serialize, Deserialize};
 use notify::{RecommendedWatcher, Watcher};
+use serde::{Deserialize, Serialize};
+use tokio::sync::broadcast;
 
-use generated_types::HandlerStateResponse;
 use crate::{config::Config, handler_mapping::HandlerMapping};
+use generated_types::HandlerStateResponse;
 use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
@@ -13,7 +21,7 @@ use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandl
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Mapping {
-    pub directory_mapping: HashMap<String, HandlerMapping> // Hash map key binds to directory path
+    pub directory_mapping: HashMap<String, HandlerMapping>, // Hash map key binds to directory path
 }
 
 impl Mapping {
@@ -23,18 +31,25 @@ impl Mapping {
     }
 
     pub fn get_live_handlers(&self) -> impl Iterator<Item = (&String, &HandlerMapping)> {
-        self.directory_mapping.iter().filter(|(_dir, mapping)| mapping.is_alive())
+        self.directory_mapping
+            .iter()
+            .filter(|(_dir, mapping)| mapping.is_alive())
     }
 
-    pub fn start_handler(&mut self, directory_path: &str, handler_mapping: &mut HandlerMapping, 
-        trace_tx: Arc<broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>>) -> HandlerStateResponse {
+    pub fn start_handler(
+        &mut self,
+        directory_path: &str,
+        handler_mapping: &mut HandlerMapping,
+        trace_tx: Arc<
+            broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>,
+        >,
+    ) -> HandlerStateResponse {
         if handler_mapping.is_alive() {
             HandlerStateResponse {
                 is_alive: true,
                 message: String::from("Handler already up"),
             }
-        }
-        else {
+        } else {
             match self.spawn_handler_thread(directory_path.to_string(), handler_mapping, trace_tx) {
                 Ok(_) => HandlerStateResponse {
                     is_alive: true,
@@ -43,14 +58,19 @@ impl Mapping {
                 Err(err) => HandlerStateResponse {
                     is_alive: false,
                     message: format!("Failed to start handler.\nError: {}", err),
-                }
+                },
             }
         }
     }
-    
-    pub fn spawn_handler_thread(&mut self, directory_path: String, handler_mapping: &mut HandlerMapping, 
-        trace_tx: Arc<broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>>) -> 
-    Result<(), String> {
+
+    pub fn spawn_handler_thread(
+        &mut self,
+        directory_path: String,
+        handler_mapping: &mut HandlerMapping,
+        trace_tx: Arc<
+            broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>,
+        >,
+    ) -> Result<(), String> {
         let path = PathBuf::from(directory_path.clone());
         let config_path = PathBuf::from(&handler_mapping.handler_config_path);
         match fs::read(&config_path) {
@@ -64,7 +84,7 @@ impl Mapping {
                         thread::spawn(move || {
                             let mut handler = PipelineHandler::new(config, trace_tx);
                             handler.watch(&path, watcher, events_rx);
-                        });            
+                        });
                         // Insert or update the value of the current handled directory
                         handler_mapping.watcher_tx = Option::Some(events_tx);
                         self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
@@ -79,7 +99,13 @@ impl Mapping {
         }
     }
 
-    pub async fn stop_handler(&mut self, config: &Config, directory_path: &str, handler_mapping: &mut HandlerMapping, remove: bool) -> HandlerStateResponse {
+    pub async fn stop_handler(
+        &mut self,
+        config: &Config,
+        directory_path: &str,
+        handler_mapping: &mut HandlerMapping,
+        remove: bool,
+    ) -> HandlerStateResponse {
         if handler_mapping.is_alive() {
             match handler_mapping.stop_handler_thread() {
                 Ok(mut message) => {
@@ -87,8 +113,7 @@ impl Mapping {
                         self.directory_mapping.remove(directory_path);
                         message.push_str(" & removed");
                         let _result = self.save(&config.mapping_state_path);
-                    }
-                    else {
+                    } else {
                         handler_mapping.watcher_tx = None;
                     }
                     HandlerStateResponse {
@@ -99,17 +124,15 @@ impl Mapping {
                 Err(message) => HandlerStateResponse {
                     is_alive: true,
                     message,
-                }
+                },
             }
-        }
-        else {
+        } else {
             let mut message = String::from("Handler already stopped");
             if remove {
                 self.directory_mapping.remove(directory_path);
                 message.push_str(" & removed");
                 let _result = self.save(&config.mapping_state_path);
-            }
-            else {
+            } else {
                 handler_mapping.watcher_tx = None;
             }
             HandlerStateResponse {
@@ -125,7 +148,7 @@ impl TryFrom<Vec<u8>> for Mapping {
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         match toml::from_slice(&bytes) {
-            Ok(mapping) => Ok(mapping), 
+            Ok(mapping) => Ok(mapping),
             Err(_) => Err("Couldn't deserialize data to mapping"),
         }
     }

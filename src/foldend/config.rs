@@ -1,6 +1,10 @@
-use std::{convert::TryFrom, fs, path::{Path, PathBuf}};
+use std::{
+    convert::TryFrom,
+    fs,
+    path::{Path, PathBuf},
+};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use folden::shared_config::DEFAULT_PORT;
 

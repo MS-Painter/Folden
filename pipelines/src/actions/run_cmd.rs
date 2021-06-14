@@ -1,9 +1,12 @@
-use std::{process::{Child, Command, Stdio}};
+use std::process::{Child, Command, Stdio};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::PipelineAction;
-use crate::{pipeline_context_input::PipelineContextInput, pipeline_execution_context::PipelineExecutionContext};
+use crate::{
+    pipeline_context_input::PipelineContextInput,
+    pipeline_execution_context::PipelineExecutionContext,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RunCmd {
@@ -20,7 +23,7 @@ impl RunCmd {
             if let Some(input_path) = context.get_input(self.input) {
                 formatted_command = Self::format_input(&self.command, input_path).to_string();
             }
-        } 
+        }
         if self.datetime_formatting {
             formatted_command = Self::format_datetime(formatted_command);
         };
@@ -39,17 +42,19 @@ impl PipelineAction for RunCmd {
                         if out.stdout.is_empty() {
                             let stderr = String::from_utf8(out.stderr).unwrap();
                             context.handle_error(format!("Stderr - {:?}", stderr))
-                        }
-                        else {
+                        } else {
                             let stdout = String::from_utf8(out.stdout).unwrap();
                             context.log(format!("Stdout - {:?}", stdout));
                             true
                         }
                     }
-                    Err(e) => context.handle_error(format!("Error - {:?}", e))
-                }
+                    Err(e) => context.handle_error(format!("Error - {:?}", e)),
+                };
             }
-            Err(e) => context.handle_error(format!("Could not spawn command.\nCommand: {:?}\nError: {:?}", formatted_command, e))
+            Err(e) => context.handle_error(format!(
+                "Could not spawn command.\nCommand: {:?}\nError: {:?}",
+                formatted_command, e
+            )),
         }
     }
 }
@@ -66,8 +71,9 @@ impl Default for RunCmd {
 }
 
 fn spawn_command<S>(input: &S, context: &mut PipelineExecutionContext) -> std::io::Result<Child>
-where 
-    S: AsRef<str> {
+where
+    S: AsRef<str>,
+{
     let parent_dir_path = context.event_file_path.parent().unwrap();
     if cfg!(windows) {
         Command::new("cmd.exe")
@@ -76,8 +82,7 @@ where
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-    }
-    else {
+    } else {
         Command::new(input.as_ref())
             .current_dir(parent_dir_path)
             .stdout(Stdio::piped())

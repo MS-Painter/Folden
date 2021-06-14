@@ -1,12 +1,17 @@
 use std::{ffi::OsString, time::Duration};
 
 use futures::executor;
-use tokio::sync::broadcast;
 use tokio::runtime::Runtime;
+use tokio::sync::broadcast;
 pub use windows_service::Error;
 use windows_service::{
-    define_windows_service, service_control_handler::{self, ServiceControlHandlerResult}, service_dispatcher,
-    service::{ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus, ServiceType},
+    define_windows_service,
+    service::{
+        ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
+        ServiceType,
+    },
+    service_control_handler::{self, ServiceControlHandlerResult},
+    service_dispatcher,
 };
 
 const SERVICE_NAME: &str = "Folden Service";
@@ -25,8 +30,10 @@ pub fn run() -> Result<(), windows_service::Error> {
     service_dispatcher::start(SERVICE_NAME, ffi_service_main)
 }
 
-pub async fn sync_main(shutdown_rx: Option<broadcast::Receiver<i32>>) -> Result<(), Box<dyn std::error::Error>> {
-    let rt  = Runtime::new()?;
+pub async fn sync_main(
+    shutdown_rx: Option<broadcast::Receiver<i32>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let rt = Runtime::new()?;
     match shutdown_rx {
         Some(mut rx) => {
             // Exit runtime at service execution termination or if recieved a termination message
@@ -44,12 +51,7 @@ pub async fn sync_main(shutdown_rx: Option<broadcast::Receiver<i32>>) -> Result<
         }
         None => {
             // Exit runtime at service execution termination
-            rt.block_on(async {
-                match  super::main_service_runtime().await {
-                    Ok(res) => Ok(res),
-                    Err(e) => Err(e),
-                }
-            })       
+            rt.block_on(async { super::main_service_runtime().await })
         }
     }
 }
@@ -89,10 +91,7 @@ fn run_service(_arguments: Vec<OsString>) -> Result<(), windows_service::Error> 
     })?;
 
     let sync_main_result = executor::block_on(sync_main(Some(shutdown_rx)));
-    let exit_code = match sync_main_result {
-        Ok(_) => 0,
-        Err(_) => 1
-    };
+    let exit_code = if sync_main_result.is_ok() { 0 } else { 1 };
 
     // Tell the system that service has stopped
     status_handle.set_service_status(ServiceStatus {

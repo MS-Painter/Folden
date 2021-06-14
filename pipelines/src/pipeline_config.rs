@@ -1,7 +1,7 @@
 use std::{convert::TryFrom, fs, io, path::Path};
 
 use clap::Values;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{actions::PipelineActions, event::PipelineEvent};
 
@@ -11,7 +11,7 @@ pub struct PipelineConfig {
     pub apply_on_startup_on_existing_files: bool,
     pub panic_handler_on_error: bool,
     pub event: PipelineEvent,
-    pub actions: Vec<PipelineActions>
+    pub actions: Vec<PipelineActions>,
 }
 
 impl PipelineConfig {
@@ -22,12 +22,12 @@ impl PipelineConfig {
             panic_handler_on_error: false,
             event: match events {
                 Some(events) => PipelineEvent::from(events),
-                None => PipelineEvent::default()
+                None => PipelineEvent::default(),
             },
             actions: match actions {
                 Some(actions) => PipelineActions::defaults(actions),
-                None => vec![PipelineActions::default()]
-            }
+                None => vec![PipelineActions::default()],
+            },
         }
     }
 

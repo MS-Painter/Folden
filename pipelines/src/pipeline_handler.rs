@@ -1,17 +1,18 @@
 use std::fs;
-use std::sync::Arc;
 use std::path::Path;
+use std::sync::Arc;
 
-use regex::Regex;
 use crossbeam::channel::Receiver;
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use regex::Regex;
 
 use crate::actions::PipelineAction;
-use generated_types::TraceHandlerResponse;
 use crate::pipeline_config::PipelineConfig;
 use crate::pipeline_execution_context::PipelineExecutionContext;
+use generated_types::TraceHandlerResponse;
 
-type OutputTraceSender = Arc<tokio::sync::broadcast::Sender<Result<TraceHandlerResponse, tonic::Status>>>;
+type OutputTraceSender =
+    Arc<tokio::sync::broadcast::Sender<Result<TraceHandlerResponse, tonic::Status>>>;
 
 pub struct PipelineHandler {
     pub config: PipelineConfig,
@@ -25,10 +26,10 @@ impl PipelineHandler {
         if let Some(naming_regex_match) = config.event.naming_regex_match.to_owned() {
             naming_regex = Some(Regex::new(&naming_regex_match).unwrap());
         }
-        Self { 
-            config, 
+        Self {
+            config,
             naming_regex,
-            trace_tx
+            trace_tx,
         }
     }
 
@@ -42,7 +43,8 @@ impl PipelineHandler {
     }
 
     fn execute_pipeline(&self, file_path: &Path) {
-        let mut context = PipelineExecutionContext::new(file_path, self.config.clone(), self.trace_tx.clone());
+        let mut context =
+            PipelineExecutionContext::new(file_path, self.config.clone(), self.trace_tx.clone());
         for action in &self.config.actions {
             let action_name: &'static str = action.into();
             context.action_name = Some(action_name.into());
@@ -58,7 +60,7 @@ impl PipelineHandler {
         for entry in fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
             let metadata = entry.metadata().unwrap();
-            if metadata.is_file(){
+            if metadata.is_file() {
                 self.handle(&entry.path());
             }
         }
@@ -76,17 +78,25 @@ impl PipelineHandler {
                 }
                 Err(error) => {
                     tracing::warn!("Watcher error - {:?}", error);
-                    if let notify::ErrorKind::WatchNotFound = error.kind { 
-                        break
+                    if let notify::ErrorKind::WatchNotFound = error.kind {
+                        break;
                     }
                 }
             }
         }
     }
 
-    pub fn watch(&mut self, path: &Path, mut watcher: RecommendedWatcher, 
-        events_rx: Receiver<Result<notify::Event, notify::Error>>) {
-        let recursive_mode = if self.config.watch_recursive {RecursiveMode::Recursive} else {RecursiveMode::NonRecursive};
+    pub fn watch(
+        &mut self,
+        path: &Path,
+        mut watcher: RecommendedWatcher,
+        events_rx: Receiver<Result<notify::Event, notify::Error>>,
+    ) {
+        let recursive_mode = if self.config.watch_recursive {
+            RecursiveMode::Recursive
+        } else {
+            RecursiveMode::NonRecursive
+        };
         watcher.watch(&*path, recursive_mode).unwrap();
         if self.config.apply_on_startup_on_existing_files {
             self.apply_on_existing_files(path);

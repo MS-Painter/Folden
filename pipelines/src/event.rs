@@ -1,7 +1,7 @@
 use clap::Values;
-use notify::EventKind;
 use itertools::Itertools;
-use serde::{Serialize, Deserialize};
+use notify::EventKind;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PipelineEvent {
