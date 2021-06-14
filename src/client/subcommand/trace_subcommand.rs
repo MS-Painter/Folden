@@ -67,7 +67,7 @@ impl SubCommandUtil for TraceSubCommand {
                     }
                 }
             }
-            Err(e) => println!("{}", e),
+            Err(e) => println!("{}", e.message()),
         }
     }
 }
