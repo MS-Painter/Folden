@@ -1,7 +1,7 @@
-use notify::{Event, EventKind};
 use crossbeam::channel::Sender;
-use serde::{Serialize, Deserialize};
 use notify::ErrorKind as NotifyErrorKind;
+use notify::{Event, EventKind};
+use serde::{Deserialize, Serialize};
 
 use generated_types::{HandlerSummary, ModifyHandlerRequest};
 
@@ -23,28 +23,32 @@ impl HandlerMapping {
             description,
         }
     }
-    
+
     pub fn is_alive(&self) -> bool {
         match self.watcher_tx.clone() {
             Some(tx) => tx.send(Ok(Event::new(EventKind::Other))).is_ok(),
-            None => false
+            None => false,
         }
     }
 
     pub fn summary(&self) -> HandlerSummary {
-        let state = HandlerSummary {
+        HandlerSummary {
             is_alive: self.is_alive(),
             config_path: self.handler_config_path.clone(),
             is_auto_startup: self.is_auto_startup,
             description: self.description.to_owned(),
-        };
-        state
+        }
     }
 
     pub fn stop_handler_thread(&self) -> Result<String, String> {
-        match self.watcher_tx.clone().unwrap().send(Err(notify::Error::new(NotifyErrorKind::WatchNotFound))) {
+        match self
+            .watcher_tx
+            .clone()
+            .unwrap()
+            .send(Err(notify::Error::new(NotifyErrorKind::WatchNotFound)))
+        {
             Ok(_) => Ok(String::from("Handler stopped")),
-            Err(error) => Err(format!("Failed to stop handler\nError: {:?}", error))
+            Err(error) => Err(format!("Failed to stop handler\nError: {:?}", error)),
         }
     }
 

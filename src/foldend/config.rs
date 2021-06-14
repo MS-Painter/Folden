@@ -1,8 +1,12 @@
-use std::{convert::TryFrom, fs, path::PathBuf};
+use std::{
+    convert::TryFrom,
+    fs,
+    path::{Path, PathBuf},
+};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use generated_types::DEFAULT_PORT;
+use folden::shared_config::DEFAULT_PORT;
 
 pub const DEFAULT_CONCURRENT_THREADS_LIMIT: u8 = 10;
 
@@ -16,7 +20,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn save(&self, file_path: &PathBuf) -> Result<(), std::io::Error> {
+    pub fn save(&self, file_path: &Path) -> Result<(), std::io::Error> {
         let config_data: Vec<u8> = self.into();
         fs::write(file_path, config_data)
     }
@@ -28,7 +32,7 @@ impl Default for Config {
             mapping_state_path: PathBuf::from("foldend_mapping.toml"),
             tracing_file_path: PathBuf::from("foldend.log"),
             concurrent_threads_limit: DEFAULT_CONCURRENT_THREADS_LIMIT,
-            port: DEFAULT_PORT,
+            port: DEFAULT_PORT.parse().unwrap(),
         }
     }
 }
@@ -41,8 +45,8 @@ impl TryFrom<Vec<u8>> for Config {
     }
 }
 
-impl Into<Vec<u8>> for &Config {
-    fn into(self) -> Vec<u8> {
-        toml::to_vec(&self).unwrap()
+impl From<&Config> for Vec<u8> {
+    fn from(val: &Config) -> Self {
+        toml::to_vec(&val).unwrap()
     }
 }

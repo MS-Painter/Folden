@@ -12,5 +12,7 @@ fn main() {
         println!("cargo:rerun-if-changed={}", proto_file.display());
     }
 
-    tonic_build::configure().compile(&proto_files, &[root.into()]).unwrap();
+    tonic_build::configure()
+        .compile(&proto_files, &[root])
+        .unwrap();
 }
