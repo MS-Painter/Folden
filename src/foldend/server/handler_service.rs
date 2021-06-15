@@ -285,22 +285,11 @@ impl HandlerService for Server {
         tracing::info!("Tracing directory handler");
         let request = request.into_inner();
         let mapping = self.mapping.read().await;
-
+        
+        // If empty - All directories are requested
         if !request.directory_path.is_empty() {
-            // If empty - All directories are requested
-            match mapping.directory_mapping.get(&request.directory_path) {
-                Some(handler_mapping) => {
-                    if !handler_mapping.is_alive() {
-                        return Err(tonic::Status::failed_precondition(
-                            "Handler isn't alive to trace",
-                        ));
-                    }
-                }
-                None => {
-                    return Err(tonic::Status::not_found(
-                        "Directory isn't registered to handle",
-                    ))
-                }
+            if let Err(e) = self.get_handler(&mapping, &request.directory_path, true) {
+                return Err(e);
             }
         } else if mapping.directory_mapping.is_empty() {
             return Err(tonic::Status::not_found(
