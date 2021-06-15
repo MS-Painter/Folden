@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use tonic::{Request, Response};
 
 use super::Server;
-use super::TraceHandlerStream;
 use crate::handler_mapping::HandlerMapping;
+use super::trace_handler_stream::TraceHandlerStream;
 use generated_types::{
     handler_service_server::HandlerService, HandlerStateResponse, HandlerStatesMapResponse,
     HandlerSummary, HandlerSummaryMapResponse,

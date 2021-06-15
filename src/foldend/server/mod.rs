@@ -1,9 +1,7 @@
-use std::pin::Pin;
 use std::{ops::Deref, sync::Arc};
 
 use tokio::sync::{RwLockReadGuard, broadcast};
 use tokio::sync::RwLock;
-use tokio_stream::Stream;
 use tonic::Request;
 
 use crate::config::Config;
@@ -11,7 +9,8 @@ use crate::handler_mapping::HandlerMapping;
 use crate::mapping::Mapping;
 use generated_types::handler_service_server::HandlerService;
 
-pub mod handler_service;
+mod handler_service;
+mod trace_handler_stream;
 mod handler_service_endpoint;
 
 #[derive(Debug)]
@@ -42,7 +41,7 @@ impl Server {
         false
     }
 
-    fn convert_trace_channel_reciever_to_stream(&self) -> TraceHandlerStream {
+    fn convert_trace_channel_reciever_to_stream(&self) -> trace_handler_stream::TraceHandlerStream {
         let mut rx = self.handlers_trace_tx.subscribe();
         Box::pin(async_stream::stream! {
             while let Ok(item) = rx.recv().await {
@@ -82,12 +81,3 @@ impl Server {
         }
     }
 }
-
-pub type TraceHandlerStream = Pin<
-    Box<
-        dyn Stream<Item = Result<generated_types::TraceHandlerResponse, tonic::Status>>
-            + Send
-            + Sync
-            + 'static,
-    >,
->;
