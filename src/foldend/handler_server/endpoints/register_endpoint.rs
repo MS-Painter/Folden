@@ -2,6 +2,7 @@ use tokio::sync::RwLockWriteGuard;
 
 use super::super::server::Server;
 use super::handler_service_endpoint::ServiceEndpoint;
+use crate::handler_server::utils::is_concurrent_handlers_limit_reached;
 use crate::{handler_mapping::HandlerMapping, mapping::Mapping};
 use generated_types::{HandlerStateResponse, RegisterToDirectoryRequest};
 
@@ -69,10 +70,10 @@ impl ServiceEndpoint<Request, Response> for RegisterEndpoint<'_> {
                 String::new(),
             );
             if request.is_start_on_register {
-                if self
-                    .server
-                    .is_concurrent_handlers_limit_reached(&self.mapping)
-                {
+                if is_concurrent_handlers_limit_reached(
+                    &self.mapping,
+                    self.server.config.concurrent_threads_limit,
+                ) {
                     self.mapping
                         .directory_mapping
                         .insert(request.directory_path, handler_mapping);

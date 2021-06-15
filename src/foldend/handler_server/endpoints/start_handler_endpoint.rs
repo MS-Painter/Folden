@@ -4,6 +4,7 @@ use tokio::sync::RwLockWriteGuard;
 
 use super::super::server::Server;
 use super::handler_service_endpoint::ServiceEndpoint;
+use crate::handler_server::utils::is_concurrent_handlers_limit_reached;
 use crate::mapping::Mapping;
 use generated_types::{HandlerStateResponse, HandlerStatesMapResponse, StartHandlerRequest};
 
@@ -44,9 +45,10 @@ impl ServiceEndpoint<Request, Response> for StartHandlerEndpoint<'_> {
         {
             Some(handler_mapping) => {
                 if !handler_mapping.is_alive()
-                    && self
-                        .server
-                        .is_concurrent_handlers_limit_reached(&self.mapping)
+                    && is_concurrent_handlers_limit_reached(
+                        &self.mapping,
+                        self.server.config.concurrent_threads_limit,
+                    )
                 {
                     return Err(tonic::Status::failed_precondition(format!(
                         "Aborted start handler - Reached concurrent live handler limit ({})",

@@ -1,4 +1,4 @@
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use tokio::sync::{broadcast, RwLock, RwLockReadGuard};
 
@@ -16,23 +16,6 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn is_concurrent_handlers_limit_reached<T>(&self, mapping: &T) -> bool
-    where
-        T: Deref<Target = Mapping>,
-    {
-        let mut live_handlers_count: u8 = 0;
-        if live_handlers_count >= self.config.concurrent_threads_limit {
-            return true;
-        }
-        for _ in mapping.iter_live_handlers() {
-            live_handlers_count += 1;
-            if live_handlers_count >= self.config.concurrent_threads_limit {
-                return true;
-            }
-        }
-        false
-    }
-
     pub fn convert_trace_channel_reciever_to_stream(
         &self,
     ) -> trace_handler_stream::TraceHandlerStream {
