@@ -28,8 +28,8 @@ impl<'a> ModifyEndpoint<'a> {
 }
 
 impl ServiceEndpoint<Request, Response> for ModifyEndpoint<'_> {
-    fn execute(&self) -> Result<Response, tonic::Status> {
-        let request = self.request.into_inner();
+    fn execute(mut self) -> Result<Response, tonic::Status> {
+        let request = self.request.get_ref();
         match self
             .mapping
             .directory_mapping

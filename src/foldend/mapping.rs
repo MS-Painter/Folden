@@ -99,7 +99,7 @@ impl Mapping {
         }
     }
 
-    pub async fn stop_handler(
+    pub fn stop_handler(
         &mut self,
         config: &Config,
         directory_path: &str,

@@ -17,7 +17,7 @@ impl HandlerService for Server {
         request: register_endpoint::Request,
     ) -> Result<register_endpoint::Response, tonic::Status> {
         tracing::info!("Registering handler to directory");
-        let mut mapping = self.mapping.write().await;
+        let mapping = self.mapping.write().await;
         let endpoint = register_endpoint::RegisterEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
@@ -40,8 +40,9 @@ impl HandlerService for Server {
         request: start_handler_endpoint::Request,
     ) -> Result<start_handler_endpoint::Response, tonic::Status> {
         tracing::info!("Starting handler");
-        let mut mapping = self.mapping.write().await;
-        let endpoint = start_handler_endpoint::StarthandlerEndpoint::new(request, mapping, self);
+        let mapping = self.mapping.write().await;
+        let endpoint: start_handler_endpoint::StarthandlerEndpoint =
+            start_handler_endpoint::StarthandlerEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 
@@ -51,7 +52,7 @@ impl HandlerService for Server {
         request: stop_handler_endpoint::Request,
     ) -> Result<stop_handler_endpoint::Response, tonic::Status> {
         tracing::info!("Stopping handler");
-        let mut mapping = self.mapping.write().await;
+        let mapping = self.mapping.write().await;
         let endpoint = stop_handler_endpoint::StophandlerEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
@@ -62,7 +63,7 @@ impl HandlerService for Server {
         request: modify_endpoint::Request,
     ) -> Result<modify_endpoint::Response, tonic::Status> {
         tracing::info!("Modifying handler");
-        let mut mapping = self.mapping.write().await;
+        let mapping = self.mapping.write().await;
         let endpoint = modify_endpoint::ModifyEndpoint::new(request, mapping, self);
         endpoint.execute()
     }

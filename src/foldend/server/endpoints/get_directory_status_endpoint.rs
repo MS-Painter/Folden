@@ -10,8 +10,8 @@ pub type Request = tonic::Request<GetDirectoryStatusRequest>;
 pub type Response = tonic::Response<HandlerSummaryMapResponse>;
 
 pub struct GetDirectoryStatusEndpoint<'a> {
-    request: Request,
-    mapping: RwLockReadGuard<'a, Mapping>,
+    pub request: Request,
+    pub mapping: RwLockReadGuard<'a, Mapping>,
 }
 
 impl<'a> GetDirectoryStatusEndpoint<'a> {
@@ -19,7 +19,7 @@ impl<'a> GetDirectoryStatusEndpoint<'a> {
         Self { request, mapping }
     }
 
-    pub fn is_any_handler_alive(&self) -> bool {
+    pub fn is_any_handler_alive(self) -> bool {
         if let Ok(response) = self.execute() {
             let response = response.into_inner();
             return response
@@ -32,8 +32,8 @@ impl<'a> GetDirectoryStatusEndpoint<'a> {
 }
 
 impl ServiceEndpoint<Request, Response> for GetDirectoryStatusEndpoint<'_> {
-    fn execute(&self) -> Result<Response, tonic::Status> {
-        let request = self.request.into_inner();
+    fn execute(self) -> Result<Response, tonic::Status> {
+        let request = self.request.get_ref();
         let directory_path = request.directory_path.as_str();
         let mut summary_map: HashMap<String, HandlerSummary> = HashMap::new();
 

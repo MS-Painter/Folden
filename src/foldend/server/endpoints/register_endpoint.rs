@@ -28,7 +28,7 @@ impl<'a> RegisterEndpoint<'a> {
 }
 
 impl ServiceEndpoint<Request, Response> for RegisterEndpoint<'_> {
-    fn execute(&self) -> Result<Response, tonic::Status> {
+    fn execute(mut self) -> Result<Response, tonic::Status> {
         let request = self.request.into_inner();
         let request_directory_path = request.directory_path.as_str();
         if self

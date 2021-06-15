@@ -31,8 +31,8 @@ impl<'a> TraceEndpoint<'a> {
 }
 
 impl ServiceEndpoint<Request, Response> for TraceEndpoint<'_> {
-    fn execute(&self) -> Result<Response, tonic::Status> {
-        let request = self.request.into_inner();
+    fn execute(self) -> Result<Response, tonic::Status> {
+        let request = self.request.get_ref();
         // If empty - All directories are requested
         if !request.directory_path.is_empty() {
             if let Err(e) = self
@@ -62,6 +62,6 @@ impl ServiceEndpoint<Request, Response> for TraceEndpoint<'_> {
             "Handler trace receivers live: {}",
             self.server.handlers_trace_tx.receiver_count()
         );
-        return Ok(Response::new(rx_stream));
+        Ok(Response::new(rx_stream))
     }
 }

@@ -30,8 +30,8 @@ impl<'a> StarthandlerEndpoint<'a> {
 }
 
 impl ServiceEndpoint<Request, Response> for StarthandlerEndpoint<'_> {
-    fn execute(&self) -> Result<Response, tonic::Status> {
-        let request = self.request.into_inner();
+    fn execute(mut self) -> Result<Response, tonic::Status> {
+        let request = self.request.get_ref();
         let directory_path = request.directory_path.as_str();
         let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
 

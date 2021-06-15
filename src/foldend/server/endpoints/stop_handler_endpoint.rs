@@ -30,8 +30,8 @@ impl<'a> StophandlerEndpoint<'a> {
 }
 
 impl ServiceEndpoint<Request, Response> for StophandlerEndpoint<'_> {
-    fn execute(&self) -> Result<Response, tonic::Status> {
-        let request = self.request.into_inner();
+    fn execute(mut self) -> Result<Response, tonic::Status> {
+        let request = self.request.get_ref();
         let directory_path = request.directory_path.as_str();
         let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
 
@@ -42,15 +42,12 @@ impl ServiceEndpoint<Request, Response> for StophandlerEndpoint<'_> {
             .get_mut(&request.directory_path)
         {
             Some(handler_mapping) => {
-                let response = self
-                    .mapping
-                    .stop_handler(
-                        &self.server.config,
-                        directory_path,
-                        handler_mapping,
-                        request.remove,
-                    )
-                    .await;
+                let response = self.mapping.stop_handler(
+                    &self.server.config,
+                    directory_path,
+                    handler_mapping,
+                    request.remove,
+                );
                 states_map.insert(directory_path.to_owned(), response);
                 Ok(Response::new(HandlerStatesMapResponse { states_map }))
             }
@@ -60,15 +57,12 @@ impl ServiceEndpoint<Request, Response> for StophandlerEndpoint<'_> {
                     for (directory_path, handler_mapping) in
                         self.mapping.clone().directory_mapping.iter_mut()
                     {
-                        let response = self
-                            .mapping
-                            .stop_handler(
-                                &self.server.config,
-                                directory_path,
-                                handler_mapping,
-                                request.remove,
-                            )
-                            .await;
+                        let response = self.mapping.stop_handler(
+                            &self.server.config,
+                            directory_path,
+                            handler_mapping,
+                            request.remove,
+                        );
                         states_map.insert(directory_path.to_owned(), response);
                     }
                 } else {
