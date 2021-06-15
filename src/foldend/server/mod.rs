@@ -1,15 +1,13 @@
 use std::{ops::Deref, sync::Arc};
 
-use tokio::sync::{RwLockReadGuard, broadcast};
-use tokio::sync::RwLock;
 use tonic::Request;
+use tokio::sync::{RwLock, RwLockReadGuard, broadcast};
 
 use crate::config::Config;
 use crate::mapping::Mapping;
 use endpoints::trace_handler_stream;
 use crate::handler_mapping::HandlerMapping;
 use generated_types::handler_service_server::HandlerService;
-
 
 mod endpoints;
 mod handler_service;
