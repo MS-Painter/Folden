@@ -1,8 +1,8 @@
 use tokio::sync::RwLockWriteGuard;
 
-use generated_types::ModifyHandlerRequest;
-use crate::{mapping::Mapping, server::Server};
 use super::handler_service_endpoint::ServiceEndpoint;
+use crate::{mapping::Mapping, server::Server};
+use generated_types::ModifyHandlerRequest;
 
 pub type Request = tonic::Request<ModifyHandlerRequest>;
 pub type Response = tonic::Response<()>;
@@ -16,7 +16,11 @@ pub struct ModifyEndpoint<'a> {
 impl ServiceEndpoint<Request, Response> for ModifyEndpoint<'_> {
     fn execute(&self) -> Result<Response, tonic::Status> {
         let request = self.request.into_inner();
-        match self.mapping.directory_mapping.get_mut(&request.directory_path) {
+        match self
+            .mapping
+            .directory_mapping
+            .get_mut(&request.directory_path)
+        {
             Some(handler_mapping) => handler_mapping.modify(&request),
             None => {
                 if request.directory_path.is_empty() {

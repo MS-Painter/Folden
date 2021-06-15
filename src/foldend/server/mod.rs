@@ -1,12 +1,12 @@
 use std::{ops::Deref, sync::Arc};
 
+use tokio::sync::{broadcast, RwLock, RwLockReadGuard};
 use tonic::Request;
-use tokio::sync::{RwLock, RwLockReadGuard, broadcast};
 
 use crate::config::Config;
+use crate::handler_mapping::HandlerMapping;
 use crate::mapping::Mapping;
 use endpoints::trace_handler_stream;
-use crate::handler_mapping::HandlerMapping;
 use generated_types::handler_service_server::HandlerService;
 
 mod endpoints;
@@ -64,19 +64,22 @@ impl Server {
         false
     }
 
-    fn get_handler<'a>(&self, mapping: &'a RwLockReadGuard<Mapping>, directory_path: &str, is_required_alive: bool) -> Result<&'a HandlerMapping, tonic::Status> {
+    fn get_handler<'a>(
+        &self,
+        mapping: &'a RwLockReadGuard<Mapping>,
+        directory_path: &str,
+        is_required_alive: bool,
+    ) -> Result<&'a HandlerMapping, tonic::Status> {
         match mapping.directory_mapping.get(directory_path) {
             Some(handler_mapping) => {
                 if is_required_alive && !&handler_mapping.is_alive() {
-                    return Err(tonic::Status::failed_precondition(
-                        "Handler isn't alive",
-                    ));
+                    return Err(tonic::Status::failed_precondition("Handler isn't alive"));
                 }
                 Ok(handler_mapping)
             }
             None => Err(tonic::Status::not_found(
                 "Directory isn't registered to handle",
-            ))
+            )),
         }
     }
 }

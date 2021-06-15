@@ -1,8 +1,8 @@
 use tokio::sync::RwLockReadGuard;
 
-use generated_types::TraceHandlerRequest;
-use crate::{mapping::Mapping, server::Server};
 use super::{handler_service_endpoint::ServiceEndpoint, trace_handler_stream::TraceHandlerStream};
+use crate::{mapping::Mapping, server::Server};
+use generated_types::TraceHandlerRequest;
 
 pub type Request = tonic::Request<TraceHandlerRequest>;
 pub type Response = tonic::Response<TraceHandlerStream>;
@@ -18,7 +18,10 @@ impl ServiceEndpoint<Request, Response> for TraceEndpoint<'_> {
         let request = self.request.into_inner();
         // If empty - All directories are requested
         if !request.directory_path.is_empty() {
-            if let Err(e) = self.server.get_handler(&self.mapping, &request.directory_path, true) {
+            if let Err(e) = self
+                .server
+                .get_handler(&self.mapping, &request.directory_path, true)
+            {
                 return Err(e);
             }
         } else if self.mapping.directory_mapping.is_empty() {

@@ -1,8 +1,8 @@
 use tokio::sync::RwLockWriteGuard;
 
 use super::handler_service_endpoint::ServiceEndpoint;
-use generated_types::{HandlerStateResponse, RegisterToDirectoryRequest};
 use crate::{handler_mapping::HandlerMapping, mapping::Mapping, server::Server};
+use generated_types::{HandlerStateResponse, RegisterToDirectoryRequest};
 
 pub type Request = tonic::Request<RegisterToDirectoryRequest>;
 pub type Response = tonic::Response<HandlerStateResponse>;
@@ -17,7 +17,8 @@ impl ServiceEndpoint<Request, Response> for RegisterEndpoint<'_> {
     fn execute(&self) -> Result<Response, tonic::Status> {
         let request = self.request.into_inner();
         let request_directory_path = request.directory_path.as_str();
-        if self.mapping
+        if self
+            .mapping
             .directory_mapping
             .get(request_directory_path)
             .is_some()
@@ -53,7 +54,10 @@ impl ServiceEndpoint<Request, Response> for RegisterEndpoint<'_> {
                 String::new(),
             );
             if request.is_start_on_register {
-                if self.server.is_concurrent_handlers_limit_reached(&self.mapping) {
+                if self
+                    .server
+                    .is_concurrent_handlers_limit_reached(&self.mapping)
+                {
                     self.mapping
                         .directory_mapping
                         .insert(request.directory_path, handler_mapping);

@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use tokio::sync::RwLockReadGuard;
 
-use crate::mapping::Mapping;
 use super::handler_service_endpoint::ServiceEndpoint;
+use crate::mapping::Mapping;
 use generated_types::{GetDirectoryStatusRequest, HandlerSummary, HandlerSummaryMapResponse};
 
 pub type Request = tonic::Request<GetDirectoryStatusRequest>;

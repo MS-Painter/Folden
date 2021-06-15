@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use tokio::sync::RwLockWriteGuard;
 
-use crate::{mapping::Mapping, server::Server};
 use super::handler_service_endpoint::ServiceEndpoint;
+use crate::{mapping::Mapping, server::Server};
 use generated_types::{HandlerStateResponse, HandlerStatesMapResponse, StopHandlerRequest};
 
 pub type Request = tonic::Request<StopHandlerRequest>;
@@ -21,13 +21,15 @@ impl ServiceEndpoint<Request, Response> for StophandlerEndpoint<'_> {
         let directory_path = request.directory_path.as_str();
         let mut states_map: HashMap<String, HandlerStateResponse> = HashMap::new();
 
-        match self.mapping
+        match self
+            .mapping
             .clone()
             .directory_mapping
             .get_mut(&request.directory_path)
         {
             Some(handler_mapping) => {
-                let response = self.mapping
+                let response = self
+                    .mapping
                     .stop_handler(
                         &self.server.config,
                         directory_path,
@@ -44,7 +46,8 @@ impl ServiceEndpoint<Request, Response> for StophandlerEndpoint<'_> {
                     for (directory_path, handler_mapping) in
                         self.mapping.clone().directory_mapping.iter_mut()
                     {
-                        let response = self.mapping
+                        let response = self
+                            .mapping
                             .stop_handler(
                                 &self.server.config,
                                 directory_path,

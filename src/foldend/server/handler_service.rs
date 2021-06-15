@@ -1,8 +1,11 @@
+use super::endpoints::handler_service_endpoint::ServiceEndpoint;
+use super::endpoints::trace_handler_stream::TraceHandlerStream;
+use super::endpoints::{
+    get_directory_status_endpoint, modify_endpoint, register_endpoint, start_handler_endpoint,
+    stop_handler_endpoint, trace_endpoint,
+};
 use super::Server;
 use generated_types::handler_service_server::HandlerService;
-use super::endpoints::trace_handler_stream::TraceHandlerStream;
-use super::endpoints::handler_service_endpoint::ServiceEndpoint;
-use super::endpoints::{get_directory_status_endpoint, modify_endpoint, register_endpoint, start_handler_endpoint, stop_handler_endpoint, trace_endpoint};
 
 #[tonic::async_trait]
 impl HandlerService for Server {
@@ -30,10 +33,8 @@ impl HandlerService for Server {
     ) -> Result<get_directory_status_endpoint::Response, tonic::Status> {
         tracing::info!("Getting directory status");
         let mapping = self.mapping.read().await;
-        let endpoint = get_directory_status_endpoint::GetDirectoryStatusEndpoint {
-            request,
-            mapping,
-        };
+        let endpoint =
+            get_directory_status_endpoint::GetDirectoryStatusEndpoint { request, mapping };
         endpoint.execute()
     }
 
