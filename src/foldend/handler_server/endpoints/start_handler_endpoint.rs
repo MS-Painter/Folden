@@ -68,7 +68,7 @@ impl ServiceEndpoint<Request, Response> for StartHandlerEndpoint<'_> {
                     {
                         return Err(tonic::Status::failed_precondition(
                             format!("Aborted start handlers - Would pass concurrent live handler limit ({})\nCurrently live: {}", 
-                            self.server.config.concurrent_threads_limit, self.mapping.get_live_handlers().count())));
+                            self.server.config.concurrent_threads_limit, self.mapping.iter_live_handlers().count())));
                     }
                     for (directory_path, handler_mapping) in
                         self.mapping.clone().directory_mapping.iter_mut()

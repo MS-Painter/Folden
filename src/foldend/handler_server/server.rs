@@ -24,12 +24,10 @@ impl Server {
         if live_handlers_count >= self.config.concurrent_threads_limit {
             return true;
         }
-        for handler_mapping in mapping.directory_mapping.values() {
-            if handler_mapping.is_alive() {
-                live_handlers_count += 1;
-                if live_handlers_count >= self.config.concurrent_threads_limit {
-                    return true;
-                }
+        for _ in mapping.iter_live_handlers() {
+            live_handlers_count += 1;
+            if live_handlers_count >= self.config.concurrent_threads_limit {
+                return true;
             }
         }
         false

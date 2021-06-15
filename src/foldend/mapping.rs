@@ -30,7 +30,7 @@ impl Mapping {
         fs::write(mapping_state_path, mapping_data)
     }
 
-    pub fn get_live_handlers(&self) -> impl Iterator<Item = (&String, &HandlerMapping)> {
+    pub fn iter_live_handlers(&self) -> impl Iterator<Item = (&String, &HandlerMapping)> {
         self.directory_mapping
             .iter()
             .filter(|(_dir, mapping)| mapping.is_alive())
