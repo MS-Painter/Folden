@@ -72,7 +72,6 @@ impl HandlerMapping {
                             let mut handler = PipelineHandler::new(config, trace_tx);
                             handler.watch(&path, watcher, events_rx);
                         });
-                        // Insert or update the value of the current handled directory
                         self.watcher_tx = Option::Some(events_tx);
                         Ok(())
                     }
