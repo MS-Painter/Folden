@@ -69,32 +69,23 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
 
 async fn startup_handlers(server: &Server) {
     let mapping = server.mapping.read().await;
-    let handler_requests: Vec<StartHandlerRequest> = mapping
-        .directory_mapping
-        .iter()
-        .filter_map(|(directory_path, handler_mapping)| {
-            if handler_mapping.is_auto_startup {
-                Some(StartHandlerRequest {
-                    directory_path: directory_path.to_string(),
-                })
-            } else {
-                None
-            }
-        })
-        .collect();
-    drop(mapping);
-    for request in handler_requests {
-        match server.start_handler(Request::new(request.clone())).await {
-            Ok(response) => {
-                let response = response.into_inner();
-                tracing::info!("{}", format!("{:?}", response.states_map));
-            }
-            Err(err) => {
-                tracing::error!(
-                    "Handler [DOWN] - {:?}\n Error - {:?}",
-                    request.directory_path,
-                    err
-                );
+    for (directory_path, handler_mapping) in mapping.directory_mapping.iter() {
+        if handler_mapping.is_auto_startup {
+            let request = StartHandlerRequest {
+                directory_path: directory_path.to_string(),
+            };
+            match server.start_handler(Request::new(request.clone())).await {
+                Ok(response) => {
+                    let response = response.into_inner();
+                    tracing::info!("{}", format!("{:?}", response.states_map));
+                }
+                Err(err) => {
+                    tracing::error!(
+                        "Handler [DOWN] - {:?}\n Error - {:?}",
+                        request.directory_path,
+                        err
+                    );
+                }
             }
         }
     }
