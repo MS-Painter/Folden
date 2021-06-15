@@ -1,9 +1,20 @@
+use std::convert::TryFrom;
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::thread;
+
 use crossbeam::channel::Sender;
 use notify::ErrorKind as NotifyErrorKind;
+use notify::RecommendedWatcher;
+use notify::Watcher;
 use notify::{Event, EventKind};
 use serde::{Deserialize, Serialize};
+use tokio::sync::broadcast;
 
 use generated_types::{HandlerSummary, ModifyHandlerRequest};
+use pipelines::pipeline_config::PipelineConfig;
+use pipelines::pipeline_handler::PipelineHandler;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HandlerMapping {
@@ -37,6 +48,40 @@ impl HandlerMapping {
             config_path: self.handler_config_path.clone(),
             is_auto_startup: self.is_auto_startup,
             description: self.description.to_owned(),
+        }
+    }
+
+    pub fn spawn_handler_thread(
+        &mut self,
+        directory_path: String,
+        trace_tx: Arc<
+            broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>,
+        >,
+    ) -> Result<(), String> {
+        let path = PathBuf::from(directory_path);
+        let config_path = PathBuf::from(&self.handler_config_path);
+        match fs::read(&config_path) {
+            Ok(data) => {
+                match PipelineConfig::try_from(data) {
+                    Ok(config) => {
+                        let (events_tx, events_rx) = crossbeam::channel::unbounded();
+                        let events_thread_tx = events_tx.clone();
+                        let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| events_thread_tx.send(res).unwrap()).unwrap();
+                        let _ = watcher.configure(notify::Config::PreciseEvents(true));
+                        thread::spawn(move || {
+                            let mut handler = PipelineHandler::new(config, trace_tx);
+                            handler.watch(&path, watcher, events_rx);
+                        });
+                        // Insert or update the value of the current handled directory
+                        self.watcher_tx = Option::Some(events_tx);
+                        Ok(())
+                    }
+                    Err(err) => Err(format!("Pipeline config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
+                }
+            }
+            Err(err) => {
+                Err(format!("Pipeline file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
+            }
         }
     }
 

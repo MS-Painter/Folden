@@ -84,12 +84,13 @@ impl ServiceEndpoint<Request, Response> for RegisterEndpoint<'_> {
                     }));
                 }
                 let trace_tx = self.server.handlers_trace_tx.clone();
-                match self.mapping.spawn_handler_thread(
-                    request.directory_path,
-                    &mut handler_mapping,
-                    trace_tx,
-                ) {
+                match handler_mapping
+                    .spawn_handler_thread(request.directory_path.to_string(), trace_tx)
+                {
                     Ok(_) => {
+                        self.mapping
+                            .directory_mapping
+                            .insert(request.directory_path, handler_mapping);
                         let _result = self.mapping.save(&self.server.config.mapping_state_path);
                         Ok(Response::new(HandlerStateResponse {
                             is_alive: true,
