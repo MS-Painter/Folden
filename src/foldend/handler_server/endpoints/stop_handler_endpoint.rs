@@ -10,13 +10,13 @@ use generated_types::{HandlerStateResponse, HandlerStatesMapResponse, StopHandle
 pub type Request = tonic::Request<StopHandlerRequest>;
 pub type Response = tonic::Response<HandlerStatesMapResponse>;
 
-pub struct StophandlerEndpoint<'a> {
+pub struct StopHandlerEndpoint<'a> {
     request: Request,
     mapping: RwLockWriteGuard<'a, Mapping>,
     server: &'a Server,
 }
 
-impl<'a> StophandlerEndpoint<'a> {
+impl<'a> StopHandlerEndpoint<'a> {
     pub fn new(
         request: Request,
         mapping: RwLockWriteGuard<'a, Mapping>,
@@ -30,7 +30,7 @@ impl<'a> StophandlerEndpoint<'a> {
     }
 }
 
-impl ServiceEndpoint<Request, Response> for StophandlerEndpoint<'_> {
+impl ServiceEndpoint<Request, Response> for StopHandlerEndpoint<'_> {
     fn execute(mut self) -> Result<Response, tonic::Status> {
         let request = self.request.get_ref();
         let directory_path = request.directory_path.as_str();

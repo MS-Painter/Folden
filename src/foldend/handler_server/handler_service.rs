@@ -41,8 +41,8 @@ impl HandlerService for Server {
     ) -> Result<start_handler_endpoint::Response, tonic::Status> {
         tracing::info!("Starting handler");
         let mapping = self.mapping.write().await;
-        let endpoint: start_handler_endpoint::StarthandlerEndpoint =
-            start_handler_endpoint::StarthandlerEndpoint::new(request, mapping, self);
+        let endpoint: start_handler_endpoint::StartHandlerEndpoint =
+            start_handler_endpoint::StartHandlerEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 
@@ -53,7 +53,7 @@ impl HandlerService for Server {
     ) -> Result<stop_handler_endpoint::Response, tonic::Status> {
         tracing::info!("Stopping handler");
         let mapping = self.mapping.write().await;
-        let endpoint = stop_handler_endpoint::StophandlerEndpoint::new(request, mapping, self);
+        let endpoint = stop_handler_endpoint::StopHandlerEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 
