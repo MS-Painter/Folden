@@ -1,20 +1,10 @@
-use std::{
-    collections::HashMap,
-    convert::TryFrom,
-    fs,
-    path::{Path, PathBuf},
-    result::Result,
-    sync::Arc,
-    thread,
-};
+use std::{collections::HashMap, convert::TryFrom, fs, path::Path, result::Result, sync::Arc};
 
-use notify::{RecommendedWatcher, Watcher};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 
 use crate::{config::Config, handler_mapping::HandlerMapping};
 use generated_types::HandlerStateResponse;
-use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
 // If a handler thread has ceased isn't known at realtime rather will be verified via channel whenever needed to check given a client request
@@ -30,7 +20,7 @@ impl Mapping {
         fs::write(mapping_state_path, mapping_data)
     }
 
-    pub fn get_live_handlers(&self) -> impl Iterator<Item = (&String, &HandlerMapping)> {
+    pub fn iter_live_handlers(&self) -> impl Iterator<Item = (&String, &HandlerMapping)> {
         self.directory_mapping
             .iter()
             .filter(|(_dir, mapping)| mapping.is_alive())
@@ -50,11 +40,15 @@ impl Mapping {
                 message: String::from("Handler already up"),
             }
         } else {
-            match self.spawn_handler_thread(directory_path.to_string(), handler_mapping, trace_tx) {
-                Ok(_) => HandlerStateResponse {
-                    is_alive: true,
-                    message: String::from("Started handler"),
-                },
+            match handler_mapping.spawn_handler_thread(directory_path.to_string(), trace_tx) {
+                Ok(_) => {
+                    self.directory_mapping
+                        .insert(directory_path.to_string(), handler_mapping.to_owned());
+                    HandlerStateResponse {
+                        is_alive: true,
+                        message: String::from("Started handler"),
+                    }
+                }
                 Err(err) => HandlerStateResponse {
                     is_alive: false,
                     message: format!("Failed to start handler.\nError: {}", err),
@@ -63,43 +57,7 @@ impl Mapping {
         }
     }
 
-    pub fn spawn_handler_thread(
-        &mut self,
-        directory_path: String,
-        handler_mapping: &mut HandlerMapping,
-        trace_tx: Arc<
-            broadcast::Sender<Result<generated_types::TraceHandlerResponse, tonic::Status>>,
-        >,
-    ) -> Result<(), String> {
-        let path = PathBuf::from(directory_path.clone());
-        let config_path = PathBuf::from(&handler_mapping.handler_config_path);
-        match fs::read(&config_path) {
-            Ok(data) => {
-                match PipelineConfig::try_from(data) {
-                    Ok(config) => {
-                        let (events_tx, events_rx) = crossbeam::channel::unbounded();
-                        let events_thread_tx = events_tx.clone();
-                        let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| events_thread_tx.send(res).unwrap()).unwrap();
-                        let _ = watcher.configure(notify::Config::PreciseEvents(true));
-                        thread::spawn(move || {
-                            let mut handler = PipelineHandler::new(config, trace_tx);
-                            handler.watch(&path, watcher, events_rx);
-                        });
-                        // Insert or update the value of the current handled directory
-                        handler_mapping.watcher_tx = Option::Some(events_tx);
-                        self.directory_mapping.insert(directory_path, handler_mapping.to_owned());
-                        Ok(())
-                    }
-                    Err(err) => Err(format!("Pipeline config parsing failure.\nPath: {:?}\nError: {:?}", config_path, err))
-                }
-            }
-            Err(err) => {
-                Err(format!("Pipeline file read failure.\nMake sure the file is at the registered path\nPath: {:?}\nError: {:?}", config_path, err))
-            }
-        }
-    }
-
-    pub async fn stop_handler(
+    pub fn stop_handler(
         &mut self,
         config: &Config,
         directory_path: &str,
