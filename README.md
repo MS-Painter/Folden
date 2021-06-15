@@ -1,3 +1,5 @@
+[![CI](https://github.com/STRONG-MAD/Folden/actions/workflows/integration.yml/badge.svg)](https://github.com/STRONG-MAD/Folden/actions/workflows/integration.yml)
+
 # What is Folden?
 
 Application to handle and modify files for common scenarios. System wide.
