@@ -16,6 +16,20 @@ pub struct TraceEndpoint<'a> {
     server: &'a Server,
 }
 
+impl<'a> TraceEndpoint<'a> {
+    pub fn new(
+        request: Request,
+        mapping: RwLockReadGuard<'a, Mapping>,
+        server: &'a Server,
+    ) -> Self {
+        Self {
+            request,
+            mapping,
+            server,
+        }
+    }
+}
+
 impl ServiceEndpoint<Request, Response> for TraceEndpoint<'_> {
     fn execute(&self) -> Result<Response, tonic::Status> {
         let request = self.request.into_inner();

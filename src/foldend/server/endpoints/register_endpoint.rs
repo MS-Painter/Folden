@@ -13,6 +13,20 @@ pub struct RegisterEndpoint<'a> {
     server: &'a Server,
 }
 
+impl<'a> RegisterEndpoint<'a> {
+    pub fn new(
+        request: Request,
+        mapping: RwLockWriteGuard<'a, Mapping>,
+        server: &'a Server,
+    ) -> Self {
+        Self {
+            request,
+            mapping,
+            server,
+        }
+    }
+}
+
 impl ServiceEndpoint<Request, Response> for RegisterEndpoint<'_> {
     fn execute(&self) -> Result<Response, tonic::Status> {
         let request = self.request.into_inner();

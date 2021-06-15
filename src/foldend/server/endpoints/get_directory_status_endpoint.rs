@@ -15,6 +15,10 @@ pub struct GetDirectoryStatusEndpoint<'a> {
 }
 
 impl<'a> GetDirectoryStatusEndpoint<'a> {
+    pub fn new(request: Request, mapping: RwLockReadGuard<'a, Mapping>) -> Self {
+        Self { request, mapping }
+    }
+
     pub fn is_any_handler_alive(&self) -> bool {
         if let Ok(response) = self.execute() {
             let response = response.into_inner();

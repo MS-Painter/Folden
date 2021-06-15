@@ -18,11 +18,7 @@ impl HandlerService for Server {
     ) -> Result<register_endpoint::Response, tonic::Status> {
         tracing::info!("Registering handler to directory");
         let mut mapping = self.mapping.write().await;
-        let endpoint = register_endpoint::RegisterEndpoint {
-            request,
-            mapping,
-            server: self,
-        };
+        let endpoint = register_endpoint::RegisterEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 
@@ -34,7 +30,7 @@ impl HandlerService for Server {
         tracing::info!("Getting directory status");
         let mapping = self.mapping.read().await;
         let endpoint =
-            get_directory_status_endpoint::GetDirectoryStatusEndpoint { request, mapping };
+            get_directory_status_endpoint::GetDirectoryStatusEndpoint::new(request, mapping);
         endpoint.execute()
     }
 
@@ -45,11 +41,7 @@ impl HandlerService for Server {
     ) -> Result<start_handler_endpoint::Response, tonic::Status> {
         tracing::info!("Starting handler");
         let mut mapping = self.mapping.write().await;
-        let endpoint = start_handler_endpoint::StarthandlerEndpoint {
-            request,
-            mapping,
-            server: self,
-        };
+        let endpoint = start_handler_endpoint::StarthandlerEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 
@@ -60,11 +52,7 @@ impl HandlerService for Server {
     ) -> Result<stop_handler_endpoint::Response, tonic::Status> {
         tracing::info!("Stopping handler");
         let mut mapping = self.mapping.write().await;
-        let endpoint = stop_handler_endpoint::StophandlerEndpoint {
-            request,
-            mapping,
-            server: self,
-        };
+        let endpoint = stop_handler_endpoint::StophandlerEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 
@@ -75,25 +63,18 @@ impl HandlerService for Server {
     ) -> Result<modify_endpoint::Response, tonic::Status> {
         tracing::info!("Modifying handler");
         let mut mapping = self.mapping.write().await;
-        let endpoint = modify_endpoint::ModifyEndpoint {
-            request,
-            mapping,
-            server: self,
-        };
+        let endpoint = modify_endpoint::ModifyEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 
+    #[tracing::instrument]
     async fn trace_handler(
         &self,
         request: trace_endpoint::Request,
     ) -> Result<trace_endpoint::Response, tonic::Status> {
         tracing::info!("Tracing directory handler");
         let mapping = self.mapping.read().await;
-        let endpoint = trace_endpoint::TraceEndpoint {
-            request,
-            mapping,
-            server: self,
-        };
+        let endpoint = trace_endpoint::TraceEndpoint::new(request, mapping, self);
         endpoint.execute()
     }
 }
