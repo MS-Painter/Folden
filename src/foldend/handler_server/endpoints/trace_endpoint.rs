@@ -53,7 +53,7 @@ impl ServiceEndpoint<Request, Response> for TraceEndpoint<'_> {
                 }),
                 mapping: self.mapping,
             };
-            if !get_dir_status_endpoint.is_any_handler_alive() {
+            if !get_dir_status_endpoint.any_handler_alive() {
                 return Err(tonic::Status::not_found("No handler is alive to trace"));
             }
         }

@@ -19,7 +19,7 @@ impl<'a> GetDirectoryStatusEndpoint<'a> {
         Self { request, mapping }
     }
 
-    pub fn is_any_handler_alive(self) -> bool {
+    pub fn any_handler_alive(self) -> bool {
         if let Ok(response) = self.execute() {
             let response = response.into_inner();
             return response
