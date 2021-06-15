@@ -14,6 +14,19 @@ pub struct GetDirectoryStatusEndpoint<'a> {
     mapping: RwLockReadGuard<'a, Mapping>,
 }
 
+impl<'a> GetDirectoryStatusEndpoint<'a> {
+    pub fn is_any_handler_alive(&self) -> bool {
+        if let Ok(response) = self.execute() {
+            let response = response.into_inner();
+            return response
+                .summary_map
+                .iter()
+                .any(|(_dir, handler)| handler.is_alive);
+        }
+        false
+    }
+}
+
 impl ServiceEndpoint<Request, Response> for GetDirectoryStatusEndpoint<'_> {
     fn execute(&self) -> Result<Response, tonic::Status> {
         let request = self.request.into_inner();
