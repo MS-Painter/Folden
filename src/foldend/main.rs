@@ -1,7 +1,7 @@
 mod config;
 mod handler_mapping;
+mod handler_server;
 mod mapping;
-mod server;
 mod startup;
 
 #[cfg(windows)]

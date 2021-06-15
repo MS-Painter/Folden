@@ -1,7 +1,8 @@
 use tokio::sync::RwLockWriteGuard;
 
+use super::super::server::Server;
 use super::handler_service_endpoint::ServiceEndpoint;
-use crate::{handler_mapping::HandlerMapping, mapping::Mapping, server::Server};
+use crate::{handler_mapping::HandlerMapping, mapping::Mapping};
 use generated_types::{HandlerStateResponse, RegisterToDirectoryRequest};
 
 pub type Request = tonic::Request<RegisterToDirectoryRequest>;

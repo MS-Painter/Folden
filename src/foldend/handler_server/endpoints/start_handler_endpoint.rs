@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use tokio::sync::RwLockWriteGuard;
 
+use super::super::server::Server;
 use super::handler_service_endpoint::ServiceEndpoint;
-use crate::{mapping::Mapping, server::Server};
+use crate::mapping::Mapping;
 use generated_types::{HandlerStateResponse, HandlerStatesMapResponse, StartHandlerRequest};
 
 pub type Request = tonic::Request<StartHandlerRequest>;

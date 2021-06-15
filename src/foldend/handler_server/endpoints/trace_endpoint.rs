@@ -1,9 +1,10 @@
 use tokio::sync::RwLockReadGuard;
 
+use super::super::server::Server;
 use super::{handler_service_endpoint::ServiceEndpoint, trace_handler_stream::TraceHandlerStream};
 use crate::{
+    handler_server::endpoints::get_directory_status_endpoint::GetDirectoryStatusEndpoint,
     mapping::Mapping,
-    server::{endpoints::get_directory_status_endpoint::GetDirectoryStatusEndpoint, Server},
 };
 use generated_types::{GetDirectoryStatusRequest, TraceHandlerRequest};
 

@@ -2,13 +2,10 @@ use std::{ops::Deref, sync::Arc};
 
 use tokio::sync::{broadcast, RwLock, RwLockReadGuard};
 
+use super::endpoints::trace_handler_stream;
 use crate::config::Config;
 use crate::handler_mapping::HandlerMapping;
 use crate::mapping::Mapping;
-use endpoints::trace_handler_stream;
-
-mod endpoints;
-mod handler_service;
 
 #[derive(Debug)]
 pub struct Server {
@@ -38,7 +35,9 @@ impl Server {
         false
     }
 
-    fn convert_trace_channel_reciever_to_stream(&self) -> trace_handler_stream::TraceHandlerStream {
+    pub fn convert_trace_channel_reciever_to_stream(
+        &self,
+    ) -> trace_handler_stream::TraceHandlerStream {
         let mut rx = self.handlers_trace_tx.subscribe();
         Box::pin(async_stream::stream! {
             while let Ok(item) = rx.recv().await {
@@ -47,7 +46,7 @@ impl Server {
         })
     }
 
-    fn get_handler<'a>(
+    pub fn get_handler<'a>(
         &self,
         mapping: &'a RwLockReadGuard<Mapping>,
         directory_path: &str,

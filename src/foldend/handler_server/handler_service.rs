@@ -4,7 +4,7 @@ use super::endpoints::{
     get_directory_status_endpoint, modify_endpoint, register_endpoint, start_handler_endpoint,
     stop_handler_endpoint, trace_endpoint,
 };
-use super::Server;
+use super::server::Server;
 use generated_types::handler_service_server::HandlerService;
 
 #[tonic::async_trait]

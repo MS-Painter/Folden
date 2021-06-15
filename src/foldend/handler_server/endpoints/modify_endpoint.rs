@@ -1,7 +1,8 @@
 use tokio::sync::RwLockWriteGuard;
 
+use super::super::server::Server;
 use super::handler_service_endpoint::ServiceEndpoint;
-use crate::{mapping::Mapping, server::Server};
+use crate::mapping::Mapping;
 use generated_types::ModifyHandlerRequest;
 
 pub type Request = tonic::Request<ModifyHandlerRequest>;

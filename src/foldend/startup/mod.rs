@@ -14,8 +14,8 @@ use tonic::Request;
 use tracing_subscriber::{fmt, prelude::__tracing_subscriber_SubscriberExt, EnvFilter};
 
 use crate::config::Config;
+use crate::handler_server::server::Server;
 use crate::mapping::Mapping;
-use crate::server::Server;
 use folden::shared_utils::construct_port_arg;
 use generated_types::{
     handler_service_server::{HandlerService, HandlerServiceServer},
