@@ -5,13 +5,14 @@ use tokio::sync::RwLock;
 use tonic::Request;
 
 use crate::config::Config;
-use crate::handler_mapping::HandlerMapping;
 use crate::mapping::Mapping;
+use endpoints::trace_handler_stream;
+use crate::handler_mapping::HandlerMapping;
 use generated_types::handler_service_server::HandlerService;
 
+
+mod endpoints;
 mod handler_service;
-mod trace_handler_stream;
-mod handler_service_endpoint;
 
 #[derive(Debug)]
 pub struct Server {
