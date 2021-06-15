@@ -1,12 +1,16 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use tokio::sync::broadcast::Sender;
 use tokio::sync::RwLockWriteGuard;
+use tonic::Status;
 
-use super::super::server::Server;
 use super::handler_service_endpoint::ServiceEndpoint;
 use crate::handler_server::utils::is_concurrent_handlers_limit_reached;
 use crate::mapping::Mapping;
-use generated_types::{HandlerStateResponse, HandlerStatesMapResponse, StartHandlerRequest};
+use generated_types::{
+    HandlerStateResponse, HandlerStatesMapResponse, StartHandlerRequest, TraceHandlerResponse,
+};
 
 pub type Request = tonic::Request<StartHandlerRequest>;
 pub type Response = tonic::Response<HandlerStatesMapResponse>;
@@ -14,19 +18,22 @@ pub type Response = tonic::Response<HandlerStatesMapResponse>;
 pub struct StartHandlerEndpoint<'a> {
     request: Request,
     mapping: RwLockWriteGuard<'a, Mapping>,
-    server: &'a Server,
+    handlers_trace_tx: &'a Arc<Sender<Result<TraceHandlerResponse, Status>>>,
+    concurrent_threads_limit: u8,
 }
 
 impl<'a> StartHandlerEndpoint<'a> {
     pub fn new(
         request: Request,
         mapping: RwLockWriteGuard<'a, Mapping>,
-        server: &'a Server,
+        handlers_trace_tx: &'a Arc<Sender<Result<TraceHandlerResponse, Status>>>,
+        concurrent_threads_limit: u8,
     ) -> Self {
         Self {
             request,
             mapping,
-            server,
+            handlers_trace_tx,
+            concurrent_threads_limit,
         }
     }
 }
@@ -47,15 +54,15 @@ impl ServiceEndpoint<Request, Response> for StartHandlerEndpoint<'_> {
                 if !handler_mapping.is_alive()
                     && is_concurrent_handlers_limit_reached(
                         &self.mapping,
-                        self.server.config.concurrent_threads_limit,
+                        self.concurrent_threads_limit,
                     )
                 {
                     return Err(tonic::Status::failed_precondition(format!(
                         "Aborted start handler - Reached concurrent live handler limit ({})",
-                        self.server.config.concurrent_threads_limit
+                        self.concurrent_threads_limit
                     )));
                 }
-                let trace_tx = self.server.handlers_trace_tx.clone();
+                let trace_tx = self.handlers_trace_tx.clone();
                 let response =
                     self.mapping
                         .start_handler(directory_path, handler_mapping, trace_tx);
@@ -65,17 +72,15 @@ impl ServiceEndpoint<Request, Response> for StartHandlerEndpoint<'_> {
             None => {
                 // If empty - All directories are requested
                 if request.directory_path.is_empty() {
-                    if self.mapping.directory_mapping.len()
-                        > self.server.config.concurrent_threads_limit.into()
-                    {
+                    if self.mapping.directory_mapping.len() > self.concurrent_threads_limit.into() {
                         return Err(tonic::Status::failed_precondition(
                             format!("Aborted start handlers - Would pass concurrent live handler limit ({})\nCurrently live: {}", 
-                            self.server.config.concurrent_threads_limit, self.mapping.iter_live_handlers().count())));
+                            self.concurrent_threads_limit, self.mapping.iter_live_handlers().count())));
                     }
                     for (directory_path, handler_mapping) in
                         self.mapping.clone().directory_mapping.iter_mut()
                     {
-                        let trace_tx = self.server.handlers_trace_tx.clone();
+                        let trace_tx = self.handlers_trace_tx.clone();
                         let response =
                             self.mapping
                                 .start_handler(directory_path, handler_mapping, trace_tx);

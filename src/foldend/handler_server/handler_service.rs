@@ -42,7 +42,12 @@ impl HandlerService for Server {
         tracing::info!("Starting handler");
         let mapping = self.mapping.write().await;
         let endpoint: start_handler_endpoint::StartHandlerEndpoint =
-            start_handler_endpoint::StartHandlerEndpoint::new(request, mapping, self);
+            start_handler_endpoint::StartHandlerEndpoint::new(
+                request,
+                mapping,
+                &self.handlers_trace_tx,
+                self.config.concurrent_threads_limit,
+            );
         endpoint.execute()
     }
 
