@@ -28,9 +28,9 @@ Foldend instantiates pipeline handler threads and is responsible for their lifet
 
 4. Pipeline execution -
 
-Each `action` is applied sequentially, and is required to succeed,
+Each `action` is applied sequentially after a sucessful execution (`action`'s `must_succeed` defaults to `True`).
 
-To advance to the next `action`. Otherwise ending the pipeline for the current event.
+Otherwise ending the entire pipeline for the current event.
 
 File watching events are handled sequentially as well to not apply pipeline on same file.
 
