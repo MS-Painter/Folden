@@ -1,11 +1,10 @@
 use std::{
     env,
-    ffi::{OsStr, OsString},
     option::Option,
-    path::Path,
+    path::{Path, PathBuf},
 };
 
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches, SubCommand, builder::TypedValueParser};
 use cli_table::{self, print_stdout, Cell, CellStruct, Table, TableStruct};
 use dyn_clone::DynClone;
 
@@ -43,7 +42,7 @@ pub trait SubCommandUtil: DynClone {
         }
     }
 
-    fn subcommand_matches<'a>(&self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches<'a>> {
+    fn subcommand_matches<'a>(&'a self, matches: &'a ArgMatches) -> Option<&clap::ArgMatches> {
         matches.subcommand_matches(self.name())
     }
 }
@@ -97,7 +96,7 @@ where
     futures::executor::block_on(client_connect_future)
 }
 
-pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>> {
+pub fn construct_directory_or_all_args<'a>() -> Vec<Arg<'a>> {
     vec![
         Arg::with_name("directory")
             .long("directory")
@@ -105,7 +104,7 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>> {
             .required(false)
             .empty_values(false)
             .takes_value(true)
-            .validator_os(is_existing_directory_validator),
+            .value_parser(clap::builder::ValueParser::new(ExistingDirectoryValueParser::new())),
         Arg::with_name("all")
             .long("all")
             .help("Apply on all registered directory handlers")
@@ -115,7 +114,7 @@ pub fn construct_directory_or_all_args<'a, 'b>() -> Vec<Arg<'a, 'b>> {
     ]
 }
 
-pub fn construct_startup_type_arg<'a, 'b>() -> Arg<'a, 'b> {
+pub fn construct_startup_type_arg<'a>() -> Arg<'a> {
     Arg::with_name("startup")
         .long("startup")
         .visible_alias("up")
@@ -126,7 +125,7 @@ pub fn construct_startup_type_arg<'a, 'b>() -> Arg<'a, 'b> {
         .possible_values(&STARTUP_TYPES)
 }
 
-pub fn construct_simple_output_arg<'a, 'b>() -> Arg<'a, 'b> {
+pub fn construct_simple_output_arg<'a>() -> Arg<'a> {
     Arg::with_name("simple")
         .long("simple")
         .visible_alias("smpl")
@@ -137,9 +136,9 @@ pub fn construct_simple_output_arg<'a, 'b>() -> Arg<'a, 'b> {
 pub fn get_path_from_matches_or_current_path(
     sub_matches: &ArgMatches,
     match_name: &str,
-) -> Result<std::path::PathBuf, std::io::Error> {
-    match sub_matches.value_of(match_name) {
-        Some(directory_match) => Path::new(directory_match).canonicalize(),
+) -> Result<PathBuf, std::io::Error> {
+    match sub_matches.get_one::<PathBuf>(match_name) {
+        Some(directory_match) => directory_match.as_path().canonicalize(),
         None => env::current_dir().unwrap().canonicalize(),
     }
 }
@@ -151,12 +150,36 @@ pub fn construct_server_url(sub_matches: &ArgMatches) -> Option<String> {
     None
 }
 
-pub fn is_existing_directory_validator(val: &OsStr) -> Result<(), OsString> {
-    let path = Path::new(val);
-    if path.is_dir() && path.exists() {
-        Ok(())
-    } else {
-        Err(OsString::from("Input value isn't a directory"))
+#[derive(Copy, Clone, Debug)]
+pub struct ExistingDirectoryValueParser {}
+
+impl ExistingDirectoryValueParser {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl TypedValueParser for ExistingDirectoryValueParser {
+    type Value = PathBuf;
+
+    fn parse_ref(
+        &self,
+        _cmd: &clap::Command,
+        _arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
+        let path = Path::new(value).canonicalize()?;
+        if path.is_dir() && path.exists() {
+            Ok(path)
+        } else {
+            Err(clap::Error::raw(clap::ErrorKind::InvalidValue, "Input value isn't a directory"))
+        }
+    }
+}
+
+impl Default for ExistingDirectoryValueParser {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

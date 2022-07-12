@@ -9,7 +9,7 @@ use crate::{actions::PipelineActions, event::PipelineEvent};
 pub struct PipelineConfig {
     pub watch_recursive: bool,
     pub apply_on_startup_on_existing_files: bool,
-    pub panic_handler_on_error: bool,
+    pub stop_handler_on_error: bool,
     pub event: PipelineEvent,
     pub actions: Vec<PipelineActions>,
 }
@@ -19,7 +19,7 @@ impl PipelineConfig {
         Self {
             watch_recursive: false,
             apply_on_startup_on_existing_files: false,
-            panic_handler_on_error: false,
+            stop_handler_on_error: false,
             event: match events {
                 Some(events) => PipelineEvent::from(events),
                 None => PipelineEvent::default(),

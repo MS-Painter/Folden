@@ -50,7 +50,7 @@ impl PipelineHandler {
             context.action_name = Some(action_name.into());
             context.log("Starting action");
             let action_succeeded = action.run(&mut context);
-            if !action_succeeded {
+            if !action_succeeded && action.must_succeed() {
                 break;
             }
         }

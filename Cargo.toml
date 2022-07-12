@@ -1,8 +1,8 @@
 [package]
 name = "folden"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["STRONG-MAD <mayan.shoshani7@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,34 +21,34 @@ members = [
 ]
 
 [dependencies]
-generated_types = {path = "generated_types"}
-pipelines = {path = "pipelines"}
+generated_types = { path = "generated_types" }
+pipelines = { path = "pipelines" }
 
-strum = "0.21.0"
-strum_macros = "0.21.1"
-toml = "0.5.8"
-tonic = "0.4.3"
-clap = "2.33.3"
-typetag = "0.1.7"
-futures = "0.3.15"
-cli-table = "0.4.6"
-dyn-clone = "1.0.4"
-async-stream = "0.3.2"
-serde = {version = "1.0.117", features = ["derive"] }
-tokio = { version = "1.6.1", features = ["full"] }
-tokio-stream = { version ="0.1.6", features = ["default", "sync"] }
+strum = "0.24.1"
+strum_macros = "0.24.2"
+toml = "0.5.9"
+tonic = "0.7.2"
+clap = { version = "3.2.8", features = ["cargo"] }
+typetag = "0.2.0"
+futures = "0.3.21"
+cli-table = "0.4.7"
+dyn-clone = "1.0.6"
+async-stream = "0.3.3"
+serde = { version = "1.0.138", features = ["derive"] }
+tokio = { version = "1.19.2", features = ["full"] }
+tokio-stream = { version ="0.1.9", features = ["default", "sync"] }
 
 # foldend dependencies
-serde_json = "1.0.64"
+serde_json = "1.0.82"
 crossbeam = "0.8.1"
-notify = "5.0.0-pre.7"
-tracing = "0.1.26"
-tracing-appender = "0.1.2"
+notify = "5.0.0-pre.15"
+tracing = "0.1.35"
+tracing-appender = "0.2.2"
 tracing-futures = "0.2.5"
-tracing-subscriber = "0.2.18"
+tracing-subscriber = { version = "0.3.14", features = ["env-filter"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-service = "0.3.1"
+windows-service = "0.4.0"
 
 [package.metadata.deb]
 section = "utility"

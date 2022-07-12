@@ -7,7 +7,7 @@ use std::path::Path;
 use std::{convert::TryFrom, sync::Arc};
 use std::{fs, path::PathBuf};
 
-use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand, crate_version};
 use tokio::sync::{broadcast, RwLock};
 use tonic::transport::Server as TonicServer;
 use tonic::Request;
@@ -22,14 +22,14 @@ use generated_types::{
     StartHandlerRequest,
 };
 
-fn construct_app<'a, 'b>() -> App<'a, 'b> {
+fn construct_app<'a>() -> App<'a> {
     App::new("Foldend")
         .version(crate_version!())
         .about("Folden background manager service")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .arg(
             Arg::with_name("config")
-                .short("c")
+                .short('c')
                 .long("config")
                 .required(true)
                 .empty_values(false)
@@ -42,7 +42,7 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 .arg(construct_port_arg())
                 .arg(
                     Arg::with_name("mapping")
-                        .short("m")
+                        .short('m')
                         .long("mapping")
                         .required(false)
                         .empty_values(false)
@@ -58,7 +58,7 @@ fn construct_app<'a, 'b>() -> App<'a, 'b> {
                 )
                 .arg(
                     Arg::with_name("log")
-                        .short("l")
+                        .short('l')
                         .long("log")
                         .empty_values(false)
                         .takes_value(true)
@@ -118,7 +118,7 @@ async fn startup_server(
     tracing::subscriber::set_global_default(subscriber).expect("Unable to set a global collector");
 
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), config.port);
-    let (trace_tx, _) = broadcast::channel(10);
+    let (trace_tx, _) = broadcast::channel(16);
     let server = Server {
         config: Arc::new(config),
         mapping: Arc::new(RwLock::new(mapping)),
@@ -208,13 +208,13 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
             let config_file_path = PathBuf::from(config_str_path);
             match get_config(&config_file_path) {
                 Ok(mut config) => match matches.subcommand() {
-                    ("run", Some(sub_matches)) => {
+                    Some(("run", sub_matches)) => {
                         modify_config(&mut config, sub_matches)?;
                         config.save(&config_file_path).unwrap();
                         let mapping = get_mapping(&config);
                         startup_server(config, mapping).await?;
                     }
-                    ("logs", Some(sub_matches)) => {
+                    Some(("logs", sub_matches)) => {
                         if sub_matches.value_of("view").is_some() {
                             unimplemented!("View logs from file")
                         } else if sub_matches.value_of("clear").is_some() {
@@ -225,7 +225,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                 },
                 Err(e) => {
                     match matches.subcommand() {
-                        ("run", Some(sub_matches)) => {
+                        Some(("run", sub_matches)) => {
                             tracing::warn!("Invalid config file:{path:?}\nError:{error}\nCreating default config", path=&config_file_path, error=e);
                             let mut config = Config::default();
                             modify_config(&mut config, sub_matches)?;
@@ -233,7 +233,7 @@ pub async fn main_service_runtime() -> Result<(), Box<dyn std::error::Error>> {
                             let mapping = get_mapping(&config);
                             startup_server(config, mapping).await?;
                         }
-                        ("logs", Some(_sub_matches)) => {
+                        Some(("logs", _sub_matches)) => {
                             tracing::error!(
                                 "Invalid config file:{path:?}\nError:{error}",
                                 path = &config_file_path,

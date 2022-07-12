@@ -17,6 +17,8 @@ pub trait PipelineAction {
     // Execute action. Returns if action deemed successful.
     fn run(&self, context: &mut PipelineExecutionContext) -> bool;
 
+    fn must_succeed(&self) -> bool;
+
     fn format_input(text: &str, input: PathBuf) -> Cow<str> {
         lazy_static! {
             static ref INPUT_RE: Regex = Regex::new(r"(\$input\$)").unwrap();
@@ -65,6 +67,13 @@ impl PipelineAction for PipelineActions {
         match self {
             PipelineActions::MoveToDir(action) => action.run(context),
             PipelineActions::RunCmd(action) => action.run(context),
+        }
+    }
+
+    fn must_succeed(&self) -> bool {
+        match self {
+            PipelineActions::MoveToDir(action) => action.must_succeed(),
+            PipelineActions::RunCmd(action) => action.must_succeed(),
         }
     }
 }

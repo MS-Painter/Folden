@@ -21,6 +21,7 @@ pub struct MoveToDir {
     pub replace_older_files: bool,
     pub keep_input_file_intact: bool,
     pub datetime_formatting: bool,
+    pub must_succeed: bool,
 }
 
 impl MoveToDir {
@@ -87,6 +88,7 @@ impl Default for MoveToDir {
             replace_older_files: true,
             keep_input_file_intact: false,
             datetime_formatting: true,
+            must_succeed: true,
         }
     }
 }
@@ -129,5 +131,9 @@ impl PipelineAction for MoveToDir {
             },
             None => context.handle_error("Input doesn't contain value"),
         }
+    }
+
+    fn must_succeed(&self) -> bool {
+        self.must_succeed
     }
 }

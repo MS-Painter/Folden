@@ -14,6 +14,7 @@ pub struct RunCmd {
     pub command: String,
     pub input_formatting: bool,
     pub datetime_formatting: bool,
+    pub must_succeed: bool,
 }
 
 impl RunCmd {
@@ -57,6 +58,10 @@ impl PipelineAction for RunCmd {
             )),
         }
     }
+
+    fn must_succeed(&self) -> bool {
+        self.must_succeed
+    }
 }
 
 impl Default for RunCmd {
@@ -66,6 +71,7 @@ impl Default for RunCmd {
             command: String::from("echo $input$"),
             input_formatting: true,
             datetime_formatting: true,
+            must_succeed: true,
         }
     }
 }

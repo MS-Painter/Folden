@@ -1,16 +1,16 @@
 [package]
 name = "generated_types"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["STRONG-MAD <mayan.shoshani7@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-futures = "0.3.15"
-prost = "0.7.0"
-prost-types = "0.7.0"
-tonic = "0.4.3"
+futures = "0.3.21"
+prost = "0.10.4"
+prost-types = "0.10.1"
+tonic = "0.7.2"
 
 [build-dependencies]
-tonic-build = "0.4.2"
+tonic-build = "0.7.2"

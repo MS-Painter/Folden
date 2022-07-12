@@ -8,12 +8,12 @@ use std::{
     thread,
 };
 
-use notify::{RecommendedWatcher, Watcher};
-use serde::{Deserialize, Serialize};
+use notify::Watcher;
 use tokio::sync::broadcast;
+use serde::{Deserialize, Serialize};
 
-use crate::{config::Config, handler_mapping::HandlerMapping};
 use generated_types::HandlerStateResponse;
+use crate::{config::Config, handler_mapping::HandlerMapping};
 use pipelines::{pipeline_config::PipelineConfig, pipeline_handler::PipelineHandler};
 
 // Mapping data used to handle known directories to handle
@@ -79,7 +79,7 @@ impl Mapping {
                     Ok(config) => {
                         let (events_tx, events_rx) = crossbeam::channel::unbounded();
                         let events_thread_tx = events_tx.clone();
-                        let mut watcher: RecommendedWatcher = Watcher::new_immediate(move |res| events_thread_tx.send(res).unwrap()).unwrap();
+                        let mut watcher = notify::recommended_watcher( |res| events_thread_tx.send(res).unwrap()).unwrap();
                         let _ = watcher.configure(notify::Config::PreciseEvents(true));
                         thread::spawn(move || {
                             let mut handler = PipelineHandler::new(config, trace_tx);

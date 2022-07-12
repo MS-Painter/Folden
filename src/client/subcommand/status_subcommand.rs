@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{App, ArgMatches};
 use futures::executor::block_on;
 
@@ -40,8 +42,8 @@ impl SubCommandUtil for StatusSubCommand {
         let mut directory_path = String::new();
         let all_directories = sub_matches.is_present("all");
         if all_directories {
-            if let Some(path) = sub_matches.value_of_os("directory") {
-                directory_path = path.to_os_string().into_string().unwrap();
+            if let Some(path) = sub_matches.get_one::<PathBuf>("directory") {
+                directory_path = path.as_os_str().to_os_string().into_string().unwrap();
             }
         } else {
             let path = get_path_from_matches_or_current_path(sub_matches, "directory").unwrap();

@@ -6,7 +6,7 @@ use futures::executor::block_on;
 
 use super::subcommand_utils::{
     construct_startup_type_arg, get_path_from_matches_or_current_path,
-    is_existing_directory_validator, SubCommandUtil,
+    ExistingDirectoryValueParser, SubCommandUtil,
 };
 use folden::shared_utils::construct_port_arg;
 use generated_types::{handler_service_client::HandlerServiceClient, RegisterToDirectoryRequest};
@@ -42,7 +42,7 @@ impl SubCommandUtil for RegisterSubCommand {
                     .required(false)
                     .empty_values(false)
                     .takes_value(true)
-                    .validator_os(is_existing_directory_validator)
+                    .value_parser(ExistingDirectoryValueParser::new())
                     .help("Directory to register to. Leave empty to apply on current"),
             )
             .arg(
@@ -83,7 +83,7 @@ impl SubCommandUtil for RegisterSubCommand {
                 }
             }
             Err(_) => {
-                CliError::with_description("Config file doesn't exist", ErrorKind::InvalidValue)
+                CliError::with_description("Config file doesn't exist".to_string(), ErrorKind::InvalidValue)
                     .exit();
             }
         }

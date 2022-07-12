@@ -62,7 +62,7 @@ impl SubCommandUtil for GenerateSubCommand {
                     .multiple(true)
                     .empty_values(false)
                     .case_insensitive(true)
-                    .possible_values(&PipelineActions::VARIANTS),
+                    .possible_values(&*PipelineActions::VARIANTS),
             )
             .arg(
                 Arg::with_name("path")

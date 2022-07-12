@@ -52,7 +52,7 @@ impl<'a> PipelineExecutionContext {
     {
         tracing::error!("{}", msg.as_ref());
         self.send_trace_message(msg.as_ref());
-        if self.config.panic_handler_on_error {
+        if self.config.stop_handler_on_error {
             panic!("{}", msg.as_ref());
         }
         false
