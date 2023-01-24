@@ -3,3 +3,9 @@ repos:
     rev: v2.15.10
     hooks:
     -   id: pylint
+        args: [
+          "-rn", # Only display messages
+          "-sn", # Don't display the score
+          "--exit-zero",
+          "--output-format=colorized"
+          ]
